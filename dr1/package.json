@@ -1,0 +1,23 @@
+{
+  "name": "babylon",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "babylonjs": "^7.24.0",
+    "babylonjs-gui": "^7.24.0",
+    "babylonjs-loaders": "^7.24.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "typescript": "^5.6.2",
+    "vite": "^5.4.4"
+  }
+}
