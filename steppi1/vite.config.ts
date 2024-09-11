@@ -1,4 +1,5 @@
 import { defineConfig } from "vite";
+import basicSsl from "@vitejs/plugin-basic-ssl";
 
 export default defineConfig({
     server: {
@@ -8,4 +9,5 @@ export default defineConfig({
     build: {
         outDir: "dist", // Output directory for production build
     },
+    plugins: [basicSsl({})],
 });

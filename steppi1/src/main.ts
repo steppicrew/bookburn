@@ -2,6 +2,7 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
 import { createGround } from "./baseScene";
 import { createBook } from "./book";
+import { createBook2 } from "./book2";
 
 window.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById(
@@ -46,6 +47,27 @@ window.addEventListener("DOMContentLoaded", () => {
             })
             .then((xrHelper) => {
                 xrHelper.teleportation.addFloorMesh(ground);
+
+                xrHelper.input.onControllerAddedObservable.add((controller) => {
+                    controller.onMotionControllerInitObservable.add(
+                        (motionController) => {
+                            const triggerComponent =
+                                motionController.getComponent(
+                                    "xr-standard-trigger"
+                                );
+
+                            // Listen for trigger button press
+                            triggerComponent?.onButtonStateChangedObservable.add(
+                                (state) => {
+                                    if (state.pressed) {
+                                        // Flip to next page on trigger press
+                                        book.flipPage(1);
+                                    }
+                                }
+                            );
+                        }
+                    );
+                });
                 return { scene, light };
             });
     };
