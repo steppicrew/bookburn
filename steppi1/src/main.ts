@@ -1,5 +1,7 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
+import { createGround } from "./baseScene";
+import { createBook } from "./book";
 
 window.addEventListener("DOMContentLoaded", () => {
     const canvas = document.getElementById(
@@ -7,7 +9,7 @@ window.addEventListener("DOMContentLoaded", () => {
     ) as any as HTMLCanvasElement;
     const engine = new BABYLON.Engine(canvas, true);
 
-    const createScene = async () => {
+    const createScene = () => {
         const scene = new BABYLON.Scene(engine);
 
         // Create a camera for non-VR users (or fallback when not in VR)
@@ -28,22 +30,24 @@ window.addEventListener("DOMContentLoaded", () => {
             scene
         );
 
-        // Create a simple sphere to interact with
-        const sphere = BABYLON.MeshBuilder.CreateSphere(
-            "sphere",
-            { diameter: 1 },
-            scene
-        );
+        const ground = createGround(scene);
+        const book = createBook(scene);
 
-        // Set up WebXR experience helper
-        const xrHelper = await scene.createDefaultXRExperienceAsync({
-            floorMeshes: [sphere], // Optional: Set a mesh as the floor to interact with (e.g., ground plane)
+        book.book.position.x = 4;
+        book.book.rotation = new BABYLON.Vector3(0, (2 * Math.PI) / 3, 0);
+
+        canvas.addEventListener("pointerdown", () => {
+            book.flipPage();
         });
 
-        // Optional: Modify WebXR settings (e.g., enable teleportation)
-        xrHelper.teleportation.addFloorMesh(sphere);
-
-        return { scene, light };
+        return scene
+            .createDefaultXRExperienceAsync({
+                floorMeshes: [ground], // Optional: Set a mesh as the floor to interact with (e.g., ground plane)
+            })
+            .then((xrHelper) => {
+                xrHelper.teleportation.addFloorMesh(ground);
+                return { scene, light };
+            });
     };
 
     createScene().then(({ scene, light }) => {
