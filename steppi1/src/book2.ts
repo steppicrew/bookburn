@@ -32,7 +32,7 @@ export const createBook2 = (scene: BABYLON.Scene) => {
     backPageMaterial.backFaceCulling = false;
 
     // Create an empty parent mesh (book holder)
-    const bookHolder = new BABYLON.TransformNode("bookHolder", scene);
+    const node = new BABYLON.TransformNode("book", scene);
 
     // Create book components
 
@@ -78,9 +78,9 @@ export const createBook2 = (scene: BABYLON.Scene) => {
         )
     );
 
-    // Set front and back covers as children of the book holder
-    frontCover.parent = bookHolder;
-    backCover.parent = bookHolder;
+    // Set front and back covers as children of the book node
+    frontCover.parent = node;
+    backCover.parent = node;
 
     // Interactivity: Flip pages
     let currentPage = 0;
@@ -106,7 +106,7 @@ export const createBook2 = (scene: BABYLON.Scene) => {
     };
 
     return {
-        book: bookHolder,
+        node,
         flipPage,
     };
 };
