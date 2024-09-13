@@ -4,7 +4,7 @@ export const createGround = (scene: BABYLON.Scene) => {
     // Create a ground mesh for teleportation
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
-        { width: 10, height: 10 },
+        { width: 100, height: 100 },
         scene
     );
 

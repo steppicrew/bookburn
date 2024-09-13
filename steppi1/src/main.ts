@@ -106,8 +106,17 @@ const createScene1 = async (
     };
 
     // ** Fire **
-    createFire1(scene, light);
+    const fireNode1 = createFire1(scene, light);
+    fireNode1.position.x -= 3 * 1;
 
+    const fireNode2 = createFire1(scene, light, 1);
+    fireNode2.position.x -= 3 * 2;
+
+    const fireNode3 = createFire1(scene, light, 2);
+    fireNode3.position.x -= 3 * 3;
+
+    const fireNode4 = createFire1(scene, light, 6);
+    fireNode4.position.x -= 3 * 4;
     return {
         update,
         render: () => scene.render(),
