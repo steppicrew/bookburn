@@ -4,7 +4,7 @@ import { createGround } from "./baseScene";
 import { createBook } from "./book";
 import { createBook2 } from "./book2";
 import { createCamera2 } from "./camera1";
-import { createFire1 } from "./fire";
+import { createFire1, createFire2, makeCreateFire3 } from "./fire";
 
 const setupBook = async (
     canvas: HTMLCanvasElement,
@@ -105,17 +105,19 @@ const createScene1 = async (
         );
     };
 
+    const createFire = makeCreateFire3(scene);
+
     // ** Fire **
-    const fireNode1 = createFire1(scene, light);
+    const fireNode1 = createFire(1000, 5);
     fireNode1.position.x -= 3 * 1;
 
-    const fireNode2 = createFire1(scene, light, 1);
+    const fireNode2 = createFire(50, 5);
     fireNode2.position.x -= 3 * 2;
 
-    const fireNode3 = createFire1(scene, light, 2);
+    const fireNode3 = createFire(50, 3);
     fireNode3.position.x -= 3 * 3;
 
-    const fireNode4 = createFire1(scene, light, 6);
+    const fireNode4 = createFire(10, 3);
     fireNode4.position.x -= 3 * 4;
     return {
         update,
