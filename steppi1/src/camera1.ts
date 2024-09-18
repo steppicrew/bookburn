@@ -25,7 +25,7 @@ export const createCamera1 = (
     };
 };
 
-export type CreateCamera1 = ReturnType<typeof createCamera1>;
+export type CreateCamera1 = Awaited<ReturnType<typeof createCamera1>>;
 
 export const createCamera2 = async (
     canvas: HTMLCanvasElement,
@@ -47,4 +47,4 @@ export const createCamera2 = async (
     };
 };
 
-export type CreateCamera2 = ReturnType<typeof createCamera2>;
+export type CreateCamera2 = Awaited<ReturnType<typeof createCamera2>>;

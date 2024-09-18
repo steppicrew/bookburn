@@ -1,150 +1,70 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
-import { createGround } from "./baseScene";
-import { createBook } from "./book";
-import { createBook2 } from "./book2";
-import { createCamera2 } from "./camera1";
-import { createFire1, createFire2, makeCreateFire3 } from "./fire";
+import { SceneEx } from "./sceneEx";
+import { state } from "./state";
+import { createScene1 } from "./scene1";
 
-const setupBook = async (
-    canvas: HTMLCanvasElement,
-    scene: BABYLON.Scene,
-    xrHelper: BABYLON.WebXRDefaultExperience
-) => {
-    const book = createBook(scene);
+const start = async () => {
+    if (!state.canvas) {
+        state.canvas = document.getElementById(
+            "renderCanvas"
+        ) as unknown as HTMLCanvasElement;
+    }
 
-    book.node.position.x = 4;
-    book.node.rotation = new BABYLON.Vector3(0, (2 * Math.PI) / 3, 0);
+    if (!state.engine) {
+        state.engine = new BABYLON.Engine(state.canvas, true);
 
-    // Fallback for non-VR
-    canvas.addEventListener("pointerdown", () => {
-        book.flipPage();
-    });
+        // To prevent limitations of lights per mesh
+        // engine.disableUniformBuffers = true;
 
-    xrHelper.input.onControllerAddedObservable.add((controller) => {
-        controller.onMotionControllerInitObservable.add((motionController) => {
-            const triggerComponent = motionController.getComponent(
-                "xr-standard-trigger"
-            );
-            triggerComponent?.onButtonStateChangedObservable.add((state) => {
-                if (state.pressed) {
-                    book.flipPage(1);
-                }
-            });
+        window.addEventListener("resize", () => {
+            state.engine.resize();
         });
-    });
+    }
+
+    if (!state.sceneEx) {
+        // Initialize the scene only once
+        state.sceneEx = await SceneEx.create(state.engine, state.canvas);
+        await state.sceneEx.setup(createScene1);
+    }
+
+    // Start the render loop if not already running
+    if (!state.engine.isDisposed) {
+        state.engine.runRenderLoop(() => {
+            state.sceneEx.update();
+            state.sceneEx.render();
+        });
+    }
 };
 
-const createScene1 = async (
-    engine: BABYLON.Engine,
-    canvas: HTMLCanvasElement
-) => {
-    const scene = new BABYLON.Scene(engine);
-    const camera = await createCamera2(canvas, scene);
-    const xrHelper = await scene.createDefaultXRExperienceAsync();
+window.addEventListener("DOMContentLoaded", start);
 
-    // *** Light ***
-
-    const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(1, 1, 0),
-        scene
-    );
-
-    // *** Environment texture ***
-    // The HDR texture set up in the code you provided is not directly
-    // visible as a background in the scene but is used primarily for
-    // lighting, reflections, and overall environment effects.
-
-    const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-        "./assets/Runyon_Canyon_A_2k_cube_specular.dds",
-        scene
-    );
-    hdrTexture.name = "envTex";
-    hdrTexture.gammaSpace = false;
-
-    scene.registerBeforeRender(() => {
-        hdrTexture.setReflectionTextureMatrix(BABYLON.Matrix.RotationY(0));
-    });
-
-    scene.environmentTexture = hdrTexture;
-
-    // *** Skybox ***
-
-    const skybox = BABYLON.MeshBuilder.CreateBox(
-        "skyBox",
-        { size: 1000.0 },
-        scene
-    );
-    const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-    skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.reflectionTexture = hdrTexture;
-    skyboxMaterial.reflectionTexture.coordinatesMode =
-        BABYLON.Texture.SKYBOX_MODE;
-    skyboxMaterial.disableLighting = true;
-    skybox.material = skyboxMaterial;
-
-    // *** Ground ***
-
-    const ground = createGround(scene);
-    xrHelper.teleportation.addFloorMesh(ground);
-
-    // *** Book ***
-
-    await setupBook(canvas, scene, xrHelper);
-
-    let angle = 0;
-
-    const update = () => {
-        angle += 0.01;
-
-        light.direction = new BABYLON.Vector3(
-            Math.sin(angle),
-            1,
-            Math.cos(angle)
+// Vite HMR support
+if (import.meta.hot) {
+    if (false) {
+        const ms = [
+            "beforeUpdate",
+            "afterUpdate",
+            "beforeFullReload",
+            "beforePrune",
+            "invalidate",
+            "error",
+            "ws:disconnect",
+            "ws:connect",
+        ];
+        ms.forEach((event) =>
+            import.meta.hot!.on(`vite:${event}`, (args) => {
+                console.log("HMR EVENT", event, args);
+            })
         );
-    };
+    }
 
-    const createFire = makeCreateFire3(scene);
-
-    // ** Fire **
-    const fireNode1 = createFire(1000, 5);
-    fireNode1.position.x -= 3 * 1;
-
-    const fireNode2 = createFire(50, 5);
-    fireNode2.position.x -= 3 * 2;
-
-    const fireNode3 = createFire(50, 3);
-    fireNode3.position.x -= 3 * 3;
-
-    const fireNode4 = createFire(10, 3);
-    fireNode4.position.x -= 3 * 4;
-    return {
-        update,
-        render: () => scene.render(),
-    };
-};
-
-window.addEventListener("DOMContentLoaded", () => {
-    const canvas = document.getElementById(
-        "renderCanvas"
-    ) as any as HTMLCanvasElement;
-
-    const engine = new BABYLON.Engine(canvas, true);
-
-    // To prevent limitations of lights per mesh
-    // FIXME: Notwendig?
-    // engine.disableUniformBuffers = true;
-
-    window.addEventListener("resize", () => {
-        engine.resize();
+    import.meta.hot!.on("vite:afterUpdate", (args) => {
+        console.log("HMR EVENT afterUpdate: re-create scene");
+        state.sceneEx.setup(createScene1);
     });
 
-    (async () => {
-        const scene = await createScene1(engine, canvas);
-        engine.runRenderLoop(() => {
-            scene.update();
-            scene.render();
-        });
-    })();
-});
+    import.meta.hot.accept(() => {
+        // Dummy
+    });
+}
