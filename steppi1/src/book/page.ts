@@ -101,13 +101,23 @@ export const createPage = (
                 for (let i = 0; i < positions.length / 3; i++) {
                     positions[3 * i + 2] =
                         Math.sin(positions[3 * i] * xFactor) *
-                        //Math.sin(positions[3 * i + 1] * yFactor) *
+                        Math.sin(positions[3 * i + 1] * yFactor) *
                         Math.sin(timeFactor) *
                         1;
                 }
+                //Empty array to contain calculated values or normals added
+                var normals: number[] = [];
+
+                //Calculations of normals added
+                BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+
                 customMesh.setVerticesData(
                     BABYLON.VertexBuffer.PositionKind,
                     positions
+                );
+                customMesh.setVerticesData(
+                    BABYLON.VertexBuffer.NormalKind,
+                    normals
                 );
             }
         });
