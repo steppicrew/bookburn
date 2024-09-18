@@ -101,12 +101,9 @@ export const createPage = (
                 for (let i = 0; i < positions.length / 3; i++) {
                     positions[3 * i + 2] =
                         Math.sin(positions[3 * i] * xFactor) *
-                        // Math.sin(positions[3 * i + 1] * yFactor) *
+                        //Math.sin(positions[3 * i + 1] * yFactor) *
                         Math.sin(timeFactor) *
                         1;
-                }
-                if (deltaTime > 1 && deltaTime < 1.5) {
-                    console.log(positions);
                 }
                 customMesh.setVerticesData(
                     BABYLON.VertexBuffer.PositionKind,
