@@ -5,7 +5,7 @@ type Color = [r: number, g: number, b: number, a: number];
 
 type Style = "color" | "texture";
 
-const vertices = 2;
+const vertices = 200;
 const PI = Math.PI;
 const PI2 = PI / 2;
 
@@ -88,23 +88,22 @@ export const createPage = (
     customMesh.material = mat;
 
     {
-        const factor = (2 * PI) / vertices;
+        const xFactor = (2 * PI) / width;
+        const yFactor = (2 * PI) / height;
         const startTime = Date.now();
         scene.registerBeforeRender(() => {
-            const deltaTime = (Date.now() - startTime) / 1_000;
+            const deltaTime = (Date.now() - startTime) / 200;
             const timeFactor = Math.sin(deltaTime);
             const positions = customMesh.getVerticesData(
                 BABYLON.VertexBuffer.PositionKind
             );
             if (positions) {
-                for (let row = 0; row < vertices; row++) {
-                    const rowOffset = 3 * vertices * row;
-                    for (let col = 0; col < vertices; col++) {
-                        const colOffset = rowOffset + 3 * col;
-                        positions![colOffset + 2] =
-                            Math.sin((positions[colOffset] / width) * 2 * PI) *
-                            10;
-                    }
+                for (let i = 0; i < positions.length / 3; i++) {
+                    positions[3 * i + 2] =
+                        Math.sin(positions[3 * i] * xFactor) *
+                        // Math.sin(positions[3 * i + 1] * yFactor) *
+                        Math.sin(timeFactor) *
+                        1;
                 }
                 if (deltaTime > 1 && deltaTime < 1.5) {
                     console.log(positions);
