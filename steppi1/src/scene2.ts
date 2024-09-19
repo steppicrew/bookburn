@@ -9,7 +9,14 @@ const setupBook = async (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    const page = createPage(scene, 21, 27);
+    const page = createPage({
+        scene,
+        width: 21,
+        height: 27,
+        frontTexture: "assets/front.jpg",
+        backTexture: "assets/back.jpg",
+        floppyness: 1,
+    });
     xrHelper.input.onControllerAddedObservable.add((controller) => {
         controller.onMotionControllerInitObservable.add((motionController) => {
             const triggerComponent = motionController.getComponent(
