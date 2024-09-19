@@ -39,6 +39,11 @@ export const createScene1: CreateSceneFn = async (
         new BABYLON.Vector3(0, 0, 1),
         scene
     );
+    const light2 = new BABYLON.DirectionalLight(
+        "light2",
+        new BABYLON.Vector3(0, 0, -1),
+        scene
+    );
 
     // *** Book ***
 
