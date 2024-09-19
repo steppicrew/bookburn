@@ -44,6 +44,9 @@ export const disposeScene = (
         renderTarget.dispose();
     });
 
+    scene.getEngine().releaseEffects();
+    BABYLON.Effect.ResetCache();
+
     /*
     // Clean up multi-canvas scenarios if using multiple viewports
     if (scene.activeCameras) {

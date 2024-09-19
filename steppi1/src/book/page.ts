@@ -5,7 +5,7 @@ type Color = [r: number, g: number, b: number, a: number];
 
 type Style = "color" | "texture";
 
-const vertices = 200;
+const vertices = 50;
 const PI = Math.PI;
 const PI2 = PI / 2;
 

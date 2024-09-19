@@ -15,8 +15,6 @@ export type CreateSceneFn = (
 export class SceneEx {
     private _update: () => void = () => undefined;
 
-    private xyz = false;
-
     private constructor(
         private scene: BABYLON.Scene,
         private camera: CreateCamera2,
@@ -39,19 +37,37 @@ export class SceneEx {
         const cameraRotation = this.camera.node.rotation.clone();
         const cameraFov = this.camera.node.fov;
 
+        console.log("camera.position=", JSON.stringify(cameraPosition));
+
+        console.log(
+            "camera.node.position = new BABYLON.Vector3(" +
+                cameraPosition.x +
+                "," +
+                cameraPosition.y +
+                "," +
+                cameraPosition.z +
+                ");\n" +
+                "camera.node.rotation = new BABYLON.Vector3(" +
+                cameraRotation.x +
+                "," +
+                cameraRotation.y +
+                "," +
+                cameraRotation.z +
+                ");\n" +
+                "camera.node.fov = " +
+                cameraFov +
+                ";\n"
+        );
+
         // Dispose of existing scene content
         disposeScene(this.scene, this.xrHelper);
 
-        if (this.xyz === false) {
-            // this.xyz = true;
-
-            // Recreate Scene
-            this._update = await createSceneFn(
-                this.scene,
-                this.camera,
-                this.xrHelper
-            );
-        }
+        // Recreate Scene
+        this._update = await createSceneFn(
+            this.scene,
+            this.camera,
+            this.xrHelper
+        );
 
         // Restore camera parameters
         this.camera.node.position = cameraPosition;
