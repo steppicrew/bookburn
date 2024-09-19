@@ -5,7 +5,7 @@ import * as BABYLON from "babylonjs";
 // https://www.babylonjs-playground.com/#7IM02G#0
 
 // @from https://medium.com/@dirkk/campfire-vr-fa654d15e92a
-export function makeCreateFire3(
+export function makeCreateFire(
     scene: BABYLON.Scene
 ): (particles?: number, size?: number) => BABYLON.Mesh {
     // One-time setup: Register shaders in the shader store
@@ -24,6 +24,7 @@ export function makeCreateFire3(
         varying vec3 vUv;
 
         void main() {
+            // return;
             float sawTime = mod(time * offset, PI);
             float sineTime = (sawTime * abs(sin(time * offset)));
             vec3 timeVec = vec3(sineTime, sawTime, sineTime);
@@ -55,8 +56,10 @@ export function makeCreateFire3(
         }
     `;
 
-    BABYLON.Effect.ShadersStore["fireVertexShader"] = VERTEX_SHADER;
-    BABYLON.Effect.ShadersStore["fireFragmentShader"] = FRAGMENT_SHADER;
+    const shader = "fire" + Date.now();
+
+    BABYLON.Effect.ShadersStore[`${shader}VertexShader`] = VERTEX_SHADER;
+    BABYLON.Effect.ShadersStore[`${shader}FragmentShader`] = FRAGMENT_SHADER;
 
     const fireMaterials: BABYLON.ShaderMaterial[] = [];
 
@@ -123,7 +126,7 @@ export function makeCreateFire3(
         const shaderMaterial = new BABYLON.ShaderMaterial(
             `fireShaderInstance_${mesh.uniqueId}`,
             scene,
-            "fire",
+            shader,
             {
                 attributes: ["position", "direction", "offset"],
                 uniforms: ["worldViewProjection", "time", "size", "yMax"],
@@ -147,7 +150,6 @@ export function makeCreateFire3(
 
         // Assign material to mesh
         mesh.material = meshMaterial;
-        mesh.scaling = new BABYLON.Vector3(0.2, 0.2, 0.2);
 
         scene.addMesh(mesh);
 

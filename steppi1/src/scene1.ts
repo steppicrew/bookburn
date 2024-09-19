@@ -4,7 +4,7 @@ import { state } from "./state";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
-import { makeCreateFire3 } from "./fire";
+import { makeCreateFire } from "./fire";
 
 const setupBook = async (
     scene: BABYLON.Scene,
@@ -50,6 +50,15 @@ export const createScene1: CreateSceneFn = async (
     let angle = 0;
 
     const update = () => {
+        /*
+        camera.node.position = new BABYLON.Vector3(
+            -4.142467027972506,
+            3.6664359864043488,
+            6.308459603515606
+        );
+        camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
+        camera.node.fov = 0.8;
+*/
         angle += 0.01;
 
         light.direction = new BABYLON.Vector3(
@@ -101,22 +110,24 @@ export const createScene1: CreateSceneFn = async (
 
     await setupBook(scene, xrHelper);
 
-    const createFire = makeCreateFire3(scene);
+    const createFire = makeCreateFire(scene);
 
     // ** Fire **
     const relX = 8;
 
-    const fireNode1 = createFire(1000, 5);
+    const fireNode1 = createFire(1000, 0.7);
     fireNode1.position.x -= relX * 1;
 
-    const fireNode2 = createFire(50, 5);
+    const fireNode2 = createFire(50, 1);
     fireNode2.position.x -= relX * 2;
 
-    const fireNode3 = createFire(50, 3);
+    const fireNode3 = createFire(50, 1);
     fireNode3.position.x -= relX * 3;
 
-    const fireNode4 = createFire(10, 3);
+    const fireNode4 = createFire(10, 1);
     fireNode4.position.x -= relX * 4;
+
+    camera.node.setTarget(fireNode1.position);
 
     return update;
 };

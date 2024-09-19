@@ -5,7 +5,7 @@ type XZ = [x: number, z: number];
 
 type FrontBack = "front" | "back";
 
-const vertices = 100;
+const vertices = 50;
 const PI = Math.PI;
 const flipTexture = true;
 const msPerFlip = 1_000;
