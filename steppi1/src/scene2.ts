@@ -11,9 +11,9 @@ export const createScene1: CreateSceneFn = async (
 ) => {
     // *** Light ***
 
-    const light = new BABYLON.DirectionalLight(
+    const light = new BABYLON.HemisphericLight(
         "light",
-        new BABYLON.Vector3(0, 0, 1),
+        new BABYLON.Vector3(0, 1, 1),
         scene
     );
 
@@ -23,8 +23,13 @@ export const createScene1: CreateSceneFn = async (
 
     scene.registerBeforeRender(book.update);
 
-    book.node.position.y = -1;
-    // book.node.rotation.x = -Math.PI / 2;
+    book.node.position.z = -10;
+    book.node.position.x = 5;
+    //book.node.rotation.z = -Math.PI / 2;
+    book.node.rotation.y = Math.PI;
+    book.node.rotation.x = Math.PI / 4;
+
+    camera.node.setTarget(book.node.position);
 
     return () => {};
 };
