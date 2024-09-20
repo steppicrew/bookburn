@@ -4,11 +4,15 @@ type XYZ = [x: number, y: number, z: number];
 type XZ = [x: number, z: number];
 
 type FrontBack = "front" | "back";
+type Direction = "left" | "right";
 
 const vertices = 50;
 const PI = Math.PI;
 const flipTexture = true;
 const msPerFlip = 1_000;
+
+const bendCache: Map<string, Map<number, Map<number, XZ>>> = new Map();
+const bendCacheKey = (...args: (number | string)[]) => args.join("|");
 
 export const createPage = ({
     scene,
@@ -29,6 +33,7 @@ export const createPage = ({
     const rowHeight = height / vertices;
 
     const createPageSide = (
+        node: BABYLON.TransformNode,
         texture: string,
         frontBack: FrontBack,
         flipTexture: boolean
@@ -97,6 +102,7 @@ export const createPage = ({
         mat.diffuseTexture = new BABYLON.Texture(texture, scene);
         //mat.wireframe = true;
         mesh.material = mat;
+        mesh.parent = node;
 
         return {
             positions0,
@@ -105,23 +111,31 @@ export const createPage = ({
         };
     };
 
+    const node = new BABYLON.TransformNode("book", scene);
+
     const {
         mesh: frontMesh,
         positions0: frontPositions0,
         indices,
-    } = createPageSide(frontTexture, "front", flipTexture);
+    } = createPageSide(node, frontTexture, "back", !flipTexture);
     const { mesh: backMesh, positions0: backPositions0 } = createPageSide(
+        node,
         backTexture,
-        "back",
-        !flipTexture
+        "front",
+        flipTexture
     );
 
+    const cacheKey = bendCacheKey(width, height, floppyness || 0);
+    if (!bendCache.has(cacheKey)) {
+        bendCache.set(cacheKey, new Map());
+    }
+    const cache = bendCache.get(cacheKey)!;
+
     const flipPage = ((
+        node: BABYLON.TransformNode,
         data: { mesh: BABYLON.Mesh; positions0: XYZ[] }[],
         indices: number[]
     ) => {
-        const startTime = Date.now();
-
         /*
         1. Leave y as it is
         2. The extreme (xe, ze) coordinates follow a function (i.e. a semi circla/ellipse) from (1, 0) to (-1, 0)
@@ -130,42 +144,24 @@ export const createPage = ({
 
         const R_inverse_max = (2 / width) * (floppyness || 0);
 
-        const getR_inverse = (time: number): number => {
-            const quadrant = Math.floor(time / (msPerFlip / 2));
-            switch (quadrant) {
-                case 0:
-                    return (time / (msPerFlip / 2)) * R_inverse_max;
-                case 1:
-                    return (
-                        ((msPerFlip - time) / (msPerFlip / 2)) * R_inverse_max
-                    );
-                case 2:
-                    return (
-                        (-(time - msPerFlip) / (msPerFlip / 2)) * R_inverse_max
-                    );
-                case 3:
-                    return (
-                        (-(2 * msPerFlip - time) / (msPerFlip / 2)) *
-                        R_inverse_max
-                    );
-            }
-            return 0;
-        };
-
         /**
          * Bend the page that both edges are at z=0
          * @param time Time elapsed since start flipping
          * @returns
          */
         const getBendTranslate = (time: number): Map<number, XZ> => {
+            const cacheTime = time > msPerFlip / 2 ? msPerFlip - time : time;
+            if (cache.has(cacheTime)) {
+                return cache.get(cacheTime)!;
+            }
+
             const table: Map<number, XZ> = new Map();
 
-            const r_inverse = getR_inverse(time);
+            const r_inverse = (cacheTime / (msPerFlip / 2)) * R_inverse_max;
 
             if (r_inverse == 0) {
                 for (let col = 0; col <= vertices; col++) {
-                    const l = col / vertices;
-                    table.set(col, [l * width, 0]);
+                    table.set(col, [(col / vertices) * width, 0]);
                 }
                 return table;
             }
@@ -174,25 +170,18 @@ export const createPage = ({
             const x_c = Math.sin(theta / 2) / r_inverse;
             const z_c = Math.cos(theta / 2) / r_inverse;
 
-            /*
-            console.log(
-                "r_inverse",
-                r_inverse,
-                r_inverse ? 1 / r_inverse : Infinity
-            );
-            console.log("theta", theta);
-            console.log("x_c, z_c", x_c, z_c);
-            */
-
             const d_theta = theta / vertices;
 
             for (let col = 0; col <= vertices / 2; col++) {
                 const theta_ = -theta / 2 + col * d_theta;
                 const x = x_c + Math.sin(theta_) / r_inverse;
-                const z = z_c - Math.cos(theta_) / r_inverse;
+                const z = -z_c + Math.cos(theta_) / r_inverse;
                 table.set(col, [x, z]);
                 table.set(vertices - col, [2 * x_c - x, z]);
             }
+
+            cache.set(cacheTime, table);
+
             return table;
         };
 
@@ -201,64 +190,86 @@ export const createPage = ({
          * @param time Time since start flipping
          * @returns
          */
-        const getTranslate = (time: number): Map<number, XZ> => {
-            time = time % (2 * msPerFlip);
+        let lastTime: number | undefined = undefined;
+        const getTranslate = (
+            time: number,
+            direction: Direction
+        ): Map<number, XZ> => {
+            if (lastTime == undefined) {
+                lastTime = time;
+            }
 
-            const alpha = (time / msPerFlip) * PI;
-            const sin_alpha = Math.sin(alpha);
-            const cos_alpha = Math.cos(alpha);
-            //console.log("alpha", alpha);
+            if (direction == "right") {
+                time = msPerFlip - time;
+            }
+
+            const alpha = ((time - lastTime) / msPerFlip) * PI;
+            lastTime = time;
+
+            node.rotate(new BABYLON.Vector3(0, 1, 0), alpha);
 
             const table = getBendTranslate(time % msPerFlip);
+            if (direction == "right") {
+                const _table = new Map<number, XZ>();
+                table.forEach((xz, time) => _table.set(time, [xz[0], -xz[1]]));
+                return _table;
+            }
 
-            table.forEach(([x, z], col) => {
-                table.set(col, [
-                    x * cos_alpha - z * sin_alpha,
-                    x * sin_alpha + z * cos_alpha,
-                ]);
-            });
             return table;
         };
 
-        return () => {
-            scene.registerBeforeRender(() => {
-                const deltaTime = (Date.now() - startTime) % (2 * msPerFlip);
-                const translate = getTranslate(deltaTime);
-                data.forEach(({ mesh, positions0 }) => {
-                    const positions = mesh.getVerticesData(
-                        BABYLON.VertexBuffer.PositionKind
+        return (direction: Direction = "left"): Promise<void> => {
+            return new Promise((resolve) => {
+                const startTime = Date.now();
+
+                const beforeRender = () => {
+                    const deltaTime = Math.min(
+                        Date.now() - startTime,
+                        msPerFlip
                     );
-                    if (!positions) {
-                        return;
-                    }
-                    positions0.forEach((xy, i) => {
-                        const xz: XZ = translate.get(xy[0])!;
-                        positions[3 * i] = xz[0];
-                        positions[3 * i + 2] = xz[1];
+                    const translate = getTranslate(deltaTime, direction);
+                    data.forEach(({ mesh, positions0 }) => {
+                        const positions = mesh.getVerticesData(
+                            BABYLON.VertexBuffer.PositionKind
+                        );
+                        if (!positions) {
+                            return;
+                        }
+                        positions0.forEach((xy, i) => {
+                            const xz: XZ = translate.get(xy[0])!;
+                            positions[3 * i] = xz[0];
+                            positions[3 * i + 2] = xz[1];
+                        });
+
+                        //Empty array to contain calculated values or normals added
+                        var normals: number[] = [];
+
+                        //Calculations of normals added
+                        BABYLON.VertexData.ComputeNormals(
+                            positions,
+                            indices,
+                            normals
+                        );
+
+                        mesh.setVerticesData(
+                            BABYLON.VertexBuffer.PositionKind,
+                            positions
+                        );
+                        mesh.setVerticesData(
+                            BABYLON.VertexBuffer.NormalKind,
+                            normals
+                        );
                     });
-
-                    //Empty array to contain calculated values or normals added
-                    var normals: number[] = [];
-
-                    //Calculations of normals added
-                    BABYLON.VertexData.ComputeNormals(
-                        positions,
-                        indices,
-                        normals
-                    );
-
-                    mesh.setVerticesData(
-                        BABYLON.VertexBuffer.PositionKind,
-                        positions
-                    );
-                    mesh.setVerticesData(
-                        BABYLON.VertexBuffer.NormalKind,
-                        normals
-                    );
-                });
+                    if (deltaTime == msPerFlip) {
+                        scene.unregisterBeforeRender(beforeRender);
+                        resolve();
+                    }
+                };
+                scene.registerBeforeRender(beforeRender);
             });
         };
     })(
+        node,
         [
             { mesh: frontMesh, positions0: frontPositions0 },
             { mesh: backMesh, positions0: backPositions0 },
@@ -266,7 +277,12 @@ export const createPage = ({
         indices
     );
 
-    flipPage();
+    const flipLeft = () =>
+        flipPage("left").then(() => setTimeout(flipRight, 1000));
+    const flipRight = () =>
+        flipPage("right").then(() => setTimeout(flipLeft, 1000));
+
+    setTimeout(flipLeft, 1000);
 
     const update = (dt: number) => {};
 
