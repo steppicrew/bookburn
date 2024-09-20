@@ -58,3 +58,27 @@ export const disposeScene = (
     }
     */
 };
+
+export type UpdateFn = (remove: () => void) => void;
+
+export const updateWrapper = () => {
+    const updates: Map<UpdateFn, (() => void)[]> = new Map();
+
+    const add = (update: UpdateFn) => updates.set(update, []);
+    const onRemove = (update: UpdateFn, onRemove: () => void) =>
+        updates.get(update)?.push(onRemove);
+    const remove = (update: UpdateFn) => {
+        updates.get(update)?.forEach((onRemove) => onRemove());
+        updates.delete(update);
+    };
+    const update = () => {
+        updates.keys().forEach((update) => update(() => remove(update)));
+    };
+
+    return {
+        add,
+        onRemove,
+        remove,
+        update,
+    };
+};

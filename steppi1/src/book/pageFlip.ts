@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { Direction, XYZ, XZ } from "./types";
+import { UpdateFn } from "../sceneUtils";
 
 const defaultMsPerFlip = 1_000;
 
@@ -100,23 +101,17 @@ export const createFlipPage = ({
      * @param time Time since start flipping
      * @returns
      */
-    let lastTime: number | undefined = undefined;
     const getTranslate = (
         time: number,
         direction: Direction
     ): Map<number, XZ> => {
-        if (lastTime == undefined) {
-            lastTime = time;
-        }
-
         if (direction == "right") {
             time = msPerFlip - time;
         }
 
-        const alpha = ((time - lastTime) / msPerFlip) * PI;
-        lastTime = time;
+        const alpha = (time / msPerFlip) * PI;
 
-        node.rotate(flipAxis, alpha);
+        node.rotation = new BABYLON.Vector3(0, alpha, 0);
 
         const table = getBendTranslate(time % msPerFlip);
         if (direction == "right") {
@@ -128,52 +123,46 @@ export const createFlipPage = ({
         return table;
     };
 
-    return (direction: Direction = "left"): Promise<void> => {
+    return (direction: Direction = "left", startTime?: number): UpdateFn => {
         const scene = node.getScene();
-        return new Promise((resolve) => {
-            const startTime = Date.now();
+        if (startTime == undefined) {
+            startTime = Date.now();
+        }
 
-            const beforeRender = () => {
-                const deltaTime = Math.min(Date.now() - startTime, msPerFlip);
-                const translate = getTranslate(deltaTime, direction);
-                meshes.forEach(({ mesh, positions0 }) => {
-                    const positions = mesh.getVerticesData(
-                        BABYLON.VertexBuffer.PositionKind
-                    );
-                    if (!positions) {
-                        return;
-                    }
-                    positions0.forEach((xy, i) => {
-                        const xz: XZ = translate.get(xy[0])!;
-                        positions[3 * i] = xz[0];
-                        positions[3 * i + 2] = xz[1];
-                    });
-
-                    //Empty array to contain calculated values or normals added
-                    var normals: number[] = [];
-
-                    //Calculations of normals added
-                    BABYLON.VertexData.ComputeNormals(
-                        positions,
-                        indices,
-                        normals
-                    );
-
-                    mesh.setVerticesData(
-                        BABYLON.VertexBuffer.PositionKind,
-                        positions
-                    );
-                    mesh.setVerticesData(
-                        BABYLON.VertexBuffer.NormalKind,
-                        normals
-                    );
-                });
-                if (deltaTime == msPerFlip) {
-                    scene.unregisterBeforeRender(beforeRender);
-                    resolve();
+        return (remove: () => void) => {
+            const deltaTime = Math.min(Date.now() - startTime, msPerFlip);
+            if (deltaTime < 0) {
+                return;
+            }
+            const translate = getTranslate(deltaTime, direction);
+            meshes.forEach(({ mesh, positions0 }) => {
+                const positions = mesh.getVerticesData(
+                    BABYLON.VertexBuffer.PositionKind
+                );
+                if (!positions) {
+                    return;
                 }
-            };
-            scene.registerBeforeRender(beforeRender);
-        });
+                positions0.forEach((xy, i) => {
+                    const xz: XZ = translate.get(xy[0])!;
+                    positions[3 * i] = xz[0];
+                    positions[3 * i + 2] = xz[1];
+                });
+
+                //Empty array to contain calculated values or normals added
+                var normals: number[] = [];
+
+                //Calculations of normals added
+                BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+
+                mesh.setVerticesData(
+                    BABYLON.VertexBuffer.PositionKind,
+                    positions
+                );
+                mesh.setVerticesData(BABYLON.VertexBuffer.NormalKind, normals);
+            });
+            if (deltaTime == msPerFlip) {
+                remove();
+            }
+        };
     };
 };

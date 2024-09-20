@@ -2,8 +2,8 @@ import * as BABYLON from "babylonjs";
 import { FrontBack, PageType, XYZ, XZ } from "./types";
 import { createFlipPage } from "./pageFlip";
 
-const xVertices = 50;
-const yVertices = 1;
+const defaultXVertices = 50;
+const defaultYVertices = 1;
 const flipTexture = true;
 
 const bendCache: Map<string, Map<number, Map<number, XZ>>> = new Map();
@@ -17,6 +17,7 @@ export const createPage = ({
     backTexture,
     floppyness,
     offset,
+    vertices,
 }: {
     scene: BABYLON.Scene;
     width: number;
@@ -25,7 +26,14 @@ export const createPage = ({
     backTexture: string;
     floppyness?: number;
     offset?: BABYLON.Vector3;
+    vertices?: [number, number];
 }): PageType => {
+    if (!vertices) {
+        vertices = [defaultXVertices, defaultYVertices];
+    }
+
+    const [xVertices, yVertices] = vertices;
+
     const createPageSide = (
         node: BABYLON.TransformNode,
         texture: string,
@@ -143,9 +151,10 @@ export const createPage = ({
         indices,
         floppyness,
         cache,
-        vertices: [xVertices, yVertices],
+        vertices,
         scaling: pageSidesNode.scaling,
+        msPerFlip: 500,
     });
 
-    return { node: pageSidesNode, flipPage };
+    return { node: pageNode, flipPage };
 };

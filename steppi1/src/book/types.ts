@@ -8,5 +8,8 @@ export type Direction = "left" | "right";
 
 export type PageType = {
     node: BABYLON.TransformNode;
-    flipPage: (direction: Direction) => Promise<void>;
+    flipPage: (
+        direction: Direction,
+        startTime?: number
+    ) => (remove: () => void) => void;
 };
