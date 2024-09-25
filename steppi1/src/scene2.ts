@@ -1,24 +1,8 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
-import { createBook } from "./book";
-import { CreateCamera2, createCamera2 } from "./camera1";
-import { createPage } from "./book/page";
+import { CreateCamera2 } from "./camera1";
 import { CreateSceneFn } from "./sceneEx";
-
-const setupBook = async (
-    scene: BABYLON.Scene,
-    xrHelper: BABYLON.WebXRDefaultExperience
-) => {
-    const page = createPage(scene, 21, 27);
-    xrHelper.input.onControllerAddedObservable.add((controller) => {
-        controller.onMotionControllerInitObservable.add((motionController) => {
-            const triggerComponent = motionController.getComponent(
-                "xr-standard-trigger"
-            );
-        });
-    });
-    return page;
-};
+import { setupBook } from "./book/book";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
@@ -27,17 +11,25 @@ export const createScene1: CreateSceneFn = async (
 ) => {
     // *** Light ***
 
-    const light = new BABYLON.DirectionalLight(
+    const light = new BABYLON.HemisphericLight(
         "light",
-        new BABYLON.Vector3(0, 0, 1),
+        new BABYLON.Vector3(0, 1, 1),
         scene
     );
 
     // *** Book ***
 
-    await setupBook(scene, xrHelper);
+    const book = setupBook(scene, xrHelper, { pageCount: 100 });
 
-    const update = () => {};
+    scene.registerBeforeRender(book.update);
 
-    return update;
+    book.node.position.z = -10;
+    book.node.position.x = 5;
+    //book.node.rotation.z = -Math.PI / 2;
+    book.node.rotation.y = Math.PI;
+    book.node.rotation.x = Math.PI / 4;
+
+    camera.node.setTarget(book.node.position);
+
+    return () => {};
 };

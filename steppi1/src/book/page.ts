@@ -1,128 +1,160 @@
 import * as BABYLON from "babylonjs";
+import { FrontBack, PageType, XYZ, XZ } from "./types";
+import { createFlipPage } from "./pageFlip";
 
-type Coordinate = [x: number, y: number, z: number];
-type Color = [r: number, g: number, b: number, a: number];
+const defaultXVertices = 50;
+const defaultYVertices = 1;
+const flipTexture = true;
 
-type Style = "color" | "texture";
+const bendCache: Map<string, Map<number, Map<number, XZ>>> = new Map();
+const bendCacheKey = (...args: (number | string)[]) => args.join("|");
 
-const vertices = 50;
-const PI = Math.PI;
-const PI2 = PI / 2;
+export const createPage = ({
+    scene,
+    width,
+    height,
+    frontTexture,
+    backTexture,
+    floppyness,
+    offset,
+    vertices,
+}: {
+    scene: BABYLON.Scene;
+    width: number;
+    height: number;
+    frontTexture: string;
+    backTexture: string;
+    floppyness?: number;
+    offset?: BABYLON.Vector3;
+    vertices?: [number, number];
+}): PageType => {
+    if (!vertices) {
+        vertices = [defaultXVertices, defaultYVertices];
+    }
 
-export const createPage = (
-    scene: BABYLON.Scene,
-    width: number,
-    height: number
-) => {
-    const colWidth = width / vertices;
-    const rowHeight = height / vertices;
+    const [xVertices, yVertices] = vertices;
 
-    const customMesh = new BABYLON.Mesh("custom", scene);
+    const createPageSide = (
+        node: BABYLON.TransformNode,
+        texture: string,
+        frontBack: FrontBack,
+        flipTexture: boolean
+    ) => {
+        const positions: number[] = [];
+        const positions0: XYZ[] = [];
+        const indices: number[] = [];
+        const uvs: number[] = [];
 
-    const style: Style = "texture" as Style;
+        const add = (col: number, row: number) => {
+            positions.push(col);
+            positions.push(row);
+            positions.push(0);
 
-    const positions: number[] = [];
-    const indices: number[] = [];
-    const colors: number[] = [];
-    const uvs: number[] = [];
+            positions0.push([col, row, 0]);
 
-    const add = (coord: Coordinate, color: Color) => {
-        for (const c of coord) {
-            positions.push(c);
+            uvs.push(flipTexture ? 1 - col / xVertices : col / xVertices);
+            uvs.push(row / yVertices);
+            indices.push(indices.length);
+        };
+
+        if (frontBack == "back") {
+            for (let row = 0; row < yVertices; row++) {
+                for (let col = 0; col < xVertices; col++) {
+                    add(col + 1, row);
+                    add(col, row);
+                    add(col, row + 1);
+
+                    add(col + 1, row);
+                    add(col, row + 1);
+                    add(col + 1, row + 1);
+                }
+            }
+        } else {
+            for (let row = 0; row < yVertices; row++) {
+                for (let col = 0; col < xVertices; col++) {
+                    add(col, row);
+                    add(col + 1, row);
+                    add(col, row + 1);
+
+                    add(col, row + 1);
+                    add(col + 1, row);
+                    add(col + 1, row + 1);
+                }
+            }
         }
-        uvs.push(coord[0] / width);
-        uvs.push(coord[1] / height);
-        for (const c of color) {
-            colors.push(c);
-        }
-        indices.push(indices.length);
+        //Empty array to contain calculated values or normals added
+        var normals: number[] = [];
+
+        //Calculations of normals added
+        BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+
+        const mesh = new BABYLON.Mesh("frontPage", scene);
+
+        const vertexData = new BABYLON.VertexData();
+        vertexData.positions = positions;
+        vertexData.indices = indices;
+        vertexData.uvs = uvs; //Assignment of texture to vertexData
+        vertexData.normals = normals; //Assignment of normal to vertexData added
+        vertexData.applyToMesh(mesh);
+
+        const mat = new BABYLON.StandardMaterial("pageMaterial", scene);
+        // mat.backFaceCulling = false;
+        mat.diffuseTexture = new BABYLON.Texture(texture, scene);
+        //mat.wireframe = true;
+        mesh.material = mat;
+        mesh.parent = node;
+
+        return {
+            positions0,
+            indices,
+            mesh,
+        };
     };
 
-    const color1: Color = [1, 0, 0, 1];
-    const color2: Color = [0, 1, 0, 1];
-    const color3: Color = [0, 0, 1, 1];
-
-    for (let row = 0; row < vertices; row++) {
-        const row0 = row * rowHeight;
-        const row1 = row0 + rowHeight;
-        for (let col = 0; col < vertices; col++) {
-            const col0 = col * colWidth;
-            const col1 = col0 + colWidth;
-            add([col0, row0, 0], color1);
-            add([col1, row0, 0], color2);
-            add([col0, row1, 0], color3);
-
-            add([col0, row1, 0], color3);
-            add([col1, row0, 0], color2);
-            add([col1, row1, 0], color1);
-        }
+    const pageSidesNode = new BABYLON.TransformNode("pageside", scene);
+    pageSidesNode.scaling = new BABYLON.Vector3(
+        width / xVertices,
+        height / yVertices,
+        1
+    );
+    if (offset) {
+        pageSidesNode.position = offset;
     }
 
-    //Empty array to contain calculated values or normals added
-    var normals: number[] = [];
+    const {
+        mesh: frontMesh,
+        positions0: frontPositions0,
+        indices,
+    } = createPageSide(pageSidesNode, frontTexture, "front", !flipTexture);
+    const { mesh: backMesh, positions0: backPositions0 } = createPageSide(
+        pageSidesNode,
+        backTexture,
+        "back",
+        flipTexture
+    );
 
-    //Calculations of normals added
-    BABYLON.VertexData.ComputeNormals(positions, indices, normals);
+    const pageNode = new BABYLON.TransformNode("page", scene);
+    pageSidesNode.parent = pageNode;
 
-    console.log(normals);
-
-    const vertexData = new BABYLON.VertexData();
-    vertexData.positions = positions;
-    vertexData.indices = indices;
-    switch (style) {
-        case "texture":
-            console.log("UVs", uvs);
-            vertexData.uvs = uvs; //Assignment of texture to vertexData
-            break;
-        case "color":
-            vertexData.colors = colors; //Assignment of colors to vertexData
-            break;
+    const cacheKey = bendCacheKey(xVertices, floppyness || 0);
+    if (!bendCache.has(cacheKey)) {
+        bendCache.set(cacheKey, new Map());
     }
-    vertexData.normals = normals; //Assignment of normal to vertexData added
-    vertexData.applyToMesh(customMesh);
+    const cache = bendCache.get(cacheKey)!;
 
-    const mat = new BABYLON.StandardMaterial("mat", scene);
-    mat.backFaceCulling = false;
-    mat.diffuseTexture = new BABYLON.Texture("assets/front.jpg", scene);
-    //mat.wireframe = true;
-    customMesh.material = mat;
+    const flipPage = createFlipPage({
+        node: pageNode,
+        meshes: [
+            { mesh: frontMesh, positions0: frontPositions0 },
+            { mesh: backMesh, positions0: backPositions0 },
+        ],
+        indices,
+        floppyness,
+        cache,
+        vertices,
+        scaling: pageSidesNode.scaling,
+        msPerFlip: 500,
+    });
 
-    {
-        const xFactor = (2 * PI) / width;
-        const yFactor = (2 * PI) / height;
-        const startTime = Date.now();
-        scene.registerBeforeRender(() => {
-            const deltaTime = (Date.now() - startTime) / 200;
-            const timeFactor = Math.sin(deltaTime);
-            const positions = customMesh.getVerticesData(
-                BABYLON.VertexBuffer.PositionKind
-            );
-            if (positions) {
-                for (let i = 0; i < positions.length / 3; i++) {
-                    positions[3 * i + 2] =
-                        Math.sin(positions[3 * i] * xFactor) *
-                        Math.sin(positions[3 * i + 1] * yFactor) *
-                        Math.sin(timeFactor) *
-                        1;
-                }
-                //Empty array to contain calculated values or normals added
-                var normals: number[] = [];
-
-                //Calculations of normals added
-                BABYLON.VertexData.ComputeNormals(positions, indices, normals);
-
-                customMesh.setVerticesData(
-                    BABYLON.VertexBuffer.PositionKind,
-                    positions
-                );
-                customMesh.setVerticesData(
-                    BABYLON.VertexBuffer.NormalKind,
-                    normals
-                );
-            }
-        });
-    }
-    const update = (dt: number) => {};
-
-    return {};
+    return { node: pageNode, flipPage };
 };

@@ -5,34 +5,7 @@ import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
 import { makeCreateFire } from "./fire2";
-
-const setupBook = async (
-    scene: BABYLON.Scene,
-    xrHelper: BABYLON.WebXRDefaultExperience
-) => {
-    const book = createBook(scene);
-
-    book.node.position.x = 4;
-    book.node.rotation = new BABYLON.Vector3(0, (2 * Math.PI) / 3, 0);
-
-    // Fallback for non-VR
-    state.canvas.addEventListener("pointerdown", () => {
-        book.flipPage();
-    });
-
-    xrHelper.input.onControllerAddedObservable.add((controller) => {
-        controller.onMotionControllerInitObservable.add((motionController) => {
-            const triggerComponent = motionController.getComponent(
-                "xr-standard-trigger"
-            );
-            triggerComponent?.onButtonStateChangedObservable.add((state) => {
-                if (state.pressed) {
-                    book.flipPage(1);
-                }
-            });
-        });
-    });
-};
+import { setupBook } from "./book/book";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
@@ -107,8 +80,18 @@ export const createScene1: CreateSceneFn = async (
     xrHelper.teleportation.addFloorMesh(ground);
 
     // *** Book ***
+    {
+        const book = setupBook(scene, xrHelper, { pageCount: 100 });
 
-    await setupBook(scene, xrHelper);
+        scene.registerBeforeRender(book.update);
+
+        book.node.position.z = -15;
+        book.node.position.x = -20;
+        book.node.position.y = 0;
+        //book.node.rotation.z = -Math.PI / 2;
+        book.node.rotation.y = -Math.PI / 2;
+        book.node.rotation.x = Math.PI / 4;
+    }
 
     const createFire = makeCreateFire(scene);
 
