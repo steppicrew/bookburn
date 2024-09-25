@@ -4,7 +4,7 @@ import { state } from "./state";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
-import { makeCreateFire } from "./fire";
+import { makeCreateFire } from "./fire2";
 
 const setupBook = async (
     scene: BABYLON.Scene,
