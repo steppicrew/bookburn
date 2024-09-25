@@ -19,7 +19,7 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
 
-    const book = setupBook(scene, xrHelper, { pageCount: 100 });
+    const book = setupBook(scene, xrHelper, { pageCount: 200 });
 
     scene.registerBeforeRender(book.update);
 
