@@ -1,6 +1,4 @@
 import * as BABYLON from "babylonjs";
-import { createBook } from "./book";
-import { state } from "./state";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
