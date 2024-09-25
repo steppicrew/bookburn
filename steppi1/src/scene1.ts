@@ -1,10 +1,8 @@
 import * as BABYLON from "babylonjs";
-import { createBook } from "./book";
-import { state } from "./state";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
-import { makeCreateFire } from "./fire";
+import { makeCreateFire } from "./fire2";
 import { setupBook } from "./book/book";
 
 export const createScene1: CreateSceneFn = async (
