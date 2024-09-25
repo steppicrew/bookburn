@@ -114,7 +114,7 @@ export const createFlipPage = ({
         node.rotation = new BABYLON.Vector3(0, alpha, 0);
 
         const table = getBendTranslate(time % msPerFlip);
-        if (direction == "right") {
+        if (direction == "left") {
             const _table = new Map<number, XZ>();
             table.forEach((xz, time) => _table.set(time, [xz[0], -xz[1]]));
             return _table;
