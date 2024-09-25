@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createGround } from "./baseScene";
-import { makeCreateFire } from "./fire2";
+import { makeCreateFire } from "./fire3";
 import { setupBook } from "./book/book";
 
 export const createScene1: CreateSceneFn = async (
