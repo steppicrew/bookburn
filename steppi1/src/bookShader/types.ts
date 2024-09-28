@@ -7,12 +7,10 @@ export type FrontBack = "front" | "back";
 export type Direction = "left" | "right";
 
 export type PageType = {
-    node: BABYLON.TransformNode;
     flipPage: (parameters: {
         direction: Direction;
         startTime?: number;
         onFinish?: () => void;
     }) => void;
     update: () => void;
-    // materials: BABYLON.ShaderMaterial[];
 };

@@ -9,14 +9,12 @@ const PI = Math.PI;
 const yAxis = new BABYLON.Vector3(0, 1, 0);
 
 export const createFlipPage = ({
-    node,
     materials,
     floppyness,
     msPerFlip,
     flipAxis,
     updateWrapper,
 }: {
-    node: BABYLON.TransformNode;
     materials: BABYLON.ShaderMaterial[];
     floppyness?: number;
     msPerFlip?: number;
@@ -42,7 +40,6 @@ export const createFlipPage = ({
         startTime?: number;
         onFinish?: () => void;
     }) => {
-        const scene = node.getScene();
         if (startTime == undefined) {
             startTime = Date.now();
         }
@@ -56,7 +53,7 @@ export const createFlipPage = ({
             }
 
             materials.forEach((material) => {
-                material.setFloat("time", (deltaTime / msPerFlip) + dirOffset);
+                material.setFloat("time", deltaTime / msPerFlip + dirOffset);
             });
 
             if (deltaTime == msPerFlip) {

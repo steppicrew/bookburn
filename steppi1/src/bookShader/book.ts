@@ -15,7 +15,7 @@ export const setupBook = (
     const pageDistance = options?.pageDistance || 0.001;
     const textures = options?.textures || defaultTextures;
 
-    const bookWidth = pageCount * pageDistance;
+    const bookDepth = pageCount * pageDistance;
 
     const pages: PageType[] = [];
     const updates = updateWrapper();
@@ -25,43 +25,30 @@ export const setupBook = (
 
     updates.add(lightsUpdate);
 
-    /*
-    for (let i = 0; i < pageCount; i++) {
-        const offset = new BABYLON.Vector3(
-            bookWidth / 2,
-            0,
-            i * pageDistance - bookWidth / 2
-        );
-        const page =
-            i == 0 || i == pageCount - 1
-                ? createPage({
-                      scene,
-                      width: 2.1,
-                      height: 2.7,
-                      frontTexture: textures[(2 * i) % textures.length],
-                      backTexture: textures[(2 * i + 1) % textures.length],
-                      floppyness: 0,
-                      offset,
-                      vertices: defaultVerticies,
-                  })
-                : createPage({
-                      scene,
-                      width: 2.1,
-                      height: 2.7,
-                      frontTexture: textures[(2 * i) % textures.length],
-                      backTexture: textures[(2 * i + 1) % textures.length],
-                      floppyness: 1,
-                      offset,
-                      vertices: defaultVerticies,
-                  });
+    if (1) {
+        for (let i = 0; i < pageCount; i++) {
+            const offset = new BABYLON.Vector3(
+                bookDepth / 2,
+                i * pageDistance - bookDepth / 2,
+                0
+            );
+            const page = createPage({
+                scene,
+                width: 2.1,
+                height: 2.7,
+                frontTexture: textures[(2 * i) % textures.length],
+                backTexture: textures[(2 * i + 1) % textures.length],
+                floppyness: i == 0 || i == pageCount - 1 ? 0 : 1,
+                offset,
+                uniformBuffer,
+                parentNode: bookNode,
+            });
 
-        pages.push(page);
-        page.node.parent = bookNode;
-    }
-    */
-
-    {
-        const offset = new BABYLON.Vector3(bookWidth / 2, -bookWidth / 2, 0);
+            pages.push(page);
+            updates.add(page.update);
+        }
+    } else {
+        const offset = new BABYLON.Vector3(bookDepth / 2, -bookDepth / 2, 0);
         const page = createPage({
             scene,
             width: 2.1,
@@ -71,16 +58,17 @@ export const setupBook = (
             floppyness: 1,
             offset,
             uniformBuffer,
+            parentNode: bookNode,
         });
 
         pages.push(page);
-        page.node.parent = bookNode;
         updates.add(page.update);
     }
 
     const flipBookLeft = () => {
         const startTime = Date.now();
-        pages.forEach((page, i) => {
+        for (let i = 0; i < pages.length; i++) {
+            const page = pages[pages.length - i - 1];
             const timeOffset =
                 (i > 0 ? 100 : 0) + (i == pages.length - 1 ? 100 : 0);
             page.flipPage({
@@ -91,23 +79,22 @@ export const setupBook = (
                         ? () => setTimeout(flipBookRight, 1000)
                         : undefined,
             });
-        });
+        }
     };
     const flipBookRight = () => {
         const startTime = Date.now();
-        for (let i = 0; i < pages.length; i++) {
-            const page = pages[pages.length - 1 - i];
+        pages.forEach((page, i) => {
             const timeOffset =
                 (i > 0 ? 100 : 0) + (i == pages.length - 1 ? 100 : 0);
             page.flipPage({
                 direction: "right",
-                startTime: startTime + i + timeOffset,
+                startTime: startTime + 1 * i + timeOffset,
                 onFinish:
                     i == pages.length - 1
                         ? () => setTimeout(flipBookLeft, 1000)
                         : undefined,
             });
-        }
+        });
     };
     setTimeout(flipBookLeft, 1000);
 

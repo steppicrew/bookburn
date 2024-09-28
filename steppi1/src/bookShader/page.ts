@@ -42,6 +42,7 @@ export const createPage = ({
     offset,
     vertices,
     uniformBuffer,
+    parentNode,
 }: {
     scene: BABYLON.Scene;
     width: number;
@@ -52,6 +53,7 @@ export const createPage = ({
     offset?: BABYLON.Vector3;
     vertices?: [number, number];
     uniformBuffer: BABYLON.UniformBuffer;
+    parentNode: BABYLON.Node;
 }): PageType => {
     if (!vertices) {
         vertices = [defaultXVertices, defaultYVertices];
@@ -147,6 +149,7 @@ export const createPage = ({
                     "floppyness",
                     "orientation",
                     "dimensions",
+                    "offset",
 
                     "parentPosition",
                     "parentRotation",
@@ -156,21 +159,24 @@ export const createPage = ({
         );
         // mat.backFaceCulling = false;
         material.setTexture("bookTexture", new BABYLON.Texture(texture, scene));
-        material.setFloat("time", 1.5);
+        material.setFloat("time", 0);
         material.setFloat("floppyness", floppyness || 0);
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
+        material.setVector3("offset", offset || new BABYLON.Vector3(0, 0, 0));
 
         material.setUniformBuffer("commonBuffer", uniformBuffer);
 
         //mat.wireframe = true;
         mesh.material = material;
-        mesh.parent = node;
+        if (parentNode) {
+            mesh.parent = parentNode;
+        }
 
         return mesh;
     };
 
-    const pageSidesNode = new BABYLON.TransformNode("pageside", scene);
+    const pageNode = new BABYLON.TransformNode("page", scene);
 
     /*
     pageSidesNode.scaling = new BABYLON.Vector3(
@@ -179,20 +185,9 @@ export const createPage = ({
         1
     );
     */
-    if (offset) {
-        pageSidesNode.position = offset;
-    }
-
     const meshes: BABYLON.Mesh[] = [];
-    meshes.push(
-        createPageSide(pageSidesNode, frontTexture, "front", !flipTexture)
-    );
-    meshes.push(
-        createPageSide(pageSidesNode, backTexture, "back", flipTexture)
-    );
-
-    const pageNode = new BABYLON.TransformNode("page", scene);
-    pageSidesNode.parent = pageNode;
+    meshes.push(createPageSide(pageNode, frontTexture, "front", !flipTexture));
+    meshes.push(createPageSide(pageNode, backTexture, "back", flipTexture));
 
     const updateParentPosition = () => {
         meshes.forEach((mesh) => {
@@ -227,7 +222,6 @@ export const createPage = ({
     updates.add(updateParentPosition);
 
     const flipPage = createFlipPage({
-        node: pageNode,
         materials: meshes.map(
             (mesh) => mesh.material as BABYLON.ShaderMaterial
         ),
@@ -237,7 +231,6 @@ export const createPage = ({
     });
 
     return {
-        node: pageNode,
         update: updates.update,
         //materials,
         flipPage,

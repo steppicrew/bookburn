@@ -64,12 +64,12 @@ export const createScene1: CreateSceneFn = async (
 
     // scene.registerBeforeRender(book.update);
 
-    if (false) {
-        book.node.position.z = -10;
-        book.node.position.x = 5;
+    if (true) {
+        book.node.position.z = 0.5;
+        book.node.position.x = 0.5;
         //book.node.rotation.z = -Math.PI / 2;
-        book.node.rotation.y = Math.PI;
-        book.node.rotation.x = Math.PI / 4;
+        // book.node.rotation.y = Math.PI / 4;
+        book.node.rotation.x = -Math.PI / 4;
     }
 
     updates.add(book.update);
@@ -82,8 +82,9 @@ export const createScene1: CreateSceneFn = async (
         { diameter: 1 },
         scene
     );
-    sphere.position.x = -1;
+    sphere.position.x = 0;
     sphere.position.y = 1;
+    sphere.position.z = 3;
 
     new BABYLON.AxesViewer(scene);
 

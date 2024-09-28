@@ -13,6 +13,7 @@ uniform float time; // a float between 0 and 2. 0 and 2 means original position,
 uniform float floppyness; // 0 means not floppy at all, 1 means floppy
 uniform float orientation; // 1: front side, 2: back side
 uniform vec2 dimensions; // page's width and height
+uniform vec3 offset; // page's offset
 
 varying vec2 vUV;
 varying vec3 vNormal;
@@ -78,7 +79,7 @@ void main(void) {
     if (time > 1.0) {
         theta = - theta;
     }
-    newPosition = rotate(newPosition, theta);
+    newPosition = rotate(newPosition + offset, theta);
     
     vNormal = rotate(vNormal, -theta);
     
