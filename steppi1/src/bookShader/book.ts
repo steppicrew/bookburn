@@ -77,8 +77,6 @@ export const setupBook = (
         page.node.parent = bookNode;
     }
 
-    const pageMaterials = pages.map((page) => page.materials).flat();
-
     const flipBookLeft = () => {
         const startTime = Date.now();
         pages.forEach((page, i) => {

@@ -12,5 +12,5 @@ export type PageType = {
         direction: Direction,
         startTime?: number
     ) => (remove: () => void) => void;
-    materials: BABYLON.ShaderMaterial[];
+    // materials: BABYLON.ShaderMaterial[];
 };
