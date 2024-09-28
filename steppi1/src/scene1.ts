@@ -1,22 +1,19 @@
 import * as BABYLON from "babylonjs";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
-import { createGround } from "./baseScene";
+import { createSkybox, createGround, createSphere } from "./baseScene";
 import { makeCreateFire } from "./fire3";
 import { setupBook } from "./book/book";
 
-export const createScene1: CreateSceneFn = async (
-    scene: BABYLON.Scene,
-    camera: CreateCamera2,
-    xrHelper: BABYLON.WebXRDefaultExperience
-) => {
-    // *** Light ***
-
-    const light = new BABYLON.HemisphericLight(
+const createLight = (scene: BABYLON.Scene) => {
+    const light = new BABYLON.DirectionalLight(
         "light",
-        new BABYLON.Vector3(1.2, 1, 0),
+        new BABYLON.Vector3(0.01, -1, 0.01),
         scene
     );
+    light.position = new BABYLON.Vector3(3, 20, 3);
+
+    // light.intensity = 1.0;
 
     let angle = 0;
 
@@ -29,56 +26,45 @@ export const createScene1: CreateSceneFn = async (
         );
         camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
         camera.node.fov = 0.8;
-*/
+        */
+        /*
         angle += 0.01;
 
         light.direction = new BABYLON.Vector3(
             Math.sin(angle),
-            1,
+            -1,
             Math.cos(angle)
         );
+        */
     };
 
-    // *** Environment texture ***
-    // The HDR texture set up in the code you provided is not directly
-    // visible as a background in the scene but is used primarily for
-    // lighting, reflections, and overall environment effects.
+    var shadowGenerator = new BABYLON.ShadowGenerator(512, light);
 
-    const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-        "./assets/Runyon_Canyon_A_2k_cube_specular.dds",
-        scene
-    );
-    hdrTexture.name = "envTex";
-    hdrTexture.gammaSpace = false;
+    return { light, update, shadowGenerator };
+};
 
-    scene.registerBeforeRender(() => {
-        hdrTexture.setReflectionTextureMatrix(BABYLON.Matrix.RotationY(0));
-    });
+export const createScene1: CreateSceneFn = async (
+    scene: BABYLON.Scene,
+    camera: CreateCamera2,
+    xrHelper: BABYLON.WebXRDefaultExperience
+) => {
+    const updates: Array<() => void> = [];
 
-    scene.environmentTexture = hdrTexture;
+    scene.debugLayer.show();
 
-    // *** Skybox ***
+    const { update: updateLight, shadowGenerator } = createLight(scene);
+    updates.push(updateLight);
 
-    const skybox = BABYLON.MeshBuilder.CreateBox(
-        "skyBox",
-        { size: 1000.0 },
-        scene
-    );
-    const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-    skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.reflectionTexture = hdrTexture;
-    skyboxMaterial.reflectionTexture.coordinatesMode =
-        BABYLON.Texture.SKYBOX_MODE;
-    skyboxMaterial.disableLighting = true;
-    skybox.material = skyboxMaterial;
-
-    // *** Ground ***
+    createSkybox(scene);
 
     const ground = createGround(scene);
     xrHelper.teleportation.addFloorMesh(ground);
 
+    const { update: updateSphere } = createSphere(scene, shadowGenerator);
+    updates.push(updateSphere);
+
     // *** Book ***
-    {
+    if (false) {
         const book = setupBook(scene, xrHelper, { pageCount: 100 });
 
         scene.registerBeforeRender(book.update);
@@ -109,6 +95,10 @@ export const createScene1: CreateSceneFn = async (
     fireNode4.position.x -= relX * 4;
 
     camera.node.setTarget(fireNode1.position);
+
+    const update = () => {
+        updates.forEach((update) => update());
+    };
 
     return update;
 };
