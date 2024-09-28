@@ -6,10 +6,13 @@ attribute vec2 uv;
 
 uniform mat4 worldViewProjection;
 
-uniform float time;
-uniform float floppyness;
-uniform float orientation;
-uniform vec2 dimensions;
+uniform vec3 parentPosition;   // Parent node position
+uniform vec3 parentRotation;    // Parent node rotation (Euler angles in radians)
+
+uniform float time; // a float between 0 and 2. 0 and 2 means original position, 0<time<=1 means turning from right to left, 1<time<=2 means turning from left to right
+uniform float floppyness; // 0 means not floppy at all, 1 means floppy
+uniform float orientation; // 1: front side, 2: back side
+uniform vec2 dimensions; // page's width and height
 
 varying vec2 vUV;
 varying vec3 vNormal;
@@ -19,7 +22,8 @@ float PI = 3.1415926536;
 
 vec3 getBend(void) {
     // rInverse: 1/r
-    float rInverse = -2.0 * floppyness * (0.5 - abs(0.5 - abs(time))) * sign(time);
+    float normTime = 1.0 - time;
+    float rInverse = -2.0 * floppyness * (0.5 - abs(0.5 - abs(normTime))) * sign(normTime);
     
     float uvX;
     if (orientation > 0.0) {
@@ -55,11 +59,31 @@ vec3 getBend(void) {
     return newPosition;
 }
 
+vec3 rotate(vec3 position, float theta) {
+    // Create the rotation matrix
+    mat3 rotationMatrix = mat3(
+        cos(theta), -sin(theta), 0.0,
+        sin(theta), cos(theta), 0.0,
+        0.0, 0.0, 1.0);
+    
+    return rotationMatrix * position;
+}
+
 void main(void) {
     vUV = uv; // Pass UV coordinates to the fragment shader
     
-    vec3 bended = getBend();
+    vec3 newPosition = getBend();
     
-    gl_Position = worldViewProjection * vec4(bended, 1.0);
-    vPosition = bended;
+    float theta = -time * PI;
+    if (time > 1.0) {
+        theta = - theta;
+    }
+    newPosition = rotate(newPosition, theta);
+    
+    vNormal = rotate(vNormal, -theta);
+    
+    // newPosition = newPosition + parentPosition;
+    
+    gl_Position = worldViewProjection * vec4(newPosition, 1.0);
+    vPosition = newPosition;
 }

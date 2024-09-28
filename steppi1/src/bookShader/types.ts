@@ -8,9 +8,11 @@ export type Direction = "left" | "right";
 
 export type PageType = {
     node: BABYLON.TransformNode;
-    flipPage: (
-        direction: Direction,
-        startTime?: number
-    ) => (remove: () => void) => void;
+    flipPage: (parameters: {
+        direction: Direction;
+        startTime?: number;
+        onFinish?: () => void;
+    }) => void;
+    update: () => void;
     // materials: BABYLON.ShaderMaterial[];
 };

@@ -3,6 +3,7 @@ import { FrontBack, PageType, XYZ, XZ } from "./types";
 import { createFlipPage } from "./pageFlip";
 import vertexShader from "./shaders/book-vertexShader.glsl";
 import fragmentShader from "./shaders/book-fragmentShader.glsl";
+import { updateWrapper } from "../sceneUtils";
 
 const defaultXVertices = 50;
 const defaultYVertices = 1;
@@ -109,10 +110,6 @@ export const createPage = ({
             }
         }
 
-        console.log("positions", positions);
-        console.log("indexes", indexes);
-        console.log("uvs", uvs);
-
         //Empty array to contain calculated values or normals added
         var normals: number[] = [];
 
@@ -150,13 +147,16 @@ export const createPage = ({
                     "floppyness",
                     "orientation",
                     "dimensions",
+
+                    "parentPosition",
+                    "parentRotation",
                 ],
                 samplers: ["bookTexture"],
             }
         );
         // mat.backFaceCulling = false;
         material.setTexture("bookTexture", new BABYLON.Texture(texture, scene));
-        material.setFloat("time", -0.5);
+        material.setFloat("time", 1.5);
         material.setFloat("floppyness", floppyness || 0);
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
@@ -167,7 +167,7 @@ export const createPage = ({
         mesh.material = material;
         mesh.parent = node;
 
-        return material;
+        return mesh;
     };
 
     const pageSidesNode = new BABYLON.TransformNode("pageside", scene);
@@ -183,32 +183,63 @@ export const createPage = ({
         pageSidesNode.position = offset;
     }
 
-    const frontMaterial = createPageSide(
-        pageSidesNode,
-        frontTexture,
-        "front",
-        !flipTexture
+    const meshes: BABYLON.Mesh[] = [];
+    meshes.push(
+        createPageSide(pageSidesNode, frontTexture, "front", !flipTexture)
     );
-    const backMaterial = createPageSide(
-        pageSidesNode,
-        backTexture,
-        "back",
-        flipTexture
+    meshes.push(
+        createPageSide(pageSidesNode, backTexture, "back", flipTexture)
     );
 
     const pageNode = new BABYLON.TransformNode("page", scene);
     pageSidesNode.parent = pageNode;
 
+    const updateParentPosition = () => {
+        meshes.forEach((mesh) => {
+            const material = mesh.material as BABYLON.ShaderMaterial;
+            const parent = mesh.parent! as BABYLON.TransformNode;
+            material.setVector3("parentPosition", parent.getAbsolutePosition());
+
+            // Get the parent's world matrix
+            const worldMatrix = parent.getWorldMatrix();
+
+            // Calculate rotation from the world matrix
+            const rotation = new BABYLON.Vector3();
+
+            // Manually extract Euler angles from the rotation matrix
+            const m = worldMatrix.m; // Get the underlying array of the matrix
+
+            // Extract rotation around Y (yaw)
+            rotation.y = Math.atan2(m[8], m[0]);
+
+            // Extract rotation around X (pitch)
+            const sy = Math.sqrt(m[0] * m[0] + m[8] * m[8]); // Scale factor
+            rotation.x = Math.atan2(-m[9], sy);
+
+            // Extract rotation around Z (roll)
+            rotation.z = Math.atan2(m[4], m[5]);
+
+            material.setVector3("parentRotation", rotation);
+        });
+    };
+
+    const updates = updateWrapper();
+    updates.add(updateParentPosition);
+
     const flipPage = createFlipPage({
         node: pageNode,
-        materials: [frontMaterial, backMaterial],
+        materials: meshes.map(
+            (mesh) => mesh.material as BABYLON.ShaderMaterial
+        ),
         floppyness,
         msPerFlip: 500,
+        updateWrapper: updates,
     });
 
     return {
         node: pageNode,
-        //materials: [frontMaterial, backMaterial],
+        update: updates.update,
+        //materials,
         flipPage,
     };
 };

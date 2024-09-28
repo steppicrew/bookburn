@@ -60,8 +60,14 @@ export const disposeScene = (
 };
 
 export type UpdateFn = (remove: () => void) => void;
+export interface UpdateWrapper {
+    add: (update: UpdateFn) => void;
+    onRemove: (update: UpdateFn, onRemove: () => void) => void;
+    remove: (update: UpdateFn) => void;
+    update: () => void;
+}
 
-export const updateWrapper = () => {
+export const updateWrapper = ():UpdateWrapper => {
     const updates: Map<UpdateFn, (() => void)[]> = new Map();
 
     const add = (update: UpdateFn) => updates.set(update, []);

@@ -75,6 +75,7 @@ export const setupBook = (
 
         pages.push(page);
         page.node.parent = bookNode;
+        updates.add(page.update);
     }
 
     const flipBookLeft = () => {
@@ -82,14 +83,14 @@ export const setupBook = (
         pages.forEach((page, i) => {
             const timeOffset =
                 (i > 0 ? 100 : 0) + (i == pages.length - 1 ? 100 : 0);
-            const update = page.flipPage(
-                "left",
-                startTime + 100 * i + timeOffset
-            );
-            updates.add(update);
-            if (i == pages.length - 1) {
-                updates.onRemove(update, () => setTimeout(flipBookRight, 1000));
-            }
+            page.flipPage({
+                direction: "left",
+                startTime: startTime + 100 * i + timeOffset,
+                onFinish:
+                    i == pages.length - 1
+                        ? () => setTimeout(flipBookRight, 1000)
+                        : undefined,
+            });
         });
     };
     const flipBookRight = () => {
@@ -98,14 +99,17 @@ export const setupBook = (
             const page = pages[pages.length - 1 - i];
             const timeOffset =
                 (i > 0 ? 100 : 0) + (i == pages.length - 1 ? 100 : 0);
-            const update = page.flipPage("right", startTime + i + timeOffset);
-            updates.add(update);
-            if (i == pages.length - 1) {
-                updates.onRemove(update, () => setTimeout(flipBookLeft, 1000));
-            }
+            page.flipPage({
+                direction: "right",
+                startTime: startTime + i + timeOffset,
+                onFinish:
+                    i == pages.length - 1
+                        ? () => setTimeout(flipBookLeft, 1000)
+                        : undefined,
+            });
         }
     };
-    // setTimeout(flipBookLeft, 1000);
+    setTimeout(flipBookLeft, 1000);
 
     /*
     xrHelper.input.onControllerAddedObservable.add((controller) => {
