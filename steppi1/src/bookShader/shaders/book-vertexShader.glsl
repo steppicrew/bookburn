@@ -30,26 +30,27 @@ vec3 getBend(void) {
     }
     
     if (rInverse == 0.0) {
-        vNormal = normalize(vec3(0, 0, -orientation));
-        return vec3(uvX * dimensions.x, uv.y * dimensions.y, 0.0);
+        vNormal = normalize(vec3(0, orientation, 0));
+        return vec3(uvX * dimensions.x, 0.0, uv.y * dimensions.y);
     }
+    
     float r = 1.0 / rInverse;
     
     float theta = dimensions.x / r;
     float x_c = sin(theta / 2.0) * r;
-    float z_c = cos(theta / 2.0) * r;
+    float y_c = cos(theta / 2.0) * r;
     float theta_ = theta * (uvX - 0.5);
     vec3 newPosition = vec3(
         (sin(theta_) * r + x_c),
-        uv.y * dimensions.y,
-        (cos(theta_) * r - z_c));
+        -(cos(theta_) * r - y_c),
+        uv.y * dimensions.y);
     
     vNormal = normalize(
         orientation *
         vec3(
             sin(theta_),
-            0,
-            -cos(theta_)));
+            cos(theta_),
+            0));
     
     return newPosition;
 }

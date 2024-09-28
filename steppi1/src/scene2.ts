@@ -14,44 +14,49 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Light ***
 
-    /*
-    const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(0, 0, -1),
-        scene
-    );
-    const light2 = new BABYLON.HemisphericLight(
-        "light2",
-        new BABYLON.Vector3(0, 0, 1),
-        scene
-    );
-    */
-    const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(1.2, 1, 0),
-        scene
-    );
-
-    let angle = 0;
-
-    updates.add(() => {
+    if (1) {
+        const light = new BABYLON.HemisphericLight(
+            "light",
+            new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
         /*
-        camera.node.position = new BABYLON.Vector3(
-            -4.142467027972506,
-            3.6664359864043488,
-            6.308459603515606
+        const light2 = new BABYLON.HemisphericLight(
+            "light2",
+            new BABYLON.Vector3(0, 0, 1),
+            scene
         );
-        camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
-        camera.node.fov = 0.8;
-*/
-        angle += 0.01;
+        */
+    } else {
+        const light = new BABYLON.HemisphericLight(
+            "light",
+            new BABYLON.Vector3(1.2, 1, 0),
+            // new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
 
-        light.direction = new BABYLON.Vector3(
-            Math.sin(angle),
-            1,
-            Math.cos(angle)
-        );
-    });
+        let angle = 0;
+
+        updates.add(() => {
+            return;
+            /*
+            camera.node.position = new BABYLON.Vector3(
+                -4.142467027972506,
+                3.6664359864043488,
+                6.308459603515606
+            );
+            camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
+            camera.node.fov = 0.8;
+    */
+            angle += 0.01;
+
+            light.direction = new BABYLON.Vector3(
+                Math.sin(angle),
+                1,
+                Math.cos(angle)
+            );
+        });
+    }
 
     // *** Book ***
 
@@ -69,10 +74,6 @@ export const createScene1: CreateSceneFn = async (
 
     updates.add(book.update);
 
-    camera.node.position.x = 0;
-    camera.node.position.y = 1;
-    camera.node.position.z = 0;
-
     camera.node.setTarget(book.node.position);
 
     // Create a simple sphere to interact with
@@ -83,6 +84,8 @@ export const createScene1: CreateSceneFn = async (
     );
     sphere.position.x = -1;
     sphere.position.y = 1;
+
+    new BABYLON.AxesViewer(scene);
 
     return updates.update;
 };

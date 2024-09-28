@@ -48,8 +48,8 @@ export const createFlipPage = ({
             const alpha = (deltaTime / msPerFlip) * PI;
             node.rotation = new BABYLON.Vector3(
                 0,
+                0,
                 direction == "left" ? alpha : PI - alpha,
-                0
             );
 
             materials.forEach((material) => {

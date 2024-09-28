@@ -57,7 +57,7 @@ export const setupBook = (
     */
 
     {
-        const offset = new BABYLON.Vector3(bookWidth / 2, 0, -bookWidth / 2);
+        const offset = new BABYLON.Vector3(bookWidth / 2, -bookWidth / 2, 0);
         const page = createPage({
             scene,
             width: 2.1,
@@ -72,8 +72,10 @@ export const setupBook = (
         page.node.parent = bookNode;
     }
 
-    const pageMaterials = pages.map(page => page.materials).flat()
-    updates.add(() => { setLights(scene, ...pageMaterials) });
+    const pageMaterials = pages.map((page) => page.materials).flat();
+    updates.add(() => {
+        // setLights(scene, ...pageMaterials);
+    });
 
     const flipBookLeft = () => {
         const startTime = Date.now();
@@ -103,7 +105,7 @@ export const setupBook = (
             }
         }
     };
-    setTimeout(flipBookLeft, 1000);
+    // setTimeout(flipBookLeft, 1000);
 
     /*
     xrHelper.input.onControllerAddedObservable.add((controller) => {

@@ -51,8 +51,8 @@ export const createPage = ({
 
         const add = (col: number, row: number) => {
             positions.push((col / xVertices) * width);
-            positions.push((row / yVertices) * height);
             positions.push(0);
+            positions.push((row / yVertices) * height);
 
             uvs.push(flipTexture ? 1 - col / xVertices : col / xVertices);
             uvs.push(row / yVertices);
@@ -99,7 +99,7 @@ export const createPage = ({
         vertexData.normals = normals; //Assignment of normal to vertexData added
         vertexData.applyToMesh(mesh);
 
-        const shader = "bookShader" + pageNum + Date.now() + Math.random();
+        const shader = `bookShader_${pageNum}_${Date.now()}`;
 
         BABYLON.Effect.ShadersStore[`${shader}VertexShader`] = vertexShader;
         BABYLON.Effect.ShadersStore[`${shader}FragmentShader`] = fragmentShader;
@@ -138,10 +138,12 @@ export const createPage = ({
         );
         // mat.backFaceCulling = false;
         material.setTexture("bookTexture", new BABYLON.Texture(texture, scene));
-        material.setFloat("time", 0);
+        material.setFloat("time", 0.2);
         material.setFloat("floppyness", floppyness || 0);
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
+
+        setLights(scene, material);
 
         //mat.wireframe = true;
         mesh.material = material;
