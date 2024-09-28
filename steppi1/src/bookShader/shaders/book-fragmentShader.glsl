@@ -6,15 +6,17 @@ varying vec3 vPosition;
 
 uniform sampler2D bookTexture; // Texture sampler
 
-uniform vec3 lightPositions[10];    // Array of light positions (for point lights)
-uniform vec3 lightPositionsColors[10];       // Array of light colors (diffuse)
-uniform float lightPositionsIntensities[10]; // Array of light intensities
-uniform int numLightsPositions;              // Number of lights in the scene
-
-uniform vec3 lightDirections[10];   // Array of light directions (for directional/hemispheric lights)
-uniform vec3 lightDirectionsColors[10];       // Array of light colors (diffuse)
-uniform float lightDirectionsIntensities[10]; // Array of light intensities
-uniform int numLightsDirections;              // Number of lights in the scene
+layout(std140) uniform CommonBuffer {
+    vec4 lightPositions[10];
+    vec4 lightPositionsColors[10];
+    float lightPositionsIntensities[10];
+    int lightPositionsNum;
+    
+    vec4 lightDirections[10];
+    vec4 lightDirectionsColors[10];
+    float lightDirectionsIntensities[10];
+    int lightDirectionsNum;
+};
 
 vec3 colorContribution(vec3 normal, vec3 lightDir, vec3 lightColor, float lightIntensity) {
     lightDir = normalize(lightDir);
@@ -40,13 +42,13 @@ void main(void) {
     vec3 fragmentPosition = vPosition;
     
     // Calculate light contributions
-    for (int i = 0; i < numLightsDirections; i++) {
+    for (int i = 0; i < lightDirectionsNum; i++) {
         // For directional light: use light direction directly
-        finalColor += colorContribution(normal, lightDirections[i], lightDirectionsColors[i], lightDirectionsIntensities[i]);
+        finalColor += colorContribution(normal, lightDirections[i].xyz, lightDirectionsColors[i].xyz, lightDirectionsIntensities[i]);
     }
-    for (int i = 0; i < numLightsPositions; i++) {
+    for (int i = 0; i < lightPositionsNum; i++) {
         // For point light: compute direction from light to the fragment
-        finalColor += colorContribution(normal, lightPositions[i] - fragmentPosition, lightPositionsColors[i], lightPositionsIntensities[i]);
+        finalColor += colorContribution(normal, lightPositions[i].xyz - fragmentPosition, lightPositionsColors[i].xyz, lightPositionsIntensities[i]);
     }
     
     // Multiply the final light color with the texture color for the final output

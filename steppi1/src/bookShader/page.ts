@@ -20,6 +20,7 @@ export const createPage = ({
     floppyness,
     offset,
     vertices,
+    uniformBuffer,
 }: {
     scene: BABYLON.Scene;
     width: number;
@@ -29,6 +30,7 @@ export const createPage = ({
     floppyness?: number;
     offset?: BABYLON.Vector3;
     vertices?: [number, number];
+    uniformBuffer: BABYLON.UniformBuffer;
 }): PageType => {
     if (!vertices) {
         vertices = [defaultXVertices, defaultYVertices];
@@ -121,17 +123,6 @@ export const createPage = ({
                     "floppyness",
                     "orientation",
                     "dimensions",
-
-                    // fragment variables
-                    "lightPositions",
-                    "lightPositionsColors",
-                    "lightPositionsIntensities",
-                    "numLightsPositions",
-
-                    "lightDirections",
-                    "lightDirectionsColors",
-                    "lightDirectionsIntensities",
-                    "numLightsDirections",
                 ],
                 samplers: ["bookTexture"],
             }
@@ -143,7 +134,7 @@ export const createPage = ({
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
 
-        setLights(scene, material);
+        material.setUniformBuffer("commonBuffer", uniformBuffer);
 
         //mat.wireframe = true;
         mesh.material = material;

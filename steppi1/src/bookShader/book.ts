@@ -21,6 +21,10 @@ export const setupBook = (
     const updates = updateWrapper();
     const bookNode = new BABYLON.TransformNode("book", scene);
 
+    const { update: lightsUpdate, uniformBuffer } = setLights(scene);
+
+    updates.add(lightsUpdate);
+
     /*
     for (let i = 0; i < pageCount; i++) {
         const offset = new BABYLON.Vector3(
@@ -66,6 +70,7 @@ export const setupBook = (
             backTexture: textures[1],
             floppyness: 1,
             offset,
+            uniformBuffer,
         });
 
         pages.push(page);
@@ -73,9 +78,6 @@ export const setupBook = (
     }
 
     const pageMaterials = pages.map((page) => page.materials).flat();
-    updates.add(() => {
-        // setLights(scene, ...pageMaterials);
-    });
 
     const flipBookLeft = () => {
         const startTime = Date.now();
