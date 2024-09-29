@@ -217,8 +217,6 @@ export const createPage = ({
         return mesh;
     };
 
-    const pageNode = new BABYLON.TransformNode("page", scene);
-
     /*
     pageSidesNode.scaling = new BABYLON.Vector3(
         width / xVertices,
@@ -237,7 +235,6 @@ export const createPage = ({
             (mesh) => mesh.material as BABYLON.ShaderMaterial
         ),
         floppyness,
-        msPerFlip: 500,
         updateWrapper: updates,
     });
 

@@ -10,6 +10,8 @@ export const createScene1: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
+    scene.debugLayer.show();
+
     const updates = updateWrapper();
 
     // *** Light ***
@@ -68,7 +70,26 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
 
-    const book = setupBook(scene, xrHelper, { pageCount: 100 });
+    const book = setupBook(scene, xrHelper, {
+        pageCount: 20,
+        textures: Array.from({ length: 5 }).map(
+            (_, i) => `assets/Page${i + 1}.jpg`
+        ),
+        frontCover: ["assets/CoverFront.jpg", "assets/Empty.jpg"],
+        backCover: ["assets/Empty.jpg", "assets/CoverBack.jpg"],
+    });
+
+    if (true) {
+        const flipLeft = () =>
+            book
+                .flipBook({ direction: "left", deltaTime: 100 })
+                .then(() => setTimeout(flipRight, 1000));
+        const flipRight = () =>
+            book
+                .flipBook({ direction: "right", deltaTime: 10 })
+                .then(() => setTimeout(flipLeft, 1000));
+        setTimeout(flipLeft, 1000);
+    }
 
     // scene.registerBeforeRender(book.update);
 

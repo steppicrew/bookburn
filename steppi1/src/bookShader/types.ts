@@ -10,6 +10,7 @@ export type PageType = {
     flipPage: (parameters: {
         direction: Direction;
         startTime?: number;
+        msPerFlip: number;
         onFinish?: () => void;
     }) => void;
     update: () => void;
