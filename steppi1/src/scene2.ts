@@ -10,7 +10,7 @@ export const createScene1: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    scene.debugLayer.show();
+    // scene.debugLayer.show();
 
     const updates = updateWrapper();
 
