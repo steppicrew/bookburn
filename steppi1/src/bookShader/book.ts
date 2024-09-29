@@ -25,7 +25,7 @@ export const setupBook = (
 
     updates.add(lightsUpdate);
 
-    if (1) {
+    if (true) {
         for (let i = 0; i < pageCount; i++) {
             const offset = new BABYLON.Vector3(
                 bookDepth / 2,

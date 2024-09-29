@@ -4,10 +4,8 @@ attribute vec3 position;
 attribute vec3 normal;
 attribute vec2 uv;
 
+uniform mat4 world;
 uniform mat4 worldViewProjection;
-
-uniform vec3 parentPosition;   // Parent node position
-uniform vec3 parentRotation;    // Parent node rotation (Euler angles in radians)
 
 uniform float time; // a float between 0 and 2. 0 and 2 means original position, 0<time<=1 means turning from right to left, 1<time<=2 means turning from left to right
 uniform float floppyness; // 0 means not floppy at all, 1 means floppy
@@ -16,8 +14,10 @@ uniform vec2 dimensions; // page's width and height
 uniform vec3 offset; // page's offset
 
 varying vec2 vUV;
-varying vec3 vNormal;
-varying vec3 vPosition;
+varying vec3 vPositionW;
+varying vec3 vNormalW;
+
+vec3 vNormal;
 
 float PI = 3.1415926536;
 
@@ -39,12 +39,19 @@ vec3 getBend(void) {
         return vec3(uvX * dimensions.x, 0.0, uv.y * dimensions.y);
     }
     
+    // Circle's radius
     float r = 1.0 / rInverse;
     
+    // Angle the page equals on the circle
     float theta = dimensions.x / r;
+    
+    // Coordinates of the circle's center
     float x_c = sin(theta / 2.0) * r;
     float y_c = cos(theta / 2.0) * r;
+    
+    // Angle from the the lot (+- theta/2)
     float theta_ = theta * (uvX - 0.5);
+    
     vec3 newPosition = vec3(
         (sin(theta_) * r + x_c),
         -(cos(theta_) * r - y_c),
@@ -53,7 +60,7 @@ vec3 getBend(void) {
     vNormal = normalize(
         orientation *
         vec3(
-            sin(theta_),
+            -sin(theta_),
             cos(theta_),
             0));
     
@@ -81,10 +88,12 @@ void main(void) {
     }
     newPosition = rotate(newPosition + offset, theta);
     
-    vNormal = rotate(vNormal, -theta);
+    vNormal = rotate(vNormal, theta);
     
     // newPosition = newPosition + parentPosition;
     
     gl_Position = worldViewProjection * vec4(newPosition, 1.0);
-    vPosition = newPosition;
+    
+    vPositionW = vec3(world * vec4(newPosition, 1.0));
+    vNormalW = normalize(vec3(world * vec4(vNormal, 0.0)));
 }

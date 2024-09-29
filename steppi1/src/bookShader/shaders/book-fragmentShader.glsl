@@ -1,8 +1,8 @@
 precision highp float;
 
 varying vec2 vUV; // Receive UV coordinates from the vertex shader
-varying vec3 vNormal;    // Normal from the vertex shader
-varying vec3 vPosition;
+varying vec3 vNormalW;    // Normal from the vertex shader
+varying vec3 vPositionW;
 
 uniform sampler2D bookTexture; // Texture sampler
 
@@ -36,10 +36,10 @@ void main(void) {
     vec3 finalColor = vec3(0.0);
     
     // Define the fragment's normal (assuming the surface is facing up in Y direction)
-    vec3 normal = normalize(vNormal);
+    vec3 normal = normalize(vNormalW);
     
     // Define the fragment's position in world space (assuming flat plane at y = 0)
-    vec3 fragmentPosition = vPosition;
+    vec3 fragmentPosition = vPositionW;
     
     // Calculate light contributions
     for (int i = 0; i < lightDirectionsNum; i++) {

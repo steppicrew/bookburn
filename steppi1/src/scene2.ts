@@ -14,12 +14,20 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Light ***
 
-    if (1) {
-        const light = new BABYLON.HemisphericLight(
-            "light",
-            new BABYLON.Vector3(0, 1, 0),
-            scene
-        );
+    if (false) {
+        if (false) {
+            const light = new BABYLON.HemisphericLight(
+                "light",
+                new BABYLON.Vector3(0, 1, 0),
+                scene
+            );
+        } else {
+            const light = new BABYLON.PointLight(
+                "light",
+                new BABYLON.Vector3(0, 10000, 0),
+                scene
+            );
+        }
         /*
         const light2 = new BABYLON.HemisphericLight(
             "light2",
@@ -38,7 +46,7 @@ export const createScene1: CreateSceneFn = async (
         let angle = 0;
 
         updates.add(() => {
-            return;
+            // return;
             /*
             camera.node.position = new BABYLON.Vector3(
                 -4.142467027972506,
@@ -64,7 +72,7 @@ export const createScene1: CreateSceneFn = async (
 
     // scene.registerBeforeRender(book.update);
 
-    if (true) {
+    if (false) {
         book.node.position.z = 0.5;
         book.node.position.x = 0.5;
         //book.node.rotation.z = -Math.PI / 2;
