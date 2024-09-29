@@ -19,7 +19,7 @@ varying vec3 vNormalW;
 
 vec3 vNormal;
 
-float PI = 3.1415926536;
+const float PI = 3.1415926535897932384626433832795;
 
 vec3 getBend(void) {
     // rInverse: 1/r

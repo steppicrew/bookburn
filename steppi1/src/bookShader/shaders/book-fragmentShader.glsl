@@ -1,8 +1,8 @@
 precision highp float;
 
 varying vec2 vUV; // Receive UV coordinates from the vertex shader
-varying vec3 vNormalW;    // Normal from the vertex shader
-varying vec3 vPositionW;
+varying vec3 vNormalW;    // World normal vector from the vertex shader
+varying vec3 vPositionW;    // World position vector from vertex shader
 
 uniform sampler2D bookTexture; // Texture sampler
 
