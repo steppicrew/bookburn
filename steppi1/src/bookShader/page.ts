@@ -9,7 +9,7 @@ const defaultXVertices = 50;
 const defaultYVertices = 1;
 const flipTexture = true;
 
-let _pageCount = 0;
+const shaderName = `bookShader_${Date.now()}`;
 
 const createAddPositions = (positions: XYZ[], uvs: XZ[]) => {
     // maps x->(z->index)
@@ -69,7 +69,6 @@ export const createPage = ({
         const positions: XYZ[] = [];
         const indexes: number[] = [];
         const uvs: XZ[] = [];
-        const pageNum = ++_pageCount;
 
         const addPosition = createAddPositions(positions, uvs);
 
@@ -126,17 +125,24 @@ export const createPage = ({
         vertexData.normals = normals; //Assignment of normal to vertexData added
         vertexData.applyToMesh(mesh);
 
-        const shader = `bookShader_${pageNum}_${Date.now()}`;
-
-        BABYLON.Effect.ShadersStore[`${shader}VertexShader`] = vertexShader;
-        BABYLON.Effect.ShadersStore[`${shader}FragmentShader`] = fragmentShader;
-
+        {
+            const vertexShaderName = `${shaderName}VertexShader`;
+            if (!(vertexShaderName in BABYLON.Effect.ShadersStore)) {
+                BABYLON.Effect.ShadersStore[vertexShaderName] = vertexShader;
+            }
+            const fragmentShaderName = `${shaderName}FragmentShader`;
+            if (!(fragmentShaderName in BABYLON.Effect.ShadersStore)) {
+                BABYLON.Effect.ShadersStore[fragmentShaderName] =
+                    fragmentShader;
+            }
+        }
         const material = new BABYLON.ShaderMaterial(
             "pageMaterial",
             scene,
             {
-                vertex: shader,
-                fragment: shader,
+                vertex: shaderName,
+                fragment: shaderName,
+                // fragment: "default",
                 // fragmentElement: shader,
             },
             {
@@ -151,6 +157,12 @@ export const createPage = ({
                     "orientation",
                     "dimensions",
                     "offset",
+
+                    /*
+                    // fragment variables
+                    "vEyePosition",
+                    "visibility",
+                    */
                 ],
                 samplers: ["bookTexture"],
             }
@@ -162,6 +174,37 @@ export const createPage = ({
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
         material.setVector3("offset", offset || new BABYLON.Vector3(0, 0, 0));
+
+        if (false) {
+            material.setFloat("visibility", 1);
+
+            // Create the uniform values for the material
+            const diffuseColor = new BABYLON.Vector4(1.0, 0.0, 0.0, 1.0); // Example diffuse color (red)
+            const specularColor = new BABYLON.Vector4(1.0, 1.0, 1.0, 1.0); // Specular color
+            const emissiveColor = new BABYLON.Vector3(0.1, 0.1, 0.1); // Emissive color
+
+            // Pass the uniform values to the shader
+            material.setVector4("vDiffuseColor", diffuseColor);
+            material.setVector4("vSpecularColor", specularColor);
+            material.setVector3("vEmissiveColor", emissiveColor);
+
+            // If you have matrices, you can pass them like this
+            material.setMatrix("diffuseMatrix", BABYLON.Matrix.Identity());
+
+            // Assuming you have a camera in your scene
+            const camera = scene.activeCamera;
+
+            if (camera) {
+                // Set the viewProjection matrix
+                const viewProjection = camera
+                    .getViewMatrix()
+                    .multiply(camera.getProjectionMatrix());
+                material.setMatrix("viewProjection", viewProjection);
+
+                // Set the eye position (camera position)
+                material.setVector3("vEyePosition", camera.position);
+            }
+        }
 
         material.setUniformBuffer("commonBuffer", uniformBuffer);
 
