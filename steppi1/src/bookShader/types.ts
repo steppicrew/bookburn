@@ -1,4 +1,4 @@
-import * as BABYLON from "babylonjs";
+import { UpdateWrapper } from "../sceneUtils";
 
 export type XYZ = [x: number, y: number, z: number];
 export type XZ = [x: number, z: number];
@@ -13,5 +13,5 @@ export type PageType = {
         msPerFlip: number;
         onFinish?: () => void;
     }) => void;
-    update: () => void;
+    updates: UpdateWrapper;
 };

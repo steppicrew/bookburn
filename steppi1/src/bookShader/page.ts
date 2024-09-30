@@ -4,6 +4,7 @@ import { createFlipPage } from "./pageFlip";
 import vertexShader from "./shaders/book-vertexShader.glsl";
 import fragmentShader from "./shaders/book-fragmentShader.glsl";
 import { updateWrapper } from "../sceneUtils";
+import { setLights } from "../shaderTools";
 
 const defaultXVertices = 50;
 const defaultYVertices = 1;
@@ -41,18 +42,16 @@ export const createPage = ({
     floppyness,
     offset,
     vertices,
-    uniformBuffer,
     parentNode,
 }: {
     scene: BABYLON.Scene;
     width: number;
     height: number;
-    frontTexture: string;
-    backTexture: string;
+    frontTexture: BABYLON.Texture;
+    backTexture: BABYLON.Texture;
     floppyness?: number;
     offset?: BABYLON.Vector3;
     vertices?: [number, number];
-    uniformBuffer: BABYLON.UniformBuffer;
     parentNode: BABYLON.Node;
 }): PageType => {
     if (!vertices) {
@@ -60,9 +59,12 @@ export const createPage = ({
     }
 
     const [xVertices, yVertices] = vertices;
+    const updates = updateWrapper();
+
+    const uniformBuffer = setLights(scene, updates);
 
     const createPageSide = (
-        texture: string,
+        texture: BABYLON.Texture,
         frontBack: FrontBack,
         flipTexture: boolean
     ) => {
@@ -168,45 +170,14 @@ export const createPage = ({
             }
         );
         // mat.backFaceCulling = false;
-        material.setTexture("bookTexture", new BABYLON.Texture(texture, scene));
+        material.setTexture("bookTexture", texture);
         material.setFloat("time", 0);
         material.setFloat("floppyness", floppyness || 0);
         material.setFloat("orientation", frontBack == "front" ? 1 : -1);
         material.setVector2("dimensions", new BABYLON.Vector2(width, height));
         material.setVector3("offset", offset || new BABYLON.Vector3(0, 0, 0));
 
-        if (false) {
-            material.setFloat("visibility", 1);
-
-            // Create the uniform values for the material
-            const diffuseColor = new BABYLON.Vector4(1.0, 0.0, 0.0, 1.0); // Example diffuse color (red)
-            const specularColor = new BABYLON.Vector4(1.0, 1.0, 1.0, 1.0); // Specular color
-            const emissiveColor = new BABYLON.Vector3(0.1, 0.1, 0.1); // Emissive color
-
-            // Pass the uniform values to the shader
-            material.setVector4("vDiffuseColor", diffuseColor);
-            material.setVector4("vSpecularColor", specularColor);
-            material.setVector3("vEmissiveColor", emissiveColor);
-
-            // If you have matrices, you can pass them like this
-            material.setMatrix("diffuseMatrix", BABYLON.Matrix.Identity());
-
-            // Assuming you have a camera in your scene
-            const camera = scene.activeCamera;
-
-            if (camera) {
-                // Set the viewProjection matrix
-                const viewProjection = camera
-                    .getViewMatrix()
-                    .multiply(camera.getProjectionMatrix());
-                material.setMatrix("viewProjection", viewProjection);
-
-                // Set the eye position (camera position)
-                material.setVector3("vEyePosition", camera.position);
-            }
-        }
-
-        material.setUniformBuffer("commonBuffer", uniformBuffer);
+        material.setUniformBuffer("Lights", uniformBuffer);
 
         //mat.wireframe = true;
         mesh.material = material;
@@ -228,8 +199,6 @@ export const createPage = ({
     meshes.push(createPageSide(frontTexture, "front", !flipTexture));
     meshes.push(createPageSide(backTexture, "back", flipTexture));
 
-    const updates = updateWrapper();
-
     const flipPage = createFlipPage({
         materials: meshes.map(
             (mesh) => mesh.material as BABYLON.ShaderMaterial
@@ -239,7 +208,7 @@ export const createPage = ({
     });
 
     return {
-        update: updates.update,
+        updates: updates,
         //materials,
         flipPage,
     };

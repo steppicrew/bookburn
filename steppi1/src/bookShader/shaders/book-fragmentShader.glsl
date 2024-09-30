@@ -6,7 +6,7 @@ varying vec3 vPositionW;    // World position vector from vertex shader
 
 uniform sampler2D bookTexture; // Texture sampler
 
-layout(std140) uniform CommonBuffer {
+layout(std140) uniform Lights {
     vec4 lightPositions[10];
     vec4 lightPositionsColors[10];
     float lightPositionsIntensities[10];

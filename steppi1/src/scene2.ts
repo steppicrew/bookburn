@@ -79,6 +79,8 @@ export const createScene1: CreateSceneFn = async (
         backCover: ["assets/Empty.jpg", "assets/CoverBack.jpg"],
     });
 
+    updates.addUpdates(book.updates);
+
     if (true) {
         const flipLeft = () =>
             book
@@ -91,17 +93,13 @@ export const createScene1: CreateSceneFn = async (
         setTimeout(flipLeft, 1000);
     }
 
-    // scene.registerBeforeRender(book.update);
-
-    if (false) {
-        book.node.position.z = 0.5;
+    if (true) {
+        book.node.position.z = 0;
         book.node.position.x = 0.5;
         //book.node.rotation.z = -Math.PI / 2;
         // book.node.rotation.y = Math.PI / 4;
-        book.node.rotation.x = -Math.PI / 4;
+        book.node.rotation.x = -Math.PI / 6;
     }
-
-    updates.add(book.update);
 
     camera.node.setTarget(book.node.position);
 

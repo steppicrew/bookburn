@@ -44,6 +44,15 @@ export const disposeScene = (
         renderTarget.dispose();
     });
 
+    scene.getNodes().forEach((node) => {
+        if (node instanceof BABYLON.Camera) {
+            console.log("Skipping camera", node.id);
+            return;
+        }
+        console.log("Disposing node", node.id);
+        node.dispose();
+    });
+
     scene.getEngine().releaseEffects();
     BABYLON.Effect.ResetCache();
 
@@ -65,9 +74,11 @@ export interface UpdateWrapper {
     onRemove: (update: UpdateFn, onRemove: () => void) => void;
     remove: (update: UpdateFn) => void;
     update: () => void;
+    dispose: () => void;
+    addUpdates: (childWrapper: UpdateWrapper) => void;
 }
 
-export const updateWrapper = ():UpdateWrapper => {
+export const updateWrapper = (): UpdateWrapper => {
     const updates: Map<UpdateFn, (() => void)[]> = new Map();
 
     const add = (update: UpdateFn) => updates.set(update, []);
@@ -81,10 +92,24 @@ export const updateWrapper = ():UpdateWrapper => {
         updates.keys().forEach((update) => update(() => remove(update)));
     };
 
+    const dispose = () => {
+        updates.forEach((update) => {
+            update.forEach((onRemove) => onRemove());
+        });
+        updates.clear();
+    };
+
+    const addWrapper = (childWrapper: UpdateWrapper) => {
+        add(childWrapper.update);
+        onRemove(childWrapper.update, childWrapper.dispose);
+    };
+
     return {
         add,
         onRemove,
         remove,
         update,
+        dispose,
+        addUpdates: addWrapper,
     };
 };

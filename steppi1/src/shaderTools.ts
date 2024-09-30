@@ -1,25 +1,14 @@
 import * as BABYLON from "babylonjs";
-import { UpdateFn } from "./sceneUtils";
+import { UpdateFn, updateWrapper, UpdateWrapper } from "./sceneUtils";
 
-export const setLights = (
-    scene: BABYLON.Scene
-): { update: UpdateFn; uniformBuffer: BABYLON.UniformBuffer } => {
-    const uniformBuffer = new BABYLON.UniformBuffer(scene.getEngine());
+export const setLights = (() => {
+    let _uniformBuffer: BABYLON.UniformBuffer | undefined = undefined;
+    let _currentUpdate: (() => void) | undefined = undefined;
 
-    // std140 layout aligns Vec3 on 4 floats (each Vec3 is represented as a Vec4)
-    uniformBuffer.addUniform("lightPositions", 4, 10); // 10 Vec3 (padded)
-    uniformBuffer.addUniform("lightPositionsColors", 4, 10); // 10 Vec3 (padded)
-    uniformBuffer.addUniform("lightPositionsIntensities", 1, 10); // 10 floats
-    uniformBuffer.addUniform("lightPositionsNum", 1); // 1 int
-
-    uniformBuffer.addUniform("lightDirections", 4, 10); // 10 Vec3 (padded)
-    uniformBuffer.addUniform("lightDirectionsColors", 4, 10); // 10 Vec3 (padded)
-    uniformBuffer.addUniform("lightDirectionsIntensities", 1, 10); // 10 floats
-    uniformBuffer.addUniform("lightDirectionsNum", 1); // 1 int
-
-    uniformBuffer.update();
-
-    const update = () => {
+    const updateBuffer = (
+        scene: BABYLON.Scene,
+        uniformBuffer: BABYLON.UniformBuffer
+    ) => {
         const lights = scene.lights; // Get all lights in the scene
 
         const lightPositions: number[] = [];
@@ -103,5 +92,45 @@ export const setLights = (
         uniformBuffer.update();
     };
 
-    return { update, uniformBuffer };
-};
+    const getUniformBuffer = (
+        scene: BABYLON.Scene,
+        updates?: UpdateWrapper
+    ) => {
+        if (!_uniformBuffer) {
+            const uniformBuffer = new BABYLON.UniformBuffer(scene.getEngine());
+            _uniformBuffer = uniformBuffer;
+
+            // std140 layout aligns Vec3 on 4 floats (each Vec3 is represented as a Vec4)
+            uniformBuffer.addUniform("lightPositions", 4, 10); // 10 Vec3 (padded)
+            uniformBuffer.addUniform("lightPositionsColors", 4, 10); // 10 Vec3 (padded)
+            uniformBuffer.addUniform("lightPositionsIntensities", 1, 10); // 10 floats
+            uniformBuffer.addUniform("lightPositionsNum", 1); // 1 int
+
+            uniformBuffer.addUniform("lightDirections", 4, 10); // 10 Vec3 (padded)
+            uniformBuffer.addUniform("lightDirectionsColors", 4, 10); // 10 Vec3 (padded)
+            uniformBuffer.addUniform("lightDirectionsIntensities", 1, 10); // 10 floats
+            uniformBuffer.addUniform("lightDirectionsNum", 1); // 1 int
+
+            uniformBuffer.update();
+        }
+        if (updates) {
+            const _thisUpdate = () => {
+                if (_currentUpdate === undefined) {
+                    _currentUpdate = _thisUpdate;
+                }
+                if (_currentUpdate === _thisUpdate) {
+                    updateBuffer(scene, _uniformBuffer!);
+                }
+            };
+            updates.add(_thisUpdate);
+            updates.onRemove(_thisUpdate, () => {
+                if (_currentUpdate === _thisUpdate) {
+                    _currentUpdate = undefined;
+                }
+            });
+        }
+        return _uniformBuffer;
+    };
+
+    return getUniformBuffer;
+})();

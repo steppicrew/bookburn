@@ -1,5 +1,5 @@
 import { Direction } from "../book/types";
-import { updateWrapper } from "../sceneUtils";
+import { UpdateWrapper, updateWrapper } from "../sceneUtils";
 import { setLights } from "../shaderTools";
 import { createPage } from "./page";
 import { PageType } from "./types";
@@ -31,14 +31,15 @@ export const setupBook = (
     const updates = updateWrapper();
     const bookNode = new BABYLON.TransformNode("book", scene);
 
-    const { update: lightsUpdate, uniformBuffer } = setLights(scene);
-
-    updates.add(lightsUpdate);
+    bookNode.onDispose = () => {
+        updates.dispose();
+    };
 
     const getTexture = (() => {
         const _maxPageSide = backCover ? 2 * pageCount - 2 : 2 * pageCount;
         const _offset = frontCover ? 2 : 0;
-        return (pageSide: number) => {
+        const _textures: Map<string, BABYLON.Texture> = new Map();
+        const getUrl = (pageSide: number) => {
             if (frontCover && pageSide < 2) {
                 return frontCover[pageSide];
             }
@@ -46,6 +47,20 @@ export const setupBook = (
                 return backCover[pageSide - _maxPageSide];
             }
             return textures[(pageSide - _offset) % textures.length];
+        };
+        return (pageSide: number) => {
+            const url = getUrl(pageSide);
+            {
+                const texture = _textures.get(url);
+                if (texture) {
+                    return texture;
+                }
+            }
+            {
+                const texture = new BABYLON.Texture(url, scene);
+                _textures.set(url, texture);
+                return texture;
+            }
         };
     })();
 
@@ -64,12 +79,11 @@ export const setupBook = (
                 backTexture: getTexture(2 * i + 1),
                 floppyness: i == 0 || i == pageCount - 1 ? 0 : 1,
                 offset,
-                uniformBuffer,
                 parentNode: bookNode,
             });
 
             pages.push(page);
-            updates.add(page.update);
+            updates.addUpdates(page.updates);
         }
     } else {
         const i: number = pageCount - 1;
@@ -86,12 +100,11 @@ export const setupBook = (
             backTexture: getTexture(2 * i + 1),
             floppyness: i == 0 || i == pageCount - 1 ? 0 : 1,
             offset,
-            uniformBuffer,
             parentNode: bookNode,
         });
 
         pages.push(page);
-        updates.add(page.update);
+        updates.addUpdates(page.updates);
     }
 
     const flipBookLeft = (
@@ -172,7 +185,7 @@ export const setupBook = (
     */
 
     return {
-        update: updates.update,
+        updates: updates,
         node: bookNode,
         flipBook,
     };
