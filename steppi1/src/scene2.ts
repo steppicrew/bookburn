@@ -2,34 +2,119 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
 import { CreateCamera2 } from "./camera1";
 import { CreateSceneFn } from "./sceneEx";
-import { setupBook } from "./book/book";
+import { setupBook } from "./bookShader/book";
+import { updateWrapper } from "./sceneUtils";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
+    scene.debugLayer.show();
+
+    const updates = updateWrapper();
+
     // *** Light ***
 
-    const light = new BABYLON.HemisphericLight(
-        "light",
-        new BABYLON.Vector3(0, 1, 1),
-        scene
-    );
+    if (false) {
+        if (false) {
+            const light = new BABYLON.HemisphericLight(
+                "light",
+                new BABYLON.Vector3(0, 1, 0),
+                scene
+            );
+        } else {
+            const light = new BABYLON.PointLight(
+                "light",
+                new BABYLON.Vector3(0, 10000, 0),
+                scene
+            );
+        }
+        /*
+        const light2 = new BABYLON.HemisphericLight(
+            "light2",
+            new BABYLON.Vector3(0, 0, 1),
+            scene
+        );
+        */
+    } else {
+        const light = new BABYLON.HemisphericLight(
+            "light",
+            new BABYLON.Vector3(1.2, 1, 0),
+            // new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
+
+        let angle = 0;
+
+        updates.add(() => {
+            // return;
+            /*
+            camera.node.position = new BABYLON.Vector3(
+                -4.142467027972506,
+                3.6664359864043488,
+                6.308459603515606
+            );
+            camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
+            camera.node.fov = 0.8;
+    */
+            angle += 0.01;
+
+            light.direction = new BABYLON.Vector3(
+                Math.sin(angle),
+                1,
+                Math.cos(angle)
+            );
+        });
+    }
 
     // *** Book ***
 
-    const book = setupBook(scene, xrHelper, { pageCount: 200 });
+    const book = setupBook(scene, xrHelper, {
+        pageCount: 20,
+        textures: Array.from({ length: 5 }).map(
+            (_, i) => `assets/Page${i + 1}.jpg`
+        ),
+        frontCover: ["assets/CoverFront.jpg", "assets/Empty.jpg"],
+        backCover: ["assets/Empty.jpg", "assets/CoverBack.jpg"],
+    });
 
-    scene.registerBeforeRender(book.update);
+    updates.addUpdates(book.updates);
 
-    book.node.position.z = -10;
-    book.node.position.x = 5;
-    //book.node.rotation.z = -Math.PI / 2;
-    book.node.rotation.y = Math.PI;
-    book.node.rotation.x = Math.PI / 4;
+    if (true) {
+        const flipLeft = () =>
+            book
+                .flipBook({ direction: "left", deltaTime: 100 })
+                .then(() => setTimeout(flipRight, 1000));
+        const flipRight = () =>
+            book
+                .flipBook({ direction: "right", deltaTime: 10 })
+                .then(() => setTimeout(flipLeft, 1000));
+        setTimeout(flipLeft, 1000);
+    }
+
+    if (true) {
+        book.node.position.z = 1;
+        book.node.position.x = 0.3;
+        book.node.position.y = 0;
+        //book.node.rotation.z = -Math.PI / 2;
+        // book.node.rotation.y = Math.PI / 4;
+        book.node.rotation.x = -Math.PI / 6;
+    }
 
     camera.node.setTarget(book.node.position);
 
-    return () => {};
+    // Create a simple sphere to interact with
+    const sphere = BABYLON.MeshBuilder.CreateSphere(
+        "sphere",
+        { diameter: 1 },
+        scene
+    );
+    sphere.position.x = -2.5;
+    sphere.position.y = 1;
+    sphere.position.z = 0;
+
+    new BABYLON.AxesViewer(scene);
+
+    return updates.update;
 };
