@@ -6,7 +6,7 @@ import fragmentShader from "./shaders/book-fragmentShader.glsl";
 import { updateWrapper } from "../sceneUtils";
 import { setLights } from "../shaderTools";
 
-const defaultXVertices = 50;
+const defaultXVertices = 10;
 const defaultYVertices = 1;
 const flipTexture = true;
 

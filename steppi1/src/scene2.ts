@@ -10,7 +10,7 @@ export const createScene1: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    // scene.debugLayer.show();
+    scene.debugLayer.show();
 
     const updates = updateWrapper();
 
@@ -94,8 +94,9 @@ export const createScene1: CreateSceneFn = async (
     }
 
     if (true) {
-        book.node.position.z = 0;
-        book.node.position.x = 0.5;
+        book.node.position.z = 1;
+        book.node.position.x = 0.3;
+        book.node.position.y = 0;
         //book.node.rotation.z = -Math.PI / 2;
         // book.node.rotation.y = Math.PI / 4;
         book.node.rotation.x = -Math.PI / 6;
@@ -109,9 +110,9 @@ export const createScene1: CreateSceneFn = async (
         { diameter: 1 },
         scene
     );
-    sphere.position.x = 0;
+    sphere.position.x = -2.5;
     sphere.position.y = 1;
-    sphere.position.z = 3;
+    sphere.position.z = 0;
 
     new BABYLON.AxesViewer(scene);
 

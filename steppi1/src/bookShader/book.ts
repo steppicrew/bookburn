@@ -113,7 +113,7 @@ export const setupBook = (
         msPerFlip: number
     ) =>
         new Promise((resolve) => {
-            const coverMsPerFlip = Math.max(msPerFlip / 5, deltaTime);
+            const coverMsPerFlip = Math.max(msPerFlip / 2 - deltaTime, 0);
             pages.forEach((page, i) => {
                 const timeOffset = i > 0 ? coverMsPerFlip : 0;
                 page.flipPage({
@@ -134,7 +134,7 @@ export const setupBook = (
         msPerFlip: number
     ) =>
         new Promise((resolve) => {
-            const coverMsPerFlip = Math.max(msPerFlip / 3, deltaTime);
+            const coverMsPerFlip = Math.max(msPerFlip / 2 - deltaTime, 0);
             for (let i = 0; i < pages.length; i++) {
                 const page = pages[pages.length - i - 1];
                 const timeOffset = i > 0 ? coverMsPerFlip : 0;
