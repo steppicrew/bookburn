@@ -47,8 +47,7 @@ export function makeCreateFire(
         // shaderMaterial.alphaBlending = true;
 
         // Set the blend mode to additive
-        // shaderMaterial.alphaMode =
-        //     BABYLON.Constants.ALPHA_SRC_DSTONEMINUSSRCALPHA;
+        // shaderMaterial.alphaMode = BABYLON.Constants.ALPHA_ADD;
 
         // Clone the shared shader material for this mesh instance
         const material = shaderMaterial.clone(
@@ -73,6 +72,9 @@ export function makeCreateFire(
 
         mesh.material = createMaterial(mesh);
         mesh.material.alpha = 0.5;
+
+        // mesh.material = new BABYLON.StandardMaterial("dummy", scene);
+        // mesh.material.
 
         mesh.position.y += 1;
         mesh.scaling = new BABYLON.Vector3(5, 5, 5);

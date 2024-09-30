@@ -104,53 +104,6 @@ const createFireSystem = (
     center: BABYLON.Vector3,
     texture: string
 ) => {
-    const setupAnimationSheet = function (
-        system: BABYLON.IParticleSystem,
-        texture: string,
-        width: number,
-        height: number,
-        numSpritesWidth: number,
-        numSpritesHeight: number,
-        animationSpeed: number,
-        isRandom: boolean,
-        loop: boolean
-    ) {
-        // Assign animation parameters
-        system.isAnimationSheetEnabled = true;
-        system.particleTexture = new BABYLON.Texture(
-            texture,
-            scene,
-            false,
-            false
-        );
-        system.spriteCellWidth = width / numSpritesWidth;
-        system.spriteCellHeight = height / numSpritesHeight;
-        const numberCells = numSpritesWidth * numSpritesHeight;
-        system.startSpriteCellID = 0;
-        system.endSpriteCellID = numberCells - 1;
-        system.spriteCellChangeSpeed = animationSpeed;
-        system.spriteRandomStartCell = isRandom;
-        system.updateSpeed = 1 / 60;
-        system.spriteCellLoop = loop;
-    };
-
-    const colorParticles = function (system: BABYLON.IParticleSystem) {
-        system.addColorGradient(0.0, new BABYLON.Color4(1, 1, 1, 0));
-        system.addColorGradient(0.1, new BABYLON.Color4(1, 1, 1, 0.6));
-        system.addColorGradient(0.9, new BABYLON.Color4(1, 1, 1, 0.6));
-        system.addColorGradient(1.0, new BABYLON.Color4(1, 1, 1, 0));
-
-        // Defines the color ramp to apply
-        system.addRampGradient(0.0, new BABYLON.Color3(1, 1, 1));
-        system.addRampGradient(1.0, new BABYLON.Color3(0.7968, 0.3685, 0.1105));
-        system.useRampGradients = true;
-
-        system.addColorRemapGradient(0, 0.2, 1);
-        system.addColorRemapGradient(1.0, 0.2, 1.0);
-    };
-
-    const fireSystem = BABYLON.ParticleHelper.CreateDefault(center, 5);
-
     // Create an invisible box mesh as the emitter and set its parent
     const fireEmitter = BABYLON.MeshBuilder.CreateBox(
         "fireEmitter",
@@ -161,29 +114,56 @@ const createFireSystem = (
     fireEmitter.parent = parent; // Parent it to the provided node
     fireEmitter.position = center; // Set its position to the center
 
-    fireSystem.emitter = fireEmitter; // Use the box mesh as the emitter
-
-    fireSystem.createBoxEmitter(
+    const system = BABYLON.ParticleHelper.CreateDefault(center, 5);
+    system.emitter = fireEmitter; // Use the box mesh as the emitter
+    system.createBoxEmitter(
         new BABYLON.Vector3(0, 1, 0),
         new BABYLON.Vector3(0, 1, 0),
         new BABYLON.Vector3(-0.5, 0, -0.5),
         new BABYLON.Vector3(0.5, 0, 0.5)
     );
 
-    setupAnimationSheet(fireSystem, texture, 1024, 1024, 8, 8, 1, true, true);
-    fireSystem.minLifeTime = 2;
-    fireSystem.maxLifeTime = 3;
-    fireSystem.emitRate = 2;
-    fireSystem.minSize = 6;
-    fireSystem.maxSize = 8;
-    fireSystem.minInitialRotation = -0.1;
-    fireSystem.maxInitialRotation = 0.1;
-    colorParticles(fireSystem);
-    fireSystem.minEmitPower = 0;
-    fireSystem.maxEmitPower = 0;
-    fireSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_MULTIPLYADD;
-    fireSystem.billboardMode = BABYLON.AbstractMesh.BILLBOARDMODE_Y;
-    return fireSystem;
+    const width = 1024;
+    const height = 1024;
+    const numSpritesWidth = 8;
+    const numSpritesHeight = 8;
+    const numberCells = numSpritesWidth * numSpritesHeight;
+
+    system.isAnimationSheetEnabled = true;
+    system.particleTexture = new BABYLON.Texture(texture, scene, false, false);
+    system.spriteCellWidth = width / numSpritesWidth;
+    system.spriteCellHeight = height / numSpritesHeight;
+    system.startSpriteCellID = 0;
+    system.endSpriteCellID = numberCells - 1;
+    system.spriteCellChangeSpeed = 1;
+    system.spriteRandomStartCell = true;
+    system.updateSpeed = 1 / 60;
+    system.spriteCellLoop = true;
+    system.minLifeTime = 2;
+    system.maxLifeTime = 3;
+    system.emitRate = 2;
+    system.minSize = 6;
+    system.maxSize = 8;
+    system.minInitialRotation = -0.1;
+    system.maxInitialRotation = 0.1;
+    system.minEmitPower = 0;
+    system.maxEmitPower = 0;
+    system.blendMode = BABYLON.ParticleSystem.BLENDMODE_MULTIPLYADD;
+    system.billboardMode = BABYLON.AbstractMesh.BILLBOARDMODE_Y;
+
+    system.addColorGradient(0.0, new BABYLON.Color4(1, 1, 1, 0));
+    system.addColorGradient(0.1, new BABYLON.Color4(1, 1, 1, 0.6));
+    system.addColorGradient(0.9, new BABYLON.Color4(1, 1, 1, 0.6));
+    system.addColorGradient(1.0, new BABYLON.Color4(1, 1, 1, 0));
+
+    // Defines the color ramp to apply
+    system.addRampGradient(0.0, new BABYLON.Color3(1, 1, 1));
+    system.addRampGradient(1.0, new BABYLON.Color3(0.7968, 0.3685, 0.1105));
+    system.useRampGradients = true;
+
+    system.addColorRemapGradient(0, 0.2, 1);
+    system.addColorRemapGradient(1.0, 0.2, 1.0);
+    return system;
 };
 
 const createFireSystem1 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
@@ -191,7 +171,7 @@ const createFireSystem1 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 3.25, 0),
-        "https://raw.githubusercontent.com/PatrickRyanMS/BabylonJStextures/master/ParticleSystems/Fire/Fire_SpriteSheet1_8x8.png"
+        "assets/Fire_SpriteSheet1_8x8.png"
     );
     return system;
 };
@@ -201,7 +181,7 @@ const createFireSystem2 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 2.25, 0),
-        "https://raw.githubusercontent.com/PatrickRyanMS/BabylonJStextures/master/ParticleSystems/Fire/Fire_SpriteSheet2_8x8.png"
+        "assets/Fire_SpriteSheet2_8x8.png"
     );
     system.minSize = 5;
     system.maxSize = 6;
@@ -213,7 +193,7 @@ const createFireSystem3 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 2.25, 0),
-        "https://raw.githubusercontent.com/PatrickRyanMS/BabylonJStextures/master/ParticleSystems/Fire/Fire_SpriteSheet3_8x8.png"
+        "assets/Fire_SpriteSheet3_8x8.png"
     );
     system.minSize = 5;
     system.maxSize = 6;

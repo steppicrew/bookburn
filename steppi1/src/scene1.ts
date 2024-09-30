@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createSkybox, createGround, createSphere } from "./baseScene";
-import { makeCreateFire } from "./fire3";
+import { makeCreateFire } from "./fire4";
 import { setupBook } from "./book/book";
 
 const createLight = (scene: BABYLON.Scene) => {
@@ -85,6 +85,7 @@ export const createScene1: CreateSceneFn = async (
     const fireNode1 = createFire(1000, 0.7);
     fireNode1.position.x -= relX * 1;
 
+    /*
     const fireNode2 = createFire(50, 1);
     fireNode2.position.x -= relX * 2;
 
@@ -93,6 +94,7 @@ export const createScene1: CreateSceneFn = async (
 
     const fireNode4 = createFire(10, 1);
     fireNode4.position.x -= relX * 4;
+    */
 
     camera.node.setTarget(fireNode1.position);
 

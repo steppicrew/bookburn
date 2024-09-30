@@ -53,7 +53,7 @@ export const createSkybox = (scene: BABYLON.Scene) => {
     // lighting, reflections, and overall environment effects.
 
     const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-        "./assets/Runyon_Canyon_A_2k_cube_specular.dds",
+        "assets/Runyon_Canyon_A_2k_cube_specular.dds",
         scene
     );
     hdrTexture.name = "envTex";
