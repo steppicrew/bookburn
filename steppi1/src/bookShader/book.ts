@@ -1,6 +1,5 @@
-import { Direction } from "../book/types";
-import { UpdateWrapper, updateWrapper } from "../sceneUtils";
-import { setLights } from "../shaderTools";
+import { Direction } from "./types";
+import { updateWrapper } from "../sceneUtils";
 import { createPage } from "./page";
 import { PageType } from "./types";
 import * as BABYLON from "babylonjs";

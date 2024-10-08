@@ -3,7 +3,8 @@ import { CreateSceneFn } from "./sceneEx";
 import { CreateCamera2 } from "./camera1";
 import { createSkybox, createGround, createSphere } from "./baseScene";
 import { makeCreateFire } from "./fire4";
-import { setupBook } from "./bookShader/book";
+import { updateWrapper } from "./sceneUtils";
+import { createAutoflipBook } from "./autoflipBook";
 import { initXR } from "./xr";
 
 const createLight = (scene: BABYLON.Scene) => {
@@ -71,12 +72,12 @@ export const createScene1: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    const updates: Array<() => void> = [];
+    const updates = updateWrapper();
 
     scene.debugLayer.show();
 
     const { update: updateLight, shadowGenerator } = createLight(scene);
-    updates.push(updateLight);
+    updates.add(updateLight);
 
     createSkybox(scene);
 
@@ -85,7 +86,7 @@ export const createScene1: CreateSceneFn = async (
     xrHelper.teleportation.addFloorMesh(ground);
 
     const { update: updateSphere } = createSphere(scene, shadowGenerator);
-    updates.push(updateSphere);
+    updates.add(updateSphere);
 
     createBox(scene, shadowGenerator);
 
@@ -93,37 +94,15 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
     if (true) {
-        const book = setupBook(scene, xrHelper, {
-            pageCount: 20,
-            textures: Array.from({ length: 5 }).map(
-                (_, i) => `assets/Page${i + 1}.jpg`
-            ),
-            frontCover: ["assets/CoverFront.jpg", "assets/Empty.jpg"],
-            backCover: ["assets/Empty.jpg", "assets/CoverBack.jpg"],
-        });
+        const book = createAutoflipBook(scene, xrHelper);
+        updates.addUpdates(book.updates);
 
-        updates.push(book.updates.update);
-
-        if (true) {
-            const flipLeft = () =>
-                book
-                    .flipBook({ direction: "left", deltaTime: 100 })
-                    .then(() => setTimeout(flipRight, 1000));
-            const flipRight = () =>
-                book
-                    .flipBook({ direction: "right", deltaTime: 10 })
-                    .then(() => setTimeout(flipLeft, 1000));
-            setTimeout(flipLeft, 1000);
-        }
-
-        if (true) {
-            book.node.position.z = -3;
-            book.node.position.x = -2.3;
-            book.node.position.y = 2;
-            // book.node.rotation.z = Math.PI / 2;
-            book.node.rotation.y = -Math.PI / 4;
-            book.node.rotation.x = -Math.PI / 6;
-        }
+        book.node.position.z = 3;
+        book.node.position.x = -2.3;
+        book.node.position.y = 2;
+        // book.node.rotation.z = Math.PI / 2;
+        book.node.rotation.y = -Math.PI / 4;
+        book.node.rotation.x = -Math.PI / 6;
     }
 
     const createFire = makeCreateFire(scene);
@@ -147,9 +126,7 @@ export const createScene1: CreateSceneFn = async (
 
     camera.node.setTarget(fireNode1.position);
 
-    const update = () => {
-        updates.forEach((update) => update());
-    };
+    new BABYLON.AxesViewer(scene);
 
-    return update;
+    return updates.update;
 };
