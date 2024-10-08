@@ -2,8 +2,8 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
 import { CreateCamera2 } from "./camera1";
 import { CreateSceneFn } from "./sceneEx";
-import { setupBook } from "./bookShader/book";
 import { updateWrapper } from "./sceneUtils";
+import { createAutoflipBook } from "./autoflipBook";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
@@ -70,28 +70,8 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
 
-    const book = setupBook(scene, xrHelper, {
-        pageCount: 20,
-        textures: Array.from({ length: 5 }).map(
-            (_, i) => `assets/Page${i + 1}.jpg`
-        ),
-        frontCover: ["assets/CoverFront.jpg", "assets/Empty.jpg"],
-        backCover: ["assets/Empty.jpg", "assets/CoverBack.jpg"],
-    });
-
+    const book = createAutoflipBook(scene, xrHelper);
     updates.addUpdates(book.updates);
-
-    if (true) {
-        const flipLeft = () =>
-            book
-                .flipBook({ direction: "left", deltaTime: 100 })
-                .then(() => setTimeout(flipRight, 1000));
-        const flipRight = () =>
-            book
-                .flipBook({ direction: "right", deltaTime: 10 })
-                .then(() => setTimeout(flipLeft, 1000));
-        setTimeout(flipLeft, 1000);
-    }
 
     if (true) {
         book.node.position.z = 1;

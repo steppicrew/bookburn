@@ -45,10 +45,11 @@ export const setLights = (() => {
                 light instanceof BABYLON.DirectionalLight ||
                 light instanceof BABYLON.HemisphericLight
             ) {
+                const sign = light instanceof BABYLON.DirectionalLight ? -1 : 1;
                 lightDirections.push(
-                    light.direction.x,
-                    light.direction.y,
-                    light.direction.z,
+                    sign * light.direction.x,
+                    sign * light.direction.y,
+                    sign * light.direction.z,
                     0 // Padding for std140
                 );
                 // Flatten the light color (Color3 -> Array of floats)
