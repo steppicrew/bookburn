@@ -536,7 +536,6 @@ const xx = () => {
 const createFireSystem = (
     scene: BABYLON.Scene,
     parent: BABYLON.Node,
-    center: BABYLON.Vector3,
     texture: string,
     scale: number
 ) => {
@@ -548,10 +547,10 @@ const createFireSystem = (
     );
     emitter.isVisible = true; // Make the mesh invisible
     emitter.parent = parent; // Parent it to the provided node
-    emitter.position = center; // Set its position to the center
+    emitter.position = new BABYLON.Vector3(0, scale * 0.7, 0); // Set its position to the center
 
     const system = BABYLON.ParticleHelper.CreateDefault(
-        center,
+        emitter.position,
         5,
         scene,
         false
@@ -616,6 +615,9 @@ const createFireSystem = (
     }
 
     if (true) {
+        system.minInitialRotation = -0.1;
+        system.maxInitialRotation = 0.1;
+
         system.minEmitPower = 0;
         system.maxEmitPower = 0;
 
@@ -647,7 +649,6 @@ const createFireSystem1 = (
     const system = createFireSystem(
         scene,
         parent,
-        new BABYLON.Vector3(0, 0, 0),
         "assets/Fire_SpriteSheet1_8x8.png",
         scale
     );
@@ -680,8 +681,9 @@ export function makeCreateFire(
         // mesh.material = new BABYLON.StandardMaterial("dummy", scene);
         // mesh.material.
 
-        mesh.position.y += scale * 0.5;
-        mesh.scaling = new BABYLON.Vector3(scale, scale, scale);
+        mesh.isVisible = false;
+        // mesh.position.y += scale * 0.5;
+        // mesh.scaling = new BABYLON.Vector3(scale, scale, scale);
 
         return mesh;
     };

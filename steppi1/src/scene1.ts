@@ -4,6 +4,7 @@ import { CreateCamera2 } from "./camera1";
 import { createSkybox, createGround, createSphere } from "./baseScene";
 import { makeCreateFire } from "./fire4";
 import { setupBook } from "./bookShader/book";
+import { initXR } from "./xr";
 
 const createLight = (scene: BABYLON.Scene) => {
     const light = new BABYLON.DirectionalLight(
@@ -43,6 +44,28 @@ const createLight = (scene: BABYLON.Scene) => {
     return { light, update, shadowGenerator };
 };
 
+// Create a simple sphere to interact with
+const createBox = (
+    scene: BABYLON.Scene,
+    shadowGenerator: BABYLON.ShadowGenerator
+) => {
+    const mesh = BABYLON.MeshBuilder.CreateBox(
+        "sphere",
+        { width: 0.5, height: 0.5, depth: 0.5 },
+        scene
+    );
+    mesh.position.x = -3;
+    mesh.position.y = 1;
+    mesh.position.z = 2;
+    shadowGenerator.addShadowCaster(mesh);
+
+    const update = () => {
+        // nothing
+    };
+
+    return { box: mesh, update };
+};
+
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
@@ -58,10 +81,15 @@ export const createScene1: CreateSceneFn = async (
     createSkybox(scene);
 
     const ground = createGround(scene);
+    ground.isPickable = false;
     xrHelper.teleportation.addFloorMesh(ground);
 
     const { update: updateSphere } = createSphere(scene, shadowGenerator);
     updates.push(updateSphere);
+
+    createBox(scene, shadowGenerator);
+
+    initXR(scene, xrHelper);
 
     // *** Book ***
     if (true) {

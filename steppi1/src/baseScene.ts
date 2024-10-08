@@ -33,7 +33,7 @@ export const createSphere = (
 ) => {
     const sphere = BABYLON.MeshBuilder.CreateSphere(
         "sphere",
-        { diameter: 2 },
+        { diameter: 1 },
         scene
     );
     sphere.position.y = 1;
