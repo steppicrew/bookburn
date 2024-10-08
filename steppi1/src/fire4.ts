@@ -531,11 +531,14 @@ const xx = () => {
 };
 */
 
+// const shader = "shader" + Date.now() + Math.random();
+
 const createFireSystem = (
     scene: BABYLON.Scene,
     parent: BABYLON.Node,
     center: BABYLON.Vector3,
-    texture: string
+    texture: string,
+    scale: number
 ) => {
     // Create an invisible box mesh as the emitter and set its parent
     const emitter = BABYLON.MeshBuilder.CreateBox(
@@ -574,11 +577,11 @@ const createFireSystem = (
     system.minInitialRotation = -0.1;
     system.maxInitialRotation = 0.1;
 
-    if (false) {
-        system.minScaleX = 0.2;
-        system.minScaleY = 0.2;
-        system.maxScaleX = 0.3;
-        system.maxScaleY = 0.3;
+    if (true) {
+        system.minScaleX = scale;
+        system.minScaleY = scale;
+        system.maxScaleX = scale;
+        system.maxScaleY = scale;
     }
 
     if (true) {
@@ -636,12 +639,17 @@ const createFireSystem = (
     return system;
 };
 
-const createFireSystem1 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
+const createFireSystem1 = (
+    scene: BABYLON.Scene,
+    parent: BABYLON.Node,
+    scale: number
+) => {
     const system = createFireSystem(
         scene,
         parent,
         new BABYLON.Vector3(0, 0, 0),
-        "assets/Fire_SpriteSheet1_8x8.png"
+        "assets/Fire_SpriteSheet1_8x8.png",
+        scale
     );
     return system;
 };
@@ -649,8 +657,6 @@ const createFireSystem1 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
 export function makeCreateFire(
     scene: BABYLON.Scene
 ): (particles?: number, size?: number) => BABYLON.Mesh {
-    const shader = "shader" + Date.now() + Math.random();
-
     return function createFireNode(
         particles: number = 1,
         size: number = 0.5
@@ -663,7 +669,9 @@ export function makeCreateFire(
         //particleSource.position = new BABYLON.Vector3(0, -0.5, 0);
         //particleSource.parent = mesh;
 
-        const fireSystem1 = createFireSystem1(scene, mesh);
+        const scale = 5;
+
+        const fireSystem1 = createFireSystem1(scene, mesh, scale);
         fireSystem1.start();
 
         // mesh.material = createMaterial(mesh);
@@ -671,8 +679,6 @@ export function makeCreateFire(
 
         // mesh.material = new BABYLON.StandardMaterial("dummy", scene);
         // mesh.material.
-
-        const scale = 1;
 
         mesh.position.y += scale * 0.5;
         mesh.scaling = new BABYLON.Vector3(scale, scale, scale);

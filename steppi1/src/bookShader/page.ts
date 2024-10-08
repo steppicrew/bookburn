@@ -179,7 +179,7 @@ export const createPage = ({
 
         material.setUniformBuffer("Lights", uniformBuffer);
 
-        //mat.wireframe = true;
+        // material.wireframe = true;
         mesh.material = material;
         if (parentNode) {
             mesh.parent = parentNode;
