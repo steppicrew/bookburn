@@ -66,6 +66,12 @@ export const createScene1: CreateSceneFn = async (
                 Math.cos(angle)
             );
         });
+        new BABYLON.HemisphericLight(
+            "light2",
+            new BABYLON.Vector3(-1.2, -1, 0),
+            // new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
     }
 
     // *** Book ***
@@ -73,7 +79,7 @@ export const createScene1: CreateSceneFn = async (
     const book = createAutoflipBook(scene, xrHelper);
     updates.addUpdates(book.updates);
 
-    if (true) {
+    if (false) {
         book.node.position.z = 1;
         book.node.position.x = 0.3;
         book.node.position.y = 0;

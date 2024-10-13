@@ -1,12 +1,13 @@
 import * as BABYLON from "babylonjs";
 import { setupBook } from "./bookShader/book";
+import { setupBook as setupBlockBook } from "./bookBlockShader/book";
 
-export const createAutoflipBook = (
+export const _createAutoflipBook = (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
     const book = setupBook(scene, xrHelper, {
-        pageCount: 20,
+        pageCount: 2000,
         textures: Array.from({ length: 5 }).map(
             (_, i) => `assets/Page${i + 1}.jpg`
         ),
@@ -28,5 +29,17 @@ export const createAutoflipBook = (
 
     if (true) {
     }
+    return book;
+};
+
+export const createAutoflipBook = (
+    scene: BABYLON.Scene,
+    xrHelper: BABYLON.WebXRDefaultExperience
+) => {
+    const book = setupBlockBook(scene, xrHelper, {
+        pageCount: 20,
+        texture: "assets/BookTexture.jpg",
+    });
+
     return book;
 };
