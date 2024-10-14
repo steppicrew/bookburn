@@ -95,7 +95,7 @@ export const setupBook = (
         height: 2.7,
         depth: bookDepth,
         maxFlipPageCount: 5,
-        pageCount: 100,
+        pageCount: 5,
         parentNode: bookNode,
         texture: new BABYLON.Texture(texture, scene),
         textureMapper: textureMap,

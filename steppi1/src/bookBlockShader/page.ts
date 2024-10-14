@@ -144,7 +144,7 @@ export const createBookParts = ({
         }
     };
 
-    // Build vlocks and flip pages
+    // Build blocks and flip pages
     {
         const xzVertices = [xVertices, zVertices] as XZInt;
         const xyVertices = [xVertices, yVertices] as XZInt;
@@ -163,13 +163,13 @@ export const createBookParts = ({
         // Build flip pages
         for (let i = 0; i < maxFlipPageCount; i++) {
             addPage(
-                BookBody.BackBlock,
+                BookBody.Page,
                 BookBodySide.Top,
                 i as BookPageNum,
                 xzVertices
             );
             addPage(
-                BookBody.BackBlock,
+                BookBody.Page,
                 BookBodySide.Bottom,
                 i as BookPageNum,
                 xzVertices
@@ -220,6 +220,7 @@ export const createBookParts = ({
 
                     "time",
                     "floppyness",
+                    "pageCount",
                     "maxFlipPages",
                     "flipPages",
                     "dimensions",
@@ -235,8 +236,9 @@ export const createBookParts = ({
 
         // mat.backFaceCulling = false;
         material.setTexture("bookTexture", texture);
-        material.setFloat("time", 0.01);
+        material.setFloat("time", 0.5);
         material.setFloat("floppyness", floppyness || 0);
+        material.setInt("pageCount", pageCount);
         material.setInt("maxFlipPages", maxFlipPageCount);
         material.setInt("flipPages", flipPageCount || maxFlipPageCount);
         material.setVector3(
