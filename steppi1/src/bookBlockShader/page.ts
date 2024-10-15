@@ -234,7 +234,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 0);
+    material.setFloat("time", 0.5);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt("maxFlipPages", maxFlipPageCount);

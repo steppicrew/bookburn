@@ -94,6 +94,7 @@ export const setupBook = (
         coverDepth,
         pageDepth,
         maxFlipPageCount: Math.min(50, pageCount) as never,
+        flipPageCount: 10,
         pageCount: pageCount,
         parentNode: bookNode,
         texture: new BABYLON.Texture(texture, scene),

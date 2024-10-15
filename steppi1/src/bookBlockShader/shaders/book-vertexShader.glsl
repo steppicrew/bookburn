@@ -121,54 +121,6 @@ MyResult newResult(void) {
     return MyResult(vec3(0.0), vec3(0.0), vec2(0.0), vec3(0.0, 0.0, 1.0), 0.0, false);
 }
 
-/*
-MyResult getBend(MyResult data) {
-    // rInverse: 1/r
-    float normTime = 1.0 - time;
-    float rInverse = -2.0 * floppyness * (0.5 - abs(0.5 - abs(normTime))) * sign(normTime);
-    
-    float uvX;
-    if (orientation > 0.0) {
-        uvX = uv.x;
-    }
-    else {
-        uvX = 1.0 - uv.x;
-    }
-    
-    if (rInverse == 0.0) {
-        vNormal = normalize(vec3(0, orientation, 0));
-        return vec3(uvX * dimensions.x, 0.0, uv.y * dimensions.y);
-    }
-    
-    // Circle's radius
-    float r = 1.0 / rInverse;
-    
-    // Angle the page equals on the circle
-    float theta = dimensions.x / r;
-    
-    // Coordinates of the circle's center
-    float x_c = sin(theta / 2.0) * r;
-    float y_c = cos(theta / 2.0) * r;
-    
-    // Angle from the the lot (+- theta/2)
-    float theta_ = theta * (uvX - 0.5);
-    
-    vec3 newPosition = vec3(
-        (sin(theta_) * r + x_c),
-        -(cos(theta_) * r - y_c),
-        uv.y * dimensions.y);
-    
-    vNormal = normalize(
-        orientation *
-        vec3(
-            -sin(theta_),
-            cos(theta_),
-            0.0));
-    
-    return newPosition;
-}
-*/
-
 mat4 getRotationMatrix(float theta, vec3 axisPosition, vec3 axisDirection) {
     float cosTheta = cos(theta);
     float sinTheta = sin(theta);
@@ -348,39 +300,76 @@ int floor(float num) {
 */
 
 float frac(float num) {
-    return num - float(int(num));
+    return num - floor(num);
 }
 
-MyResult positionPageBody(MyInput data, int pageOffset) {
+MyResult positionPageBody(MyInput data) {
     MyResult result = newResult();
     vec2 uv = data.uv;
     int side = data.side;
     
-    int pageNum = pageOffset + data.pageNum;
+    int pageNum = minFlipPageIndex + data.pageNum;
     float offset = coverDepth + float(pageCount - pageNum) * pageDepth;
     
     result.rotationOffset.y = offset;
-    result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
+    
+    // Start bending page
+    {
+        float t = time < 1.0 ? (time - frontCoverHeadStart) : ((2.0 - time) - deltaPageTime);
+        float _time = (t / deltaPageTime - float(pageNum)) / float(flipPages);
+        
+        // k: 1/r
+        float normTime = 1.0 - _time;
+        float k = -2.0 * floppyness * (0.5 - abs(0.5 - abs(normTime))) * sign(normTime);
+        
+        // k = 0.0;
+        
+        if (k == 0.0) {
+            result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
+            result.normal = vec3(0.0, 1.0, 0.0);
+        }
+        else {
+            // Circle's radius
+            float r = 1.0 / k;
+            
+            // Angle the page equals on the circle
+            float theta = dimensions.x / r;
+            
+            // Coordinates of the circle's center
+            float x_c = sin(theta / 2.0) * r;
+            float y_c = cos(theta / 2.0) * r;
+            
+            // Angle from the the lot (+- theta/2)
+            float theta_ = theta * (uv.x - 0.5);
+            
+            result.position = vec3(
+                (sin(theta_) * r + x_c),
+                -(cos(theta_) * r - y_c) + offset,
+                uv.y * dimensions.y);
+            
+            result.normal = normalize(vec3(
+                    -sin(theta_),
+                    cos(theta_),
+                    0.0));
+        }
+    }
+    // End bendng page
+    
+    // result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
     
     if (side == TopSide) {
         result.uv = mapUV(uv, getPageIndex(pageNum, true));
-        result.normal = vec3(0.0, 1.0, 0.0);
     }
     else if (side == BottomSide) {
         result.uv = mapUVMirror(uv, getPageIndex(pageNum, false));
-        result.normal = vec3(0.0, -1.0, 0.0);
+        result.normal = -result.normal;
     }
+    
     return result;
 }
 
 MyResult renderPageBody(MyInput data) {
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
-        MyResult result = newResult();
-        result.hide = true;
-        return result;
-    }
-    
-    if (!renderPages) {
+    if (!renderPages || time == 0.0 || time == 1.0 || time == 2.0 || data.pageNum >= flipPages) {
         MyResult result = newResult();
         result.hide = true;
         return result;
@@ -394,7 +383,7 @@ MyResult renderPageBody(MyInput data) {
         return result;
     }
     
-    MyResult result = positionPageBody(data, minFlipPageIndex);
+    MyResult result = positionPageBody(data);
     
     float t = time < 1.0 ? (time - frontCoverHeadStart) : ((2.0 - time) - deltaPageTime);
     result.theta = (t / deltaPageTime - float(index)) / float(flipPages) * PI;
