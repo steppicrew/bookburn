@@ -25,7 +25,12 @@ export type XZInt = Vec2<RangeInt>;
 export type BookFlipDirection = "left" | "right";
 
 export interface BookType {
-    flipBook: (parameters: {}) => void;
+    flipBook: (parameters: {
+        direction: BookFlipDirection;
+        msPerFlip: number;
+        flipPages?: number;
+        startTime?: number;
+    }) => Promise<void>;
     updates: UpdateWrapper;
 }
 

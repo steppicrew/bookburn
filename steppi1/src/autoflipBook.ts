@@ -37,9 +37,21 @@ export const createAutoflipBook = (
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
     const book = setupBlockBook(scene, xrHelper, {
-        pageCount: 20,
+        pageCount: 500,
         texture: "assets/BookTexture.jpg",
     });
+
+    if (true) {
+        const flipLeft = () =>
+            book
+                .flipBook({ direction: "left", msPerFlip: 3000 })
+                .then(() => setTimeout(flipRight, 1000));
+        const flipRight = () =>
+            book
+                .flipBook({ direction: "right", msPerFlip: 1000 })
+                .then(() => setTimeout(flipLeft, 1000));
+        setTimeout(flipLeft, 1000);
+    }
 
     return book;
 };

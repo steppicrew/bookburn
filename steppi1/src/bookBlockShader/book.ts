@@ -68,17 +68,15 @@ export const setupBook = (
     xrHelper: BABYLON.WebXRDefaultExperience,
     options?: {
         pageCount?: number;
-        pageDistance?: number;
+        pageDepth?: number;
         coverDepth?: number;
         texture: string;
     }
 ) => {
     const pageCount = options?.pageCount || 200;
-    const pageDistance = options?.pageDistance || 0.001;
-    const coverDepth = options?.coverDepth || 0.1;
+    const pageDepth = options?.pageDepth || 0.001;
+    const coverDepth = options?.coverDepth || 0.01;
     const texture = options?.texture || defaultTexture;
-
-    const bookDepth = pageCount * pageDistance + 2 * coverDepth;
 
     const updates = updateWrapper();
     const bookNode = new BABYLON.TransformNode("book", scene);
@@ -93,9 +91,10 @@ export const setupBook = (
         scene,
         width: 2.1,
         height: 2.7,
-        depth: bookDepth,
-        maxFlipPageCount: 5,
-        pageCount: 5,
+        coverDepth,
+        pageDepth,
+        maxFlipPageCount: Math.min(50, pageCount) as never,
+        pageCount: pageCount,
         parentNode: bookNode,
         texture: new BABYLON.Texture(texture, scene),
         textureMapper: textureMap,

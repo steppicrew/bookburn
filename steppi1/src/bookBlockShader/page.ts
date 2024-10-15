@@ -6,23 +6,20 @@ import { setLights } from "../shaderTools";
 import {
     BookBody,
     BookBodySide,
+    BookFlipDirection,
     BookPageNum,
     BookType,
     MaxBodyAttribute,
     MaxBookPageNum,
     RangeInt,
     TextureMap,
-    XYZ,
     XYZInt,
-    XZ,
     XZInt,
 } from "./types";
 
 const defaultXVertices = 10;
 const defaultYVertices = 5;
 const defaultZVertices = 1;
-
-const flipTexture = true;
 
 type AttributeType = [u: number, v: number, bodySide: number, pageNum: number];
 
@@ -68,7 +65,8 @@ export const createBookParts = ({
     scene,
     width,
     height,
-    depth,
+    coverDepth,
+    pageDepth,
     pageCount,
     maxFlipPageCount,
     flipPageCount,
@@ -81,7 +79,8 @@ export const createBookParts = ({
     scene: BABYLON.Scene;
     width: number;
     height: number;
-    depth: number;
+    coverDepth?: number;
+    pageDepth?: number;
     pageCount: number;
     maxFlipPageCount: BookPageNum;
     flipPageCount?: BookPageNum;
@@ -201,68 +200,97 @@ export const createBookParts = ({
     }
 
     // Build material
-    {
-        const material = new BABYLON.ShaderMaterial(
-            "pageMaterial",
-            scene,
-            {
-                vertex: shaderName,
-                fragment: shaderName,
-                // fragment: "default",
-                // fragmentElement: shader,
-            },
-            {
-                attributes: ["color"],
-                uniforms: [
-                    // vertex variables
-                    "world",
-                    "worldViewProjection",
+    const material = new BABYLON.ShaderMaterial(
+        "pageMaterial",
+        scene,
+        {
+            vertex: shaderName,
+            fragment: shaderName,
+            // fragment: "default",
+            // fragmentElement: shader,
+        },
+        {
+            attributes: ["color"],
+            uniforms: [
+                // vertex variables
+                "world",
+                "worldViewProjection",
 
-                    "time",
-                    "floppyness",
-                    "pageCount",
-                    "maxFlipPages",
-                    "flipPages",
-                    "dimensions",
-                    "pageDepth",
-                    "coverDepth",
-                    "vertices",
-                    "textureUVs",
-                    "textureCount",
-                ],
-                samplers: ["bookTexture"],
-            }
-        );
+                "time",
+                "floppyness",
+                "pageCount",
+                "maxFlipPages",
+                "flipPages",
+                "dimensions",
+                "pageDepth",
+                "coverDepth",
+                "vertices",
+                "textureUVs",
+                "textureCount",
+            ],
+            samplers: ["bookTexture"],
+        }
+    );
 
-        // mat.backFaceCulling = false;
-        material.setTexture("bookTexture", texture);
-        material.setFloat("time", 1.7);
-        material.setFloat("floppyness", floppyness || 0);
-        material.setInt("pageCount", pageCount);
-        material.setInt("maxFlipPages", maxFlipPageCount);
-        material.setInt("flipPages", flipPageCount || maxFlipPageCount);
-        material.setVector3(
-            "dimensions",
-            new BABYLON.Vector3(width, depth, height)
-        );
-        console.log(width, depth, height);
-        material.setFloat("pageDepth", depth / pageCount);
-        material.setFloat("coverDepth", depth / pageCount);
-        material.setVector3("vertices", new BABYLON.Vector3(...vertices));
-        material.setArray4("textureUVs", textureMap.flat(2));
-        material.setInt("textureCount", textureMap.length);
+    // mat.backFaceCulling = false;
+    material.setTexture("bookTexture", texture);
+    material.setFloat("time", 0);
+    material.setFloat("floppyness", floppyness || 0);
+    material.setInt("pageCount", pageCount);
+    material.setInt("maxFlipPages", maxFlipPageCount);
+    material.setInt("flipPages", flipPageCount || maxFlipPageCount);
+    material.setVector2("dimensions", new BABYLON.Vector2(width, height));
+    material.setFloat("pageDepth", pageDepth || 0.001);
+    material.setFloat("coverDepth", coverDepth || 0.01);
+    material.setVector3("vertices", new BABYLON.Vector3(...vertices));
+    material.setArray4("textureUVs", textureMap.flat(2));
+    material.setInt("textureCount", textureMap.length);
 
-        material.setUniformBuffer("Lights", uniformBuffer);
+    material.setUniformBuffer("Lights", uniformBuffer);
 
-        // material.wireframe = true;
-        mesh.material = material;
-    }
+    // material.wireframe = true;
+    mesh.material = material;
+
     if (parentNode) {
         mesh.parent = parentNode;
     }
 
-    const flipBook = () => {};
+    const flipBook = ({
+        direction,
+        msPerFlip,
+        flipPages,
+        startTime,
+    }: {
+        direction: BookFlipDirection;
+        msPerFlip: number;
+        flipPages?: number;
+        startTime?: number;
+    }): Promise<void> =>
+        new Promise((resolve) => {
+            const _startTime = startTime || Date.now();
+            if (!flipPages || flipPages > maxFlipPageCount) {
+                flipPages = maxFlipPageCount;
+            }
+            const timeOffset = direction === "left" ? 0 : 1;
 
+            material.setFloat("time", timeOffset);
+            material.setInt("flipPages", flipPages);
+
+            const update = () => {
+                const now = Date.now();
+                if (now < _startTime) {
+                    return;
+                }
+                const time = Math.min((now - _startTime) / msPerFlip, 1);
+                material.setFloat("time", time + timeOffset);
+                if (time === 1) {
+                    updates.remove(update);
+                    resolve();
+                }
+            };
+
+            updates.add(update);
+        });
     return {
         flipBook,
         updates,
