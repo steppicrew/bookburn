@@ -38,6 +38,7 @@ struct MyInput {
     int pageNum;
 };
 
+float frontCoverHeadStart; // time after head cover's flip start to start first page
 float timePerPage; // time to flip one page
 float deltaPageTime; // time difference between two pages start flipping
 int minFlipPageIndex;
@@ -88,12 +89,19 @@ void init(void) {
     pc: total number of pages (excl. cover)
     1. After tp/2 (the front cover is at 90°) the first page starts it's turn.
     Then starts every td one of pc pages (incl. back cover). The cover needs tp to finish it's turn.
-        => 1 = tp/2 + pc * td + tp          td = tp / (pf + 1)
-        => 1 = tp * (1.5 + pc / (pf + 1))
-        => tp = 1 / (1.5 + pc / (pf + 1))
+        => 1 = tp/2 + pc * td + tp          td = tp / pf
+        => 1 = tp * (1.5 + pc / pf)
+        => tp = 1 / (1.5 + pc / pf)
     */
-    timePerPage = 1.0 / (1.5 + float(pageCount) / float(flipPages + 1));
-    deltaPageTime = timePerPage / float(flipPages + 1);
+    if (flipPages > 1) {
+        timePerPage = 1.0 / (1.5 + float(pageCount) / float(flipPages));
+        frontCoverHeadStart = timePerPage / 2.0;
+    }
+    else {
+        timePerPage = 1.0 / (2.0 + float(pageCount) / float(flipPages));
+        frontCoverHeadStart = timePerPage;
+    }
+    deltaPageTime = timePerPage / float(flipPages);
     
     if (time <= 1.0) {
         float timeLeft = 1.0 - time - (timePerPage - deltaPageTime);
@@ -239,7 +247,7 @@ MyResult positionFrontBody(MyInput data) {
     // return result;
     
     // Calculate bottom page's texture and box's depth
-    float singleTime = timePerPage * 1.5; // time the cover is shown without a page
+    float singleTime = timePerPage + frontCoverHeadStart; // time the cover is shown without a page
     int bottomPageIndex;
     float depth;
     if (time == 0.0 || time == 1.0 || time == 2.0) {
@@ -313,12 +321,11 @@ MyResult renderFrontBody(MyInput data) {
         return result;
     }
     
-    float theta;
     if (time > timePerPage && time < 2.0 - timePerPage) {
         result.theta = PI;
     }
     else {
-        float t = time > 1.0 ? 2.0 - time : time;
+        float t = time < 1.0 ? time : (2.0 - time);
         result.theta = PI * t / timePerPage;
     }
     
@@ -377,7 +384,9 @@ MyResult renderPageBody(MyInput data) {
         return result;
     }
     
-    if (minFlipPageIndex + data.pageNum < 0 || minFlipPageIndex + data.pageNum >= pageCount) {
+    int index = minFlipPageIndex + data.pageNum;
+    
+    if (index < 0 || index >= pageCount) {
         MyResult result = newResult();
         result.hide = true;
         return result;
@@ -385,15 +394,8 @@ MyResult renderPageBody(MyInput data) {
     
     MyResult result = positionPageBody(data, minFlipPageIndex);
     
-    if (time < 1.0) {
-        float t = time - timePerPage / 2.0;
-        result.theta = (float(flipPages - data.pageNum - 1) + frac(t / deltaPageTime)) * PI / float(flipPages + 1);
-    }
-    else {
-        float t = 2.0 - (time - timePerPage / 2.0);
-        result.theta = (float(flipPages - data.pageNum) + frac(t / deltaPageTime)) * PI / float(flipPages + 1);
-    }
-    // result.theta = 0.7;
+    float t = time < 1.0 ? (time - frontCoverHeadStart) : ((2.0 - time) - deltaPageTime);
+    result.theta = (t / deltaPageTime - float(index)) / float(flipPages) * PI;
     
     return result;
 }
@@ -415,7 +417,7 @@ MyResult positionBackBody(MyInput data) {
     else {
         /*
         if (time < 1.0) {
-            pagesOnCover = max(pageCount - int((time - timePerPage / 2.0) / deltaPageTime + 1.0), 0);
+            pagesOnCover = max(pageCount - int((time - frontCoverHeadStart) / deltaPageTime + 1.0), 0);
         }
         else {
             pagesOnCover = min(int((time + singleTime - 1.0) / deltaPageTime), pageCount);
