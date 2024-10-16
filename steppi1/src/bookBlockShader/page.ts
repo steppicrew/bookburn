@@ -16,6 +16,7 @@ import {
     XYZInt,
     XZInt,
 } from "./types";
+import { globals } from "../scene2";
 
 const defaultXVertices = 10;
 const defaultYVertices = 5;
@@ -282,7 +283,14 @@ export const createBookParts = ({
                     return;
                 }
                 const time = Math.min((now - _startTime) / msPerFlip, 1);
-                material.setFloat("time", time + timeOffset);
+
+                let time1 = time + timeOffset;
+
+                if (globals.useDebugTime) {
+                    time1 = globals.debugTime;
+                }
+
+                material.setFloat("time", time1);
                 if (time === 1) {
                     updates.remove(update);
                     resolve();

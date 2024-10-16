@@ -4,6 +4,13 @@ import { CreateCamera2 } from "./camera1";
 import { CreateSceneFn } from "./sceneEx";
 import { updateWrapper } from "./sceneUtils";
 import { createAutoflipBook } from "./autoflipBook";
+import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
+
+// TODO: auslagern
+export const globals = {
+    useDebugTime: false,
+    debugTime: 0,
+};
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
@@ -11,6 +18,16 @@ export const createScene1: CreateSceneFn = async (
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
     scene.debugLayer.show();
+
+    initBookDebugGui(
+        scene,
+        (manual) => {
+            globals.useDebugTime = manual;
+        },
+        (time) => {
+            globals.debugTime = time;
+        }
+    );
 
     const updates = updateWrapper();
 
@@ -77,12 +94,13 @@ export const createScene1: CreateSceneFn = async (
     // *** Book ***
 
     let book;
-    for (let i = 0; i < 125; ++i) {
+    for (let i = 0; i < 1; ++i) {
         console.log("BOOK", i);
         book = createAutoflipBook(scene, xrHelper);
         updates.addUpdates(book.updates);
-        book.node.position.x += Math.floor(i / 5) * 5;
-        book.node.position.y += (i % 5) * 5;
+        const ii = i % 25;
+        book.node.position.x += Math.floor(ii / 5) * 5;
+        book.node.position.y += (ii % 5) * 5;
         book.node.position.z += Math.floor(i / 25) * 5;
     }
 
