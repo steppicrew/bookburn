@@ -142,27 +142,18 @@ void init(void) {
 }
 
 float binderFn(vec3 position) {
-    /*
-    if (position.x < 0.0) {
-        return -(topY - position.y);
-    }
-    else {
-        return topY - position.y;
-    }
-    */
-    //return (topY - position.y) * s;
     if (time == 0.0 || time == 1.0 || time == 2.0) {
         return 0.0;
     }
-    float x = sqrt((topY - position.y) / 3.0);
+    float x = sqrt((topY - position.y) / 3.0) * (0.5 - abs(abs(1.0 - time1) - 0.5));
     if (position.x < 0.0) {
         return -x;
     }
     return x;
 }
 
-vec3 screw(vec3 position) {
-    return vec3(position.x + binderFn(position), position.y, position.z);
+vec3 scew(vec3 position) {
+    return vec3(position.x + binderFn(position), position.yz);
 }
 
 MyResult newResult(void) {
@@ -521,11 +512,8 @@ void main(void) {
         result.normal = rotateNormal(result.normal, modelMatrix);
     }
     
-    if(body == FrontBody) {
-        result.position = screw(result.position);
-    } else if(body == PageBody) {
-    } else if(body == BackBody) {
-        result.position = screw(result.position);
+    if((result.theta == 0.0 || result.theta == PI) && (body == FrontBody || body == BackBody)) {
+        result.position = scew(result.position);
     }
     
     /*
