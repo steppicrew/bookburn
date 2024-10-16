@@ -102,7 +102,7 @@ export const setupBook = (
         texture: getTexture(texture, scene),
         textureMapper: textureMap,
         floppyness: 1,
-        vertices: [10, 1, 3],
+        vertices: [10, 10, 3],
     });
 
     updates.addUpdates(bookParts.updates);

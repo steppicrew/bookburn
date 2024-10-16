@@ -43,6 +43,7 @@ int maxFlipPageIndex;
 float bookDepth;
 vec3 frontCoverOffset;
 vec3 backCoverOffset;
+float topY;
 float time1;
 
 const float PI = 3.1415926535897932384626433832795;
@@ -137,6 +138,31 @@ void init(void) {
         frontCoverOffset = vec3(-float(maxPageIndex - minPageIndex + 1) * pageDepth / PI_2, max(backBlockDepth, frontBlockDepth), 0.0);
         backCoverOffset = vec3(0.0, max(frontBlockDepth - backBlockDepth, 0.0), 0.0);
     }
+    topY = frontCoverOffset.y;
+}
+
+float binderFn(vec3 position) {
+    /*
+    if (position.x < 0.0) {
+        return -(topY - position.y);
+    }
+    else {
+        return topY - position.y;
+    }
+    */
+    //return (topY - position.y) * s;
+    if (time == 0.0 || time == 1.0 || time == 2.0) {
+        return 0.0;
+    }
+    float x = sqrt((topY - position.y) / 3.0);
+    if (position.x < 0.0) {
+        return -x;
+    }
+    return x;
+}
+
+vec3 screw(vec3 position) {
+    return vec3(position.x + binderFn(position), position.y, position.z);
 }
 
 MyResult newResult(void) {
@@ -270,6 +296,7 @@ MyResult positionFrontBody(MyInput data) {
     }
     result.position += frontCoverOffset;
     result.rotationOffset = frontCoverOffset;
+    
     return result;
 }
 
@@ -492,6 +519,13 @@ void main(void) {
         mat4 modelMatrix = getRotationMatrix(-result.theta, result.rotationOffset, vec3(0.0, 0.0, 1.0));
         result.position = rotatePosition(result.position, modelMatrix);
         result.normal = rotateNormal(result.normal, modelMatrix);
+    }
+    
+    if(body == FrontBody) {
+        result.position = screw(result.position);
+    } else if(body == PageBody) {
+    } else if(body == BackBody) {
+        result.position = screw(result.position);
     }
     
     /*
