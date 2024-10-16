@@ -44,8 +44,11 @@ float deltaPageTime; // time difference between two pages start flipping
 int minFlipPageIndex;
 int maxFlipPageIndex;
 float bookDepth;
+vec3 frontCoverOffset;
+vec3 backCoverOffset;
 
 const float PI = 3.1415926535897932384626433832795;
+const float PI_2 = PI / 2.0;
 
 const bool renderFront = true;
 const bool renderPages = true;
@@ -115,10 +118,33 @@ void init(void) {
         maxFlipPageIndex = minFlipPageIndex + (flipPages - 1);
     }
     bookDepth = 2.0 * coverDepth + float(pageCount) * pageDepth;
+    
+    if (time == 0.0 || time == 2.0) {
+        frontCoverOffset = vec3(0.0);
+        backCoverOffset = vec3(0.0);
+    }
+    else if (time == 1.0) {
+        frontCoverOffset = vec3(0.0, bookDepth, 0.0);
+        backCoverOffset = vec3(0.0);
+    }
+    else {
+        int minPageIndex = max(minFlipPageIndex, 0);
+        int maxPageIndex = min(maxFlipPageIndex, pageCount);
+        float frontBlockDepth = coverDepth + float(minPageIndex) * pageDepth;
+        float backBlockDepth = coverDepth + float(pageCount - maxFlipPageIndex - 1) * pageDepth;
+        frontCoverOffset = vec3(-float(maxPageIndex - minPageIndex + 1) * pageDepth / PI_2, max(backBlockDepth, frontBlockDepth), 0.0);
+        backCoverOffset = vec3(0.0, max(frontBlockDepth - backBlockDepth, 0.0), 0.0);
+    }
 }
 
 MyResult newResult(void) {
-    return MyResult(vec3(0.0), vec3(0.0), vec2(0.0), vec3(0.0, 0.0, 1.0), 0.0, false);
+    return MyResult(
+        vec3(0.0), // position
+        vec3(0.0), // normal
+        vec2(0.0), // uv
+        vec3((frontCoverOffset.x + backCoverOffset.x) / 2.0, frontCoverOffset.y, 0.0), // rotation offset
+        0.0, // theta
+        false); // hide
 }
 
 mat4 getRotationMatrix(float theta, vec3 axisPosition, vec3 axisDirection) {
@@ -226,40 +252,39 @@ MyResult positionFrontBody(MyInput data) {
         bottomPageIndex = getPageIndex(index, false);
         depth = coverDepth + float(max(index, 0) + 1) * pageDepth;
     }
-    float bottom = bookDepth - depth;
-    
-    result.rotationOffset.y = bottom;
     
     if (side == TopSide) {
         result.uv = mapUV(uv, TextureIndexFrontTop);
         result.normal = vec3(0.0, 1.0, 0.0);
-        result.position = vec3(uv.x * dimensions.x, bookDepth, uv.y * dimensions.y);
+        result.position = vec3(uv.x * dimensions.x, depth, uv.y * dimensions.y);
     }
     else if (side == BottomSide) {
         result.uv = mapUVMirror(uv, bottomPageIndex);
         result.normal = vec3(0.0, -1.0, 0.0);
-        result.position = vec3(uv.x * dimensions.x, bottom, uv.y * dimensions.y);
+        result.position = vec3(uv.x * dimensions.x, 0, uv.y * dimensions.y);
     }
     else if (side == NorthSide) {
         result.uv = mapUV(uv, TextureIndexFrontNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
-        result.position = vec3(uv.x * dimensions.x, uv.y * depth + bottom, dimensions.y);
+        result.position = vec3(uv.x * dimensions.x, uv.y * depth, dimensions.y);
     }
     else if (side == SouthSide) {
         result.uv = mapUV(uv, TextureIndexFrontSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
-        result.position = vec3(uv.x * dimensions.x, uv.y * depth + bottom, 0);
+        result.position = vec3(uv.x * dimensions.x, uv.y * depth, 0);
     }
     else if (side == PagesSide) {
         result.uv = mapUV(uv, TextureIndexFrontPages);
         result.normal = vec3(1.0, 0.0, 0.0);
-        result.position = vec3(dimensions.x, uv.x * depth + bottom, uv.y * dimensions.y);
+        result.position = vec3(dimensions.x, uv.x * depth, uv.y * dimensions.y);
     }
     if (side == BinderSide) {
         result.uv = mapUV(uv, TextureIndexFrontBinder);
         result.normal = vec3(-1.0, 0.0, 0.0);
-        result.position = vec3(0, uv.x * depth + bottom, uv.y * dimensions.y);
+        result.position = vec3(0.0, uv.x * depth, uv.y * dimensions.y);
     }
+    result.position += frontCoverOffset;
+    result.rotationOffset = frontCoverOffset;
     return result;
 }
 
@@ -309,9 +334,6 @@ MyResult positionPageBody(MyInput data) {
     int side = data.side;
     
     int pageNum = minFlipPageIndex + data.pageNum;
-    float offset = coverDepth + float(pageCount - pageNum) * pageDepth;
-    
-    result.rotationOffset.y = offset;
     
     // Start bending page
     {
@@ -325,7 +347,7 @@ MyResult positionPageBody(MyInput data) {
         // k = 0.0;
         
         if (k == 0.0) {
-            result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
+            result.position = vec3(uv.x * dimensions.x, 0.0, uv.y * dimensions.y);
             result.normal = vec3(0.0, 1.0, 0.0);
         }
         else {
@@ -344,7 +366,7 @@ MyResult positionPageBody(MyInput data) {
             
             result.position = vec3(
                 (sin(theta_) * r + x_c),
-                -(cos(theta_) * r - y_c) + offset,
+                -(cos(theta_) * r - y_c),
                 uv.y * dimensions.y);
             
             result.normal = normalize(vec3(
@@ -352,10 +374,9 @@ MyResult positionPageBody(MyInput data) {
                     cos(theta_),
                     0.0));
         }
+        result.position += vec3(0.0, frontCoverOffset.y, 0);
     }
     // End bendng page
-    
-    // result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
     
     if (side == TopSide) {
         result.uv = mapUV(uv, getPageIndex(pageNum, true));
@@ -419,8 +440,6 @@ MyResult positionBackBody(MyInput data) {
         depth = coverDepth + float(max(pageCount - index, 0)) * pageDepth;
     }
     
-    result.rotationOffset.y = coverDepth;
-    
     if (side == TopSide) {
         result.uv = mapUV(uv, topPageIndex);
         result.normal = vec3(0.0, 1.0, 0.0);
@@ -429,28 +448,30 @@ MyResult positionBackBody(MyInput data) {
     else if (side == BottomSide) {
         result.uv = mapUVMirror(uv, TextureIndexBackBottom);
         result.normal = vec3(0.0, -1.0, 0.0);
-        result.position = vec3(uv.x * dimensions.x, 0, uv.y * dimensions.y);
+        result.position = vec3(uv.x * dimensions.x, 0.0, uv.y * dimensions.y);
     }
     else if (side == NorthSide) {
-        result.uv = mapUV(uv, TextureIndexFrontNorth);
+        result.uv = mapUV(uv, TextureIndexBackNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth, dimensions.y);
     }
     else if (side == SouthSide) {
-        result.uv = mapUV(uv, TextureIndexFrontSouth);
+        result.uv = mapUV(uv, TextureIndexBackSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth, 0);
     }
     else if (side == PagesSide) {
-        result.uv = mapUV(uv, TextureIndexFrontPages);
+        result.uv = mapUV(uv, TextureIndexBackPages);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(dimensions.x, uv.x * depth, uv.y * dimensions.y);
     }
     else if (side == BinderSide) {
-        result.uv = mapUV(uv, TextureIndexFrontBinder);
+        result.uv = mapUV(uv, TextureIndexBackBinder);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0, uv.x * depth, uv.y * dimensions.y);
     }
+    result.position += backCoverOffset;
+    result.rotationOffset.y += coverDepth;
     return result;
 }
 
