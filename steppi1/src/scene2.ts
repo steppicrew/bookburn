@@ -76,9 +76,17 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
 
-    const book = createAutoflipBook(scene, xrHelper);
-    updates.addUpdates(book.updates);
+    let book;
+    for (let i = 0; i < 125; ++i) {
+        console.log("BOOK", i);
+        book = createAutoflipBook(scene, xrHelper);
+        updates.addUpdates(book.updates);
+        book.node.position.x += Math.floor(i / 5) * 5;
+        book.node.position.y += (i % 5) * 5;
+        book.node.position.z += Math.floor(i / 25) * 5;
+    }
 
+    /*
     if (false) {
         book.node.position.z = 1;
         book.node.position.x = 0.3;
@@ -87,8 +95,9 @@ export const createScene1: CreateSceneFn = async (
         // book.node.rotation.y = Math.PI / 4;
         book.node.rotation.x = -Math.PI / 6;
     }
+    */
 
-    camera.node.setTarget(book.node.position);
+    camera.node.setTarget(book!.node.position.clone());
 
     // Create a simple sphere to interact with
     const sphere = BABYLON.MeshBuilder.CreateSphere(
