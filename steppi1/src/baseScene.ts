@@ -31,17 +31,18 @@ export const createSphere = (
     scene: BABYLON.Scene,
     shadowGenerator: BABYLON.ShadowGenerator
 ) => {
+    const diameter = 1;
     const sphere = BABYLON.MeshBuilder.CreateSphere(
         "sphere",
-        { diameter: 1 },
+        { diameter },
         scene
     );
-    sphere.position.y = 1;
+    sphere.position.y = diameter * 0.5;
     shadowGenerator.addShadowCaster(sphere);
 
     const update = () => {
         sphere.position.y =
-            1 + 3 * Math.abs(Math.sin(performance.now() * 0.003));
+            diameter * 0.5 + 3 * Math.abs(Math.sin(performance.now() * 0.003));
     };
 
     return { sphere, update };
