@@ -220,12 +220,10 @@ export const createBookParts = ({
                 "time",
                 "floppyness",
                 "pageCount",
-                "maxFlipPages",
                 "flipPages",
                 "dimensions",
                 "pageDepth",
                 "coverDepth",
-                "vertices",
                 "textureUVs",
                 "textureCount",
             ],
@@ -235,15 +233,16 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 0.5);
+    material.setFloat("time", 0.3);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
-    material.setInt("maxFlipPages", maxFlipPageCount);
-    material.setInt("flipPages", flipPageCount || maxFlipPageCount);
+    material.setInt(
+        "flipPages",
+        Math.min(flipPageCount || maxFlipPageCount, maxFlipPageCount)
+    );
     material.setVector2("dimensions", new BABYLON.Vector2(width, height));
     material.setFloat("pageDepth", pageDepth || 0.001);
     material.setFloat("coverDepth", coverDepth || 0.01);
-    material.setVector3("vertices", new BABYLON.Vector3(...vertices));
     material.setArray4("textureUVs", textureMap.flat(2));
     material.setInt("textureCount", textureMap.length);
 
