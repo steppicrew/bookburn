@@ -113,3 +113,18 @@ export const updateWrapper = (): UpdateWrapper => {
         addUpdates: addWrapper,
     };
 };
+
+export const getTexture = (() => {
+    const textures: Map<string, BABYLON.Texture> = new Map();
+    return (url: string, scene: BABYLON.Scene) => {
+        const texture = textures.get(url);
+        if (texture) {
+            return texture;
+        }
+        {
+            const texture = new BABYLON.Texture(url, scene);
+            textures.set(url, texture);
+            return texture;
+        }
+    };
+})();

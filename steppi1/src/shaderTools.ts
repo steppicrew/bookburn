@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { UpdateFn, updateWrapper, UpdateWrapper } from "./sceneUtils";
+import { UpdateWrapper } from "./sceneUtils";
 
 export const setLights = (() => {
     let _uniformBuffer: BABYLON.UniformBuffer | undefined = undefined;

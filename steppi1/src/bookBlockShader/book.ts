@@ -1,4 +1,4 @@
-import { updateWrapper } from "../sceneUtils";
+import { getTexture, updateWrapper } from "../sceneUtils";
 import { createBookParts } from "./page";
 import * as BABYLON from "babylonjs";
 import { TextureMap } from "./types";
@@ -99,7 +99,7 @@ export const setupBook = (
         flipPageCount: 10,
         pageCount: pageCount,
         parentNode: bookNode,
-        texture: new BABYLON.Texture(texture, scene),
+        texture: getTexture(texture, scene),
         textureMapper: textureMap,
         floppyness: 1,
         vertices: [10, 1, 3],
