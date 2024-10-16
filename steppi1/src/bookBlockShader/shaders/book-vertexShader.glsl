@@ -83,8 +83,7 @@ const int TextureIndexBackPages = 11;
 const int TextureIndexPagesOffest = 12;
 
 float ease(float x) {
-    return x;
-    // return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
+    return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
 }
 
 // Initialize global variables
