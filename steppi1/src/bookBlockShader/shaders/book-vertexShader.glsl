@@ -6,7 +6,7 @@ attribute vec4 color;
 uniform mat4 world;
 uniform mat4 worldViewProjection;
 
-uniform float time; // a float between 0 and 2. 0 and 2 means original position, 0<time<=1 means turning from right to left, 1<time<=2 means turning from left to right
+uniform float time; // a float between 0 and 2. 0 and 2 means original position, 0<time1<=1 means turning from right to left, 1<time1<=2 means turning from left to right
 uniform float floppyness; // 0 means not floppy at all, 1 means floppy
 uniform int pageCount; // Number of pages (excluding covers)
 uniform int maxFlipPages; // max number of pages to flip
@@ -38,9 +38,9 @@ struct MyInput {
     int pageNum;
 };
 
-float frontCoverHeadStart; // time after head cover's flip start to start first page
-float timePerPage; // time to flip one page
-float deltaPageTime; // time difference between two pages start flipping
+float frontCoverHeadStart; // time1 after head cover's flip start to start first page
+float timePerPage; // time1 to flip one page
+float deltaPageTime; // time1 difference between two pages start flipping
 int minFlipPageIndex;
 int maxFlipPageIndex;
 float bookDepth;
@@ -81,11 +81,17 @@ const int TextureIndexBackPages = 11;
 
 const int TextureIndexPagesOffest = 12;
 
+float time1;
+
+float ease(float x) {
+    return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
+}
+
 // Initialize global variables
 void init(void) {
     /*
-    tp: time to turn one page
-    td: time between two ordniary pages
+    tp: time1 to turn one page
+    td: time1 between two ordniary pages
     pf: pages flipped simltainiously
     pc: total number of pages (excl. cover)
     1. After tp/2 (the front cover is at 90°) the first page starts it's turn.
@@ -94,23 +100,23 @@ void init(void) {
         => 1 = tp * (1.5 + pc / pf)
         => tp = 1 / (1.5 + pc / pf)
     */
-    if (flipPages > 1) {
+    if(flipPages > 1) {
         timePerPage = 1.0 / (1.5 + float(pageCount) / float(flipPages));
         frontCoverHeadStart = timePerPage / 2.0;
-    }
-    else {
+    } else {
         timePerPage = 1.0 / (2.0 + float(pageCount) / float(flipPages));
         frontCoverHeadStart = timePerPage;
     }
     deltaPageTime = timePerPage / float(flipPages);
-    
-    if (time <= 1.0) {
-        float timeLeft = 1.0 - time - (timePerPage - deltaPageTime);
+
+    if(time <= 1.0) {
+        time1 = ease(time);
+        float timeLeft = 1.0 - time1 - (timePerPage - deltaPageTime);
         maxFlipPageIndex = pageCount - int(floor(timeLeft / deltaPageTime));
         minFlipPageIndex = maxFlipPageIndex - (flipPages - 1);
-    }
-    else {
-        float timeLeft = 2.0 - time - (timePerPage);
+    } else {
+        time1 = 1.0 + ease(time - 1.0);
+        float timeLeft = 2.0 - time1 - (timePerPage);
         minFlipPageIndex = int(floor(timeLeft / deltaPageTime));
         maxFlipPageIndex = minFlipPageIndex + (flipPages - 1);
     }
@@ -125,33 +131,26 @@ mat4 getRotationMatrix(float theta, vec3 axisPosition, vec3 axisDirection) {
     float cosTheta = cos(theta);
     float sinTheta = sin(theta);
     vec3 u = normalize(axisDirection);  // Normalize the axis direction just in case
-    
+
     // Outer product of the axis direction
     mat3 outer = outerProduct(u, u);
-    
+
     // Skew-symmetric matrix for cross product
-    mat3 crossProduct = mat3(
-        0.0, -u.z, u.y,
-        u.z, 0.0, -u.x,
-        -u.y, u.x, 0.0);
-    
+    mat3 crossProduct = mat3(0.0, -u.z, u.y, u.z, 0.0, -u.x, -u.y, u.x, 0.0);
+
     // Construct the rotation matrix
     mat3 rotationMatrix3x3 = cosTheta * mat3(1.0) + (1.0 - cosTheta) * outer + sinTheta * crossProduct;
-    
+
     // Step 4: Convert the 3x3 rotation matrix into a 4x4 matrix
-    mat4 rotationMatrix = mat4(
-        vec4(rotationMatrix3x3[0], 0.0),
-        vec4(rotationMatrix3x3[1], 0.0),
-        vec4(rotationMatrix3x3[2], 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0));
-    
+    mat4 rotationMatrix = mat4(vec4(rotationMatrix3x3[0], 0.0), vec4(rotationMatrix3x3[1], 0.0), vec4(rotationMatrix3x3[2], 0.0), vec4(0.0, 0.0, 0.0, 1.0));
+
     // Step 5: Build the translation matrices
     mat4 translateToOrigin = mat4(1.0);  // Identity matrix
     translateToOrigin[3] = vec4(-axisPosition, 1.0);  // Set the translation to -axisPos
-    
+
     mat4 translateBack = mat4(1.0);  // Identity matrix
     translateBack[3] = vec4(axisPosition, 1.0);  // Set the translation to +axisPos
-    
+
     // Step 6: Combine all matrices into one
     return translateBack * rotationMatrix * translateToOrigin;
 }
@@ -163,7 +162,7 @@ vec3 rotatePosition(vec3 position, mat4 transformMatrix) {
 vec3 rotateNormal(vec3 normal, mat4 transformMatrix) {
     // Step 1: Compute the normal matrix (inverse transpose of the model matrix)
     mat3 normalMatrix = transpose(inverse(mat3(transformMatrix)));  // Convert mat4 to mat3 for normal transformation
-    
+
     // Step 2: Transform the normal using the normal matrix
     return normalize(normalMatrix * normal);  // Apply the normal matrix and normalize the result
 }
@@ -196,30 +195,29 @@ MyResult positionFrontBody(MyInput data) {
     MyResult result = newResult();
     vec2 uv = data.uv;
     int side = data.side;
-    
+
     // result.hide = true;
     // return result;
-    
+
     // Calculate bottom page's texture and box's depth
-    float singleTime = timePerPage + frontCoverHeadStart; // time the cover is shown without a page
+    float singleTime = timePerPage + frontCoverHeadStart; // time1 the cover is shown without a page
     int bottomPageIndex;
     float depth;
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
+    if(time1 == 0.0 || time1 == 1.0 || time1 == 2.0) {
         bottomPageIndex = TextureIndexBackBottom;
         depth = bookDepth;
     }
-    // else  if (time < singleTime || time > 2.0 - deltaPageTime - timePerPage) {
-    else if (minFlipPageIndex <= 0) {
+    // else  if (time1 < singleTime || time1 > 2.0 - deltaPageTime - timePerPage) {
+    else if(minFlipPageIndex <= 0) {
         bottomPageIndex = TextureIndexFrontBottom;
         depth = coverDepth;
-    }
-    else {
+    } else {
         /*
-        if (time < 1.0) {
-            pagesOnCover = int((time - singleTime) / deltaPageTime);
+        if (time1 < 1.0) {
+            pagesOnCover = int((time1 - singleTime) / deltaPageTime);
         }
         else {
-            pagesOnCover = int((2.0 - time - timePerPage) / deltaPageTime);
+            pagesOnCover = int((2.0 - time1 - timePerPage) / deltaPageTime);
         }
         */
         int index = min(minFlipPageIndex, pageCount) - 1;
@@ -227,35 +225,31 @@ MyResult positionFrontBody(MyInput data) {
         depth = coverDepth + float(max(index, 0) + 1) * pageDepth;
     }
     float bottom = bookDepth - depth;
-    
+
     result.rotationOffset.y = bottom;
-    
-    if (side == TopSide) {
+
+    if(side == TopSide) {
         result.uv = mapUV(uv, TextureIndexFrontTop);
         result.normal = vec3(0.0, 1.0, 0.0);
         result.position = vec3(uv.x * dimensions.x, bookDepth, uv.y * dimensions.y);
-    }
-    else if (side == BottomSide) {
+    } else if(side == BottomSide) {
         result.uv = mapUVMirror(uv, bottomPageIndex);
         result.normal = vec3(0.0, -1.0, 0.0);
         result.position = vec3(uv.x * dimensions.x, bottom, uv.y * dimensions.y);
-    }
-    else if (side == NorthSide) {
+    } else if(side == NorthSide) {
         result.uv = mapUV(uv, TextureIndexFrontNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth + bottom, dimensions.y);
-    }
-    else if (side == SouthSide) {
+    } else if(side == SouthSide) {
         result.uv = mapUV(uv, TextureIndexFrontSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth + bottom, 0);
-    }
-    else if (side == PagesSide) {
+    } else if(side == PagesSide) {
         result.uv = mapUV(uv, TextureIndexFrontPages);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(dimensions.x, uv.x * depth + bottom, uv.y * dimensions.y);
     }
-    if (side == BinderSide) {
+    if(side == BinderSide) {
         result.uv = mapUV(uv, TextureIndexFrontBinder);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0, uv.x * depth + bottom, uv.y * dimensions.y);
@@ -265,24 +259,23 @@ MyResult positionFrontBody(MyInput data) {
 
 MyResult renderFrontBody(MyInput data) {
     MyResult result = positionFrontBody(data);
-    
-    if (!renderFront) {
+
+    if(!renderFront) {
         result.hide = true;
         return result;
     }
-    
-    if (time == 0.0 || time == 2.0) {
+
+    if(time1 == 0.0 || time1 == 2.0) {
         return result;
     }
-    
-    if (time > timePerPage && time < 2.0 - timePerPage) {
+
+    if(time1 > timePerPage && time1 < 2.0 - timePerPage) {
         result.theta = PI;
-    }
-    else {
-        float t = time < 1.0 ? time : (2.0 - time);
+    } else {
+        float t = time1 < 1.0 ? time1 : (2.0 - time1);
         result.theta = PI * t / timePerPage;
     }
-    
+
     return result;
 }
 
@@ -307,87 +300,79 @@ MyResult positionPageBody(MyInput data) {
     MyResult result = newResult();
     vec2 uv = data.uv;
     int side = data.side;
-    
+
     int pageNum = minFlipPageIndex + data.pageNum;
     float offset = coverDepth + float(pageCount - pageNum) * pageDepth;
-    
+
     result.rotationOffset.y = offset;
-    
+
     // Start bending page
     {
-        float t = time < 1.0 ? (time - frontCoverHeadStart) : ((2.0 - time) - deltaPageTime);
+        float t = time1 < 1.0 ? (time1 - frontCoverHeadStart) : ((2.0 - time1) - deltaPageTime);
         float _time = (t / deltaPageTime - float(pageNum)) / float(flipPages);
-        
+
         // k: 1/r
         float normTime = 1.0 - _time;
         float k = -2.0 * floppyness * (0.5 - abs(0.5 - abs(normTime))) * sign(normTime);
-        
+
         // k = 0.0;
-        
-        if (k == 0.0) {
+
+        if(k == 0.0) {
             result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
             result.normal = vec3(0.0, 1.0, 0.0);
-        }
-        else {
+        } else {
             // Circle's radius
             float r = 1.0 / k;
-            
+
             // Angle the page equals on the circle
             float theta = dimensions.x / r;
-            
+
             // Coordinates of the circle's center
             float x_c = sin(theta / 2.0) * r;
             float y_c = cos(theta / 2.0) * r;
-            
+
             // Angle from the the lot (+- theta/2)
             float theta_ = theta * (uv.x - 0.5);
-            
-            result.position = vec3(
-                (sin(theta_) * r + x_c),
-                -(cos(theta_) * r - y_c) + offset,
-                uv.y * dimensions.y);
-            
-            result.normal = normalize(vec3(
-                    -sin(theta_),
-                    cos(theta_),
-                    0.0));
+
+            result.position = vec3((sin(theta_) * r + x_c), -(cos(theta_) * r - y_c) + offset, uv.y * dimensions.y);
+
+            result.normal = normalize(vec3(-sin(theta_), cos(theta_), 0.0));
         }
     }
     // End bendng page
-    
+
     // result.position = vec3(uv.x * dimensions.x, offset, uv.y * dimensions.y);
-    
-    if (side == TopSide) {
+
+    if(side == TopSide) {
         result.uv = mapUV(uv, getPageIndex(pageNum, true));
-    }
-    else if (side == BottomSide) {
+    } else if(side == BottomSide) {
         result.uv = mapUVMirror(uv, getPageIndex(pageNum, false));
         result.normal = -result.normal;
     }
-    
+
     return result;
 }
 
 MyResult renderPageBody(MyInput data) {
-    if (!renderPages || time == 0.0 || time == 1.0 || time == 2.0 || data.pageNum >= flipPages) {
+    if(!renderPages || time1 == 0.0 || time1 == 1.0 || time1 == 2.0 || data.pageNum >= flipPages) {
         MyResult result = newResult();
         result.hide = true;
         return result;
     }
-    
+
     int index = minFlipPageIndex + data.pageNum;
-    
-    if (index < 0 || index >= pageCount) {
+
+    if(index < 0 || index >= pageCount) {
         MyResult result = newResult();
         result.hide = true;
         return result;
     }
-    
+
     MyResult result = positionPageBody(data);
-    
-    float t = time < 1.0 ? (time - frontCoverHeadStart) : ((2.0 - time) - deltaPageTime);
+
+    float t = time1 < 1.0 ? (time1 - frontCoverHeadStart) : ((2.0 - time1) - deltaPageTime);
     result.theta = (t / deltaPageTime - float(index)) / float(flipPages) * PI;
-    
+
     return result;
 }
 
@@ -395,58 +380,52 @@ MyResult positionBackBody(MyInput data) {
     MyResult result = newResult();
     vec2 uv = data.uv;
     int side = data.side;
-    
+
     // Calculate top page's texture and box's depth
-    float singleTime = timePerPage * 1.5; // time the cover is shown without a page
+    float singleTime = timePerPage * 1.5; // time1 the cover is shown without a page
     int topPageIndex;
     float depth;
-    // if (time > 1.0 - (deltaPageTime + timePerPage) && time < 1.0 + singleTime) {
-    if (maxFlipPageIndex >= pageCount - 1) {
+    // if (time1 > 1.0 - (deltaPageTime + timePerPage) && time1 < 1.0 + singleTime) {
+    if(maxFlipPageIndex >= pageCount - 1) {
         topPageIndex = TextureIndexBackTop;
         depth = coverDepth;
-    }
-    else {
+    } else {
         /*
-        if (time < 1.0) {
-            pagesOnCover = max(pageCount - int((time - frontCoverHeadStart) / deltaPageTime + 1.0), 0);
+        if (time1 < 1.0) {
+            pagesOnCover = max(pageCount - int((time1 - frontCoverHeadStart) / deltaPageTime + 1.0), 0);
         }
         else {
-            pagesOnCover = min(int((time + singleTime - 1.0) / deltaPageTime), pageCount);
+            pagesOnCover = min(int((time1 + singleTime - 1.0) / deltaPageTime), pageCount);
         }
         */
         int index = max(min(maxFlipPageIndex + 1, pageCount - 1), 0);
         topPageIndex = getPageIndex(index, true);
         depth = coverDepth + float(max(pageCount - index, 0)) * pageDepth;
     }
-    
+
     result.rotationOffset.y = coverDepth;
-    
-    if (side == TopSide) {
+
+    if(side == TopSide) {
         result.uv = mapUV(uv, topPageIndex);
         result.normal = vec3(0.0, 1.0, 0.0);
         result.position = vec3(uv.x * dimensions.x, depth, uv.y * dimensions.y);
-    }
-    else if (side == BottomSide) {
+    } else if(side == BottomSide) {
         result.uv = mapUVMirror(uv, TextureIndexBackBottom);
         result.normal = vec3(0.0, -1.0, 0.0);
         result.position = vec3(uv.x * dimensions.x, 0, uv.y * dimensions.y);
-    }
-    else if (side == NorthSide) {
+    } else if(side == NorthSide) {
         result.uv = mapUV(uv, TextureIndexFrontNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth, dimensions.y);
-    }
-    else if (side == SouthSide) {
+    } else if(side == SouthSide) {
         result.uv = mapUV(uv, TextureIndexFrontSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         result.position = vec3(uv.x * dimensions.x, uv.y * depth, 0);
-    }
-    else if (side == PagesSide) {
+    } else if(side == PagesSide) {
         result.uv = mapUV(uv, TextureIndexFrontPages);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(dimensions.x, uv.x * depth, uv.y * dimensions.y);
-    }
-    else if (side == BinderSide) {
+    } else if(side == BinderSide) {
         result.uv = mapUV(uv, TextureIndexFrontBinder);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0, uv.x * depth, uv.y * dimensions.y);
@@ -455,74 +434,71 @@ MyResult positionBackBody(MyInput data) {
 }
 
 MyResult renderBackBody(MyInput data) {
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
+    if(time1 == 0.0 || time1 == 1.0 || time1 == 2.0) {
         MyResult result = newResult();
         result.hide = true;
         return result;
     }
-    
-    if (!renderBack) {
+
+    if(!renderBack) {
         MyResult result = newResult();
         result.hide = true;
         return result;
     }
-    
+
     MyResult result = positionBackBody(data);
-    
+
     float theta;
-    if (time > 1.0 - timePerPage && time < 1.0 + timePerPage) {
-        float t = timePerPage - abs(1.0 - time);
+    if(time1 > 1.0 - timePerPage && time1 < 1.0 + timePerPage) {
+        float t = timePerPage - abs(1.0 - time1);
         result.theta = PI * t / timePerPage;
     }
-    
+
     return result;
 }
 
 void main(void) {
     init();
-    
+
     int bodySide = floatToInt(color[2], 64.0);
     int body = int(bodySide / 8);
     MyInput data = MyInput(color.xy, body, bodySide - body * 8, floatToInt(color[3], 64.0));
-    
+
     MyResult result;
-    
-    if (body == FrontBody) {
+
+    if(body == FrontBody) {
         result = renderFrontBody(data);
-    }
-    else if (body == PageBody) {
+    } else if(body == PageBody) {
         result = renderPageBody(data);
-    }
-    else if (body == BackBody) {
+    } else if(body == BackBody) {
         result = renderBackBody(data);
     }
-    
-    if (!result.hide && result.theta != 0.0) {
+
+    if(!result.hide && result.theta != 0.0) {
         mat4 modelMatrix = getRotationMatrix(-result.theta, result.rotationOffset, vec3(0.0, 0.0, 1.0));
         result.position = rotatePosition(result.position, modelMatrix);
         result.normal = rotateNormal(result.normal, modelMatrix);
     }
-    
+
     /*
     newPosition = getBend(newPosition);
     
-    float theta = -time * PI;
-    if (time > 1.0) {
+    float theta = -time1 * PI;
+    if (time1 > 1.0) {
         theta = - theta;
     }
     newPosition = rotate(newPosition + offset, theta);
     
     vNormal = rotate(vNormal, theta);
     */
-    
+
     gl_Position = worldViewProjection * vec4(result.position, 1.0);
     vUV = result.uv;
-    
+
     vPositionW = rotatePosition(result.position, world);
-    if (result.hide) {
+    if(result.hide) {
         vNormalW = vec3(0.0);
-    }
-    else {
+    } else {
         vNormalW = rotateNormal(result.normal, world);
     }
 }

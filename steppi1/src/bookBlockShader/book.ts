@@ -70,12 +70,14 @@ export const setupBook = (
         pageCount?: number;
         pageDepth?: number;
         coverDepth?: number;
+        maxFlipPageCount?: number;
         texture: string;
     }
 ) => {
     const pageCount = options?.pageCount || 200;
     const pageDepth = options?.pageDepth || 0.001;
     const coverDepth = options?.coverDepth || 0.01;
+    const maxFlipPageCount = options?.maxFlipPageCount || 50;
     const texture = options?.texture || defaultTexture;
 
     const updates = updateWrapper();
@@ -93,7 +95,7 @@ export const setupBook = (
         height: 2.7,
         coverDepth,
         pageDepth,
-        maxFlipPageCount: Math.min(50, pageCount) as never,
+        maxFlipPageCount: Math.min(maxFlipPageCount, pageCount) as never,
         flipPageCount: 10,
         pageCount: pageCount,
         parentNode: bookNode,
