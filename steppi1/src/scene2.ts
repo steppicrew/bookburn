@@ -94,9 +94,10 @@ export const createScene1: CreateSceneFn = async (
     // *** Book ***
 
     let book;
-    for (let i = 0; i < 1; ++i) {
+    const startTime = Date.now();
+    for (let i = 0; i < 125; ++i) {
         console.log("BOOK", i);
-        book = createAutoflipBook(scene, xrHelper);
+        book = createAutoflipBook(scene, xrHelper, startTime);
         updates.addUpdates(book.updates);
         const ii = i % 25;
         book.node.position.x += Math.floor(ii / 5) * 5;

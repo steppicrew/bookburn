@@ -34,7 +34,8 @@ export const _createAutoflipBook = (
 
 export const createAutoflipBook = (
     scene: BABYLON.Scene,
-    xrHelper: BABYLON.WebXRDefaultExperience
+    xrHelper: BABYLON.WebXRDefaultExperience,
+    startTime?: number
 ) => {
     const book = setupBlockBook(scene, xrHelper, {
         pageCount: 200,
@@ -45,9 +46,14 @@ export const createAutoflipBook = (
     });
 
     if (true) {
-        const flipLeft = () =>
+        const flipLeft = (startTime?: number) =>
             book
-                .flipBook({ direction: "left", msPerFlip: 3000, flipPages: 5 })
+                .flipBook({
+                    direction: "left",
+                    msPerFlip: 3000,
+                    flipPages: 5,
+                    startTime,
+                })
                 .then(() => setTimeout(flipRight, 1000));
         const flipRight = () =>
             book
@@ -57,7 +63,7 @@ export const createAutoflipBook = (
                     flipPages: 10,
                 })
                 .then(() => setTimeout(flipLeft, 1000));
-        setTimeout(flipLeft, 1000);
+        setTimeout(() => flipLeft(startTime), 1000);
     }
 
     return book;
