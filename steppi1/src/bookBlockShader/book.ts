@@ -1,4 +1,4 @@
-import { getTexture, updateWrapper } from "../sceneUtils";
+import { TextureManager, updateWrapper } from "../sceneUtils";
 import { createBookParts } from "./page";
 import * as BABYLON from "babylonjs";
 import { TextureMap } from "./types";
@@ -14,6 +14,10 @@ const getTextureMap = (): TextureMap[] => {
     const textureUVCoverBack: TextureMap = [
         [1 / 3, 2 / 3],
         [2 / 3, 1],
+    ];
+    const textureUVCoverEdge: TextureMap = [
+        [0, 99 / 100],
+        [1 / 100, 1],
     ];
     const textureUVEmpty: TextureMap = [
         [2 / 3, 2 / 3],
@@ -43,17 +47,21 @@ const getTextureMap = (): TextureMap[] => {
     return [
         textureUVCoverFront,
         textureUVEmpty,
-        textureUVEmpty,
+        textureUVCoverEdge,
+        textureUVCoverEdge,
+        textureUVCoverEdge,
+
         textureUVEmpty,
         textureUVEmpty,
         textureUVEmpty,
 
         textureUVEmpty,
         textureUVCoverBack,
-        textureUVEmpty,
-        textureUVEmpty,
-        textureUVEmpty,
-        textureUVEmpty,
+        textureUVCoverEdge,
+        textureUVCoverEdge,
+        textureUVCoverEdge,
+
+        textureUVCoverFront,
 
         textureUVPage1,
         textureUVPage2,
@@ -83,11 +91,12 @@ export const setupBook = (
     const updates = updateWrapper();
     const bookNode = new BABYLON.TransformNode("book", scene);
 
+    const textureMap = getTextureMap();
+
     bookNode.onDispose = () => {
         updates.dispose();
+        TextureManager.reset();
     };
-
-    const textureMap = getTextureMap();
 
     const bookParts = createBookParts({
         scene,
@@ -99,10 +108,10 @@ export const setupBook = (
         flipPageCount: 10,
         pageCount: pageCount,
         parentNode: bookNode,
-        texture: getTexture(texture, scene),
+        texture: TextureManager.get(texture, scene),
         textureMapper: textureMap,
         floppyness: 1,
-        vertices: [10, 10, 3],
+        vertices: [20, 20, 1],
     });
 
     updates.addUpdates(bookParts.updates);

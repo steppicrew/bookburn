@@ -9,7 +9,6 @@ import {
     BookFlipDirection,
     BookPageNum,
     BookType,
-    MaxBodyAttribute,
     MaxBookPageNum,
     RangeInt,
     TextureMap,
@@ -28,7 +27,7 @@ const shaderName = `bookBlockShader_${Date.now()}`;
 
 const createAddPositions = (
     indexes: number[],
-    positions: [0, 0, 0][],
+    positions: [number, number, number][],
     attributes: AttributeType[]
 ) => {
     // maps "body-side-sideNum-x-z" -> index
@@ -51,12 +50,16 @@ const createAddPositions = (
 
         const newValue = positions.length;
         vertexMap.set(key, newValue);
-        positions.push([0, 0, 0]);
+        positions.push([
+            position[0] / dimension[0],
+            position[1] / dimension[1],
+            0,
+        ]);
         attributes.push([
             position[0] / dimension[0],
             position[1] / dimension[1],
-            (body + side) / MaxBodyAttribute,
-            pageNum / MaxBookPageNum,
+            (body << 3) | side,
+            pageNum,
         ]);
         indexes.push(newValue);
     };
@@ -105,7 +108,7 @@ export const createBookParts = ({
 
     const addPosition = createAddPositions(indexes, positions, attributes);
 
-    const addPage = (
+    const addElement = (
         body: BookBody,
         side: BookBodySide,
         pageNum: BookPageNum,
@@ -118,7 +121,7 @@ export const createBookParts = ({
             for (let col = 0; col < vertices[0]; col++) {
                 switch (side) {
                     case BookBodySide.Bottom:
-                    case BookBodySide.Pages:
+                    case BookBodySide.East:
                     case BookBodySide.North:
                         add((col + 1) as RangeInt, row as RangeInt);
                         add(col as RangeInt, row as RangeInt);
@@ -129,8 +132,8 @@ export const createBookParts = ({
                         add((col + 1) as RangeInt, (row + 1) as RangeInt);
                         break;
                     case BookBodySide.Top:
-                    case BookBodySide.Binder:
                     case BookBodySide.South:
+                    case BookBodySide.Binder:
                         add(col as RangeInt, row as RangeInt);
                         add((col + 1) as RangeInt, row as RangeInt);
                         add(col as RangeInt, (row + 1) as RangeInt);
@@ -149,31 +152,48 @@ export const createBookParts = ({
         const xzVertices = [xVertices, zVertices] as XZInt;
         const xyVertices = [xVertices, yVertices] as XZInt;
         const yzVertices = [yVertices, zVertices] as XZInt;
+        const vertices11 = [1, 1] as XZInt;
 
-        // Build front and back block
-        for (const body of [BookBody.FrontBlock, BookBody.BackBlock]) {
-            addPage(body, BookBodySide.Top, 0, xzVertices);
-            addPage(body, BookBodySide.Bottom, 0, xzVertices);
-            addPage(body, BookBodySide.Binder, 0, yzVertices);
-            addPage(body, BookBodySide.Pages, 0, yzVertices);
-            addPage(body, BookBodySide.North, 0, xyVertices);
-            addPage(body, BookBodySide.South, 0, xyVertices);
+        {
+            // Build front and back cover
+            for (const body of [BookBody.FrontCover, BookBody.BackCover]) {
+                addElement(body, BookBodySide.Top, 0, vertices11);
+                addElement(body, BookBodySide.Bottom, 0, vertices11);
+                addElement(body, BookBodySide.North, 0, vertices11);
+                addElement(body, BookBodySide.East, 0, vertices11);
+                addElement(body, BookBodySide.South, 0, vertices11);
+                addElement(body, BookBodySide.Binder, 0, vertices11);
+            }
         }
-
-        // Build flip pages
-        for (let i = 0; i < maxFlipPageCount; i++) {
-            addPage(
-                BookBody.Page,
-                BookBodySide.Top,
-                i as BookPageNum,
-                xzVertices
-            );
-            addPage(
-                BookBody.Page,
-                BookBodySide.Bottom,
-                i as BookPageNum,
-                xzVertices
-            );
+        {
+            // build front and back block
+            for (const body of [BookBody.FrontBlock, BookBody.BackBlock]) {
+                addElement(body, BookBodySide.Top, 0, xzVertices);
+                addElement(body, BookBodySide.North, 0, xyVertices);
+                addElement(body, BookBodySide.East, 0, yzVertices);
+                addElement(body, BookBodySide.South, 0, xyVertices);
+                addElement(body, BookBodySide.Binder, 0, yzVertices);
+            }
+        }
+        {
+            // Build flip pages
+            for (let i = 0; i < maxFlipPageCount; i++) {
+                addElement(
+                    BookBody.Page,
+                    BookBodySide.Top,
+                    i as BookPageNum,
+                    xzVertices
+                );
+                addElement(
+                    BookBody.Page,
+                    BookBodySide.Bottom,
+                    i as BookPageNum,
+                    xzVertices
+                );
+            }
+        }
+        {
+            addElement(BookBody.Binder, BookBodySide.Binder, 0, yzVertices);
         }
     }
 
@@ -233,7 +253,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 0.3);
+    material.setFloat("time", 1.0);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt(

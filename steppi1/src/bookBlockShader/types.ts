@@ -42,18 +42,19 @@ export enum BookBodySide {
     Top = 1,
     Bottom = 2,
     North = 3,
-    Pages = 4,
+    East = 4,
     South = 5,
     Binder = 6,
 }
 
 export enum BookBody {
-    FrontBlock = 1 << 3,
-    Page = 2 << 3,
-    BackBlock = 3 << 3,
+    FrontCover = 1,
+    FrontBlock = 2,
+    Page = 3,
+    BackBlock = 4,
+    BackCover = 5,
+    Binder = 6,
 }
-
-export const MaxBodyAttribute = 1 << 6; // 64
 
 // Definition of areas in book texture
 export type TextureMap = [
@@ -63,19 +64,23 @@ export type TextureMap = [
 
 // Indexes of pre defined areas
 export const textureMapIndex = {
-    [BookBody.FrontBlock + BookBodySide.Top]: 0,
-    [BookBody.FrontBlock + BookBodySide.Bottom]: 1,
-    [BookBody.FrontBlock + BookBodySide.North]: 2,
-    [BookBody.FrontBlock + BookBodySide.South]: 3,
-    [BookBody.FrontBlock + BookBodySide.Binder]: 4,
-    [BookBody.FrontBlock + BookBodySide.Pages]: 5,
+    [BookBody.FrontCover + BookBodySide.Top]: 0,
+    [BookBody.FrontCover + BookBodySide.Bottom]: 1,
+    [BookBody.FrontCover + BookBodySide.North]: 2,
+    [BookBody.FrontCover + BookBodySide.East]: 3,
+    [BookBody.FrontCover + BookBodySide.South]: 4,
 
-    [BookBody.BackBlock + BookBodySide.Top]: 6,
-    [BookBody.BackBlock + BookBodySide.Bottom]: 7,
-    [BookBody.BackBlock + BookBodySide.North]: 8,
-    [BookBody.BackBlock + BookBodySide.South]: 9,
-    [BookBody.BackBlock + BookBodySide.Binder]: 10,
-    [BookBody.BackBlock + BookBodySide.Pages]: 11,
+    [BookBody.FrontBlock + BookBodySide.North]: 5,
+    [BookBody.FrontBlock + BookBodySide.East]: 6,
+    [BookBody.FrontBlock + BookBodySide.South]: 7,
+
+    [BookBody.BackCover + BookBodySide.Top]: 8,
+    [BookBody.BackCover + BookBodySide.Bottom]: 9,
+    [BookBody.BackCover + BookBodySide.North]: 10,
+    [BookBody.BackCover + BookBodySide.East]: 11,
+    [BookBody.BackCover + BookBodySide.South]: 12,
+
+    [BookBodySide.Binder]: 13,
 } as const;
 
-export const textureMapPageIndexOffset = 12;
+export const textureMapPageIndexOffset = 14;
