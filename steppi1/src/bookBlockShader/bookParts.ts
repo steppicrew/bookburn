@@ -27,7 +27,7 @@ const shaderName = `bookBlockShader_${Date.now()}`;
 
 const createAddPositions = (
     indexes: number[],
-    positions: [number, number, number][],
+    positions: [0, 0, 0][],
     attributes: AttributeType[]
 ) => {
     // maps "body-side-sideNum-x-z" -> index
@@ -50,11 +50,7 @@ const createAddPositions = (
 
         const newValue = positions.length;
         vertexMap.set(key, newValue);
-        positions.push([
-            position[0] / dimension[0],
-            position[1] / dimension[1],
-            0,
-        ]);
+        positions.push([0, 0, 0]);
         attributes.push([
             position[0] / dimension[0],
             position[1] / dimension[1],
@@ -254,6 +250,13 @@ export const createBookParts = ({
         }
     );
 
+    if (!pageDepth) {
+        pageDepth = 0.001;
+    }
+    if (!coverDepth) {
+        coverDepth = 0.01;
+    }
+
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
     material.setFloat("time", 0.0);
@@ -264,8 +267,8 @@ export const createBookParts = ({
         Math.min(flipPageCount || maxFlipPageCount, maxFlipPageCount)
     );
     material.setVector2("dimensions", new BABYLON.Vector2(width, height));
-    material.setFloat("pageDepth", pageDepth || 0.001);
-    material.setFloat("coverDepth", coverDepth || 0.01);
+    material.setFloat("pageDepth", pageDepth);
+    material.setFloat("coverDepth", coverDepth);
     material.setVector2(
         "coverOverlap",
         coverOverlap
@@ -279,6 +282,18 @@ export const createBookParts = ({
 
     // material.wireframe = true;
     mesh.material = material;
+
+    mesh.setBoundingInfo(
+        new BABYLON.BoundingInfo(
+            new BABYLON.Vector3(0, 0, 0),
+            new BABYLON.Vector3(
+                width,
+                2 * coverDepth + pageCount * pageDepth,
+                height
+            )
+        )
+    );
+    // mesh.showBoundingBox = true;
 
     if (parentNode) {
         mesh.parent = parentNode;
