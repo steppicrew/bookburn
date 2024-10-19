@@ -39,8 +39,8 @@ export const createAutoflipBook = (
 ) => {
     const book = setupBlockBook(scene, xrHelper, {
         pageCount: 200,
-        pageDepth: 0.001,
-        coverDepth: 0.01,
+        pageDepth: 0.002,
+        coverDepth: 0.02,
         maxFlipPageCount: 10,
         texture: "assets/BookTexture.jpg",
     });

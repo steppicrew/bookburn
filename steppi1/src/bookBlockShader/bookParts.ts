@@ -71,11 +71,12 @@ export const createBookParts = ({
     height,
     coverDepth,
     pageDepth,
+    coverOverlap,
     pageCount,
     maxFlipPageCount,
     flipPageCount,
     texture,
-    textureMapper: textureMap,
+    textureMap,
     floppyness,
     vertices,
     parentNode,
@@ -85,11 +86,12 @@ export const createBookParts = ({
     height: number;
     coverDepth?: number;
     pageDepth?: number;
+    coverOverlap?: [number, number];
     pageCount: number;
     maxFlipPageCount: BookPageNum;
     flipPageCount?: BookPageNum;
     texture: BABYLON.Texture;
-    textureMapper: TextureMap[];
+    textureMap: TextureMap[];
     floppyness?: number;
     vertices?: XYZInt;
     parentNode: BABYLON.Node;
@@ -193,7 +195,7 @@ export const createBookParts = ({
             }
         }
         {
-            addElement(BookBody.Binder, BookBodySide.Binder, 0, yzVertices);
+            addElement(BookBody.Binder, BookBodySide.Binder, 0, vertices11);
         }
     }
 
@@ -244,6 +246,7 @@ export const createBookParts = ({
                 "dimensions",
                 "pageDepth",
                 "coverDepth",
+                "coverOverlap",
                 "textureUVs",
                 "textureCount",
             ],
@@ -253,7 +256,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 1.0);
+    material.setFloat("time", 0.0);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt(
@@ -263,6 +266,12 @@ export const createBookParts = ({
     material.setVector2("dimensions", new BABYLON.Vector2(width, height));
     material.setFloat("pageDepth", pageDepth || 0.001);
     material.setFloat("coverDepth", coverDepth || 0.01);
+    material.setVector2(
+        "coverOverlap",
+        coverOverlap
+            ? new BABYLON.Vector2(...coverOverlap)
+            : new BABYLON.Vector2(width * 0.01, height * 0.01)
+    );
     material.setArray4("textureUVs", textureMap.flat(2));
     material.setInt("textureCount", textureMap.length);
 

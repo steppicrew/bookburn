@@ -1,5 +1,5 @@
 import { TextureManager, updateWrapper } from "../sceneUtils";
-import { createBookParts } from "./page";
+import { createBookParts } from "./bookParts";
 import * as BABYLON from "babylonjs";
 import { TextureMap } from "./types";
 
@@ -109,7 +109,7 @@ export const setupBook = (
         pageCount: pageCount,
         parentNode: bookNode,
         texture: TextureManager.get(texture, scene),
-        textureMapper: textureMap,
+        textureMap: textureMap,
         floppyness: 1,
         vertices: [20, 20, 1],
     });
