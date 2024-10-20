@@ -33,9 +33,9 @@ export const createCamera2 = async (
 ) => {
     const node = new BABYLON.ArcRotateCamera(
         "camera",
-        Math.PI / 2,
-        Math.PI / 2,
-        4,
+        (3 * Math.PI) / 2,
+        Math.PI / 4,
+        8,
         BABYLON.Vector3.Zero(),
         scene
     );
