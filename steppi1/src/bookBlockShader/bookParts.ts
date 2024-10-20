@@ -284,7 +284,7 @@ export const createBookParts = ({
     mesh.material = material;
 
     // Set BB to position on right side at time == 0, on left at time == 1, and on both sides at time in between
-    const setBB = (time: number) => {
+    const setBoundingBox = (time: number) => {
         const minX = time > 0 ? -width : 0;
         const maxX = time < 1 ? width : 0;
         mesh.computeWorldMatrix(true);
@@ -300,7 +300,7 @@ export const createBookParts = ({
         );
     };
 
-    setBB(0);
+    setBoundingBox(0);
     // mesh.showBoundingBox = true;
 
     if (parentNode) {
@@ -337,7 +337,7 @@ export const createBookParts = ({
                 }
                 if (!started) {
                     started = true;
-                    setBB(0.5);
+                    setBoundingBox(0.5);
                 }
                 const time = Math.min((now - _startTime) / msPerFlip, 1);
 
@@ -350,7 +350,7 @@ export const createBookParts = ({
                 material.setFloat("time", time1);
                 if (time === 1) {
                     updates.remove(update);
-                    setBB(1 - timeOffset);
+                    setBoundingBox(1 - timeOffset);
                     resolve();
                 }
             };
