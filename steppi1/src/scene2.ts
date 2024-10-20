@@ -100,9 +100,12 @@ export const createScene1: CreateSceneFn = async (
         book = createAutoflipBook(scene, xrHelper, startTime);
         updates.addUpdates(book.updates);
         const ii = i % 25;
-        book.node.position.x += Math.floor(ii / 5) * 5;
-        book.node.position.y += (ii % 5) * 5;
-        book.node.position.z += Math.floor(i / 25) * 5;
+        book.node.position = new BABYLON.Vector3(
+            Math.floor(ii / 5) * 5,
+            (ii % 5) * 5,
+            Math.floor(i / 25) * 5
+        );
+        book.node.rotation = new BABYLON.Vector3(-0.5, 0.5, 0.3);
     }
 
     /*
@@ -116,7 +119,8 @@ export const createScene1: CreateSceneFn = async (
     }
     */
 
-    camera.node.setTarget(book!.node.position.clone());
+    // camera.node.setTarget(book!.node.position.clone());
+    camera.node.setTarget(new BABYLON.Vector3(0, 0, 0));
 
     // Create a simple sphere to interact with
     const sphere = BABYLON.MeshBuilder.CreateSphere(
