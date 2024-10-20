@@ -45,24 +45,31 @@ const getTextureMap = (): TextureMap[] => {
     ];
 
     return [
+        // Front cover
+        textureUVCoverFront, // Top
+        textureUVEmpty, // Bottom
+        textureUVCoverEdge, // North
+        textureUVCoverEdge, // East
+        textureUVCoverEdge, // South
+
+        // Pages block
+        textureUVEmpty, // North
+        textureUVEmpty, // East
+        textureUVEmpty, // South
+
+        // BackCover
+        textureUVEmpty, // Top
+        textureUVCoverBack, // Bottom
+        textureUVCoverEdge, // North
+        textureUVCoverEdge, // East
+        textureUVCoverEdge, // South
+
+        // Edge outer
         textureUVCoverFront,
-        textureUVEmpty,
-        textureUVCoverEdge,
-        textureUVCoverEdge,
-        textureUVCoverEdge,
+        textureUVCoverEdge, // North
+        textureUVCoverEdge, // South
 
-        textureUVEmpty,
-        textureUVEmpty,
-        textureUVEmpty,
-
-        textureUVEmpty,
-        textureUVCoverBack,
-        textureUVCoverEdge,
-        textureUVCoverEdge,
-        textureUVCoverEdge,
-
-        textureUVCoverFront,
-
+        // Pages
         textureUVPage1,
         textureUVPage2,
         textureUVPage3,

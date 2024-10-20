@@ -92,9 +92,11 @@ const int TextureIndexBackCoverNorth = 10;
 const int TextureIndexBackCoverEast = 11;
 const int TextureIndexBackCoverSouth = 12;
 
-const int TextureIndexBinder = 13;
+const int TextureIndexBinderOuter = 13;
+const int TextureIndexBinderNorth = 14;
+const int TextureIndexBinderSouth = 15;
 
-const int TextureIndexPagesOffest = 14;
+const int TextureIndexPagesOffest = 16;
 
 float ease(float x) {
     // return x;
@@ -146,11 +148,31 @@ void init(void) {
     centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
 }
 
-float binderFn(vec3 position) {
+float binderFnRaw(vec3 position) {
     if (time == 0.0 || time == 1.0 || time == 2.0) {
         return 0.0;
     }
-    return sqrt(max(centerY + coverDepth - position.y, 0.0) / 3.0) * (0.5 - abs(abs(1.0 - easedTime) - 0.5));
+    // x = sqrt(centerY + coverDepth - y)
+    return sqrt(max(centerY + coverDepth - position.y, 0.0) / 3.0);
+}
+
+float binderFnFactor(void) {
+    return 0.5 - abs(abs(1.0 - easedTime) - 0.5);
+}
+
+float binderFn(vec3 position) {
+    return binderFnRaw(position) * binderFnFactor();
+}
+
+// Normal vector on binderFn
+vec2 binderFnNorm(vec3 position) {
+    if (time == 0.0 || time == 1.0 || time == 2.0) {
+        return vec2(-1.0, 0.0);
+    }
+    // x' = (-1/2 / (sqrt(centerY + coverDepth - y))) * timeFactor = -1/2 / binderFnRaw() * binderFnFactor()
+    // => tangente = (binderFnRaw(), -1/2) * binderFnFactor()
+    // => normal = (-1/2, -binderFnRaw()) * finderFnFactor()
+    return normalize(vec2(-0.5, -binderFnRaw(position)) * binderFnFactor());
 }
 
 vec3 scew(vec3 position) {
@@ -268,7 +290,7 @@ MyResult renderFrontCoverBody(MyInput data) {
         result.position = vec3(dimensions.x, uv.x * coverDepth, uv.y * dimensions.y);
     }
     else if (side == BinderSide) {
-        result.uv = mapUV(vec2((uv.x * coverDepth + bookDepth - coverDepth) / bookDepth, uv.y), TextureIndexBinder);
+        result.uv = mapUV(vec2((uv.x * coverDepth + bookDepth - coverDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0.0, uv.x * coverDepth, uv.y * dimensions.y);
     }
@@ -323,7 +345,7 @@ MyResult renderFrontBlockBody(MyInput data) {
         result.position = vec3(0.0, frontBlockDepth - uv.x * frontBlockDepth, uv.y * pageDimensions.y);
     }
     else if (side == BinderSide) {
-        result.uv = mapUVMirror(vec2((frontBlockDepth + coverDepth - uv.x * frontBlockDepth) / bookDepth, uv.y), TextureIndexBinder);
+        result.uv = mapUVMirror(vec2((frontBlockDepth + coverDepth - uv.x * frontBlockDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(pageDimensions.x, frontBlockDepth - uv.x * frontBlockDepth, uv.y * dimensions.y - coverOverlap.y);
     }
@@ -451,7 +473,7 @@ MyResult renderBackBlockBody(MyInput data) {
         result.position = vec3(pageDimensions.x, uv.x * backBlockDepth, uv.y * pageDimensions.y);
     }
     else if (side == BinderSide) {
-        result.uv = mapUVMirror(vec2((bookDepth - uv.x * backBlockDepth) / bookDepth, uv.y), TextureIndexBinder);
+        result.uv = mapUVMirror(vec2((bookDepth - uv.x * backBlockDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0.0, uv.x * backBlockDepth, uv.y * dimensions.y - coverOverlap.y);
     }
@@ -498,7 +520,7 @@ MyResult renderBackCoverBody(MyInput data) {
         result.position = vec3(dimensions.x, uv.x * coverDepth, uv.y * dimensions.y);
     }
     else if (side == BinderSide) {
-        result.uv = mapUV(vec2((uv.x * coverDepth) / bookDepth, uv.y), TextureIndexBinder);
+        result.uv = mapUV(vec2((uv.x * coverDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
         result.normal = vec3(-1.0, 0.0, 0.0);
         result.position = vec3(0.0, uv.x * coverDepth, uv.y * dimensions.y);
     }
@@ -524,8 +546,7 @@ MyResult renderBackCoverBody(MyInput data) {
 MyResult renderBinderBody(MyInput data) {
     MyResult result = newResult();
     
-    float normTime = easedTime < 1.0 ? easedTime : easedTime - 1.0;
-    if(!renderBinder || (normTime < frontCoverHeadStart || normTime > 1.0)) {
+    if(!renderBinder) {
         result.hide = true;
         return result;
     }
@@ -533,15 +554,56 @@ MyResult renderBinderBody(MyInput data) {
     vec2 uv = data.uv;
     int side = data.side;
 
-    vec3 offset = scew(vec3(0.0, centerY, 0.0));
-    float width = 2.0 * offset.x;
-    float uvWidth = bookDepth - 2.0 * coverDepth - frontBlockDepth - backBlockDepth;
-    float uvOffset = coverDepth + frontBlockDepth;
-    
-    if (side == BinderSide) {
-        result.uv = mapUV(vec2((uv.x * uvWidth + uvOffset) / bookDepth, uv.y), TextureIndexBinder);
-        result.normal = vec3(0.0, -1.0, 0.0);
-        result.position = vec3(- uv.x * width, centerY, uv.y * dimensions.y);
+    float width = bookDepth - 2.0 * coverDepth;
+    float frontMaxX = frontBlockDepth / width;
+    float backMinX = 1.0 - backBlockDepth / width;
+
+    if (uv.x <= frontMaxX) {
+        // Binder on front block
+        result.position.y = centerY - (frontMaxX - uv.x) * width;
+        result.position.x = -binderFn(result.position);
+    }
+    else if (uv.x < backMinX) {
+        // Binder on flipping pages
+        result.position.y = centerY;
+        float maxX = binderFn(result.position);
+        result.position.x = (uv.x - frontMaxX) / (backMinX - frontMaxX) * 2.0 * maxX - maxX;
+    }
+    else {
+        // Binder on back block
+        result.position.y = centerY - (uv.x - backMinX) * width;
+        result.position.x = binderFn(result.position);
+    }
+    vec3 normal = vec3(binderFnNorm(result.position), 0.0);
+    if (frontMaxX > 0.0 && uv.x <= frontMaxX) {
+        normal.x = -normal.x;
+    }
+
+    if (side == BottomSide) {
+        float uvOffset = coverDepth / bookDepth;
+        float uvWidth = width / bookDepth;
+        result.uv = mapUVMirror(vec2(uv.x * uvWidth + uvOffset, uv.y), TextureIndexBinderOuter);
+        result.position.z = uv.y * dimensions.y;
+        result.normal = normal;
+    }
+    else if (side == NorthSide) {
+        result.uv = mapUV(uv, TextureIndexBinderNorth);
+        result.normal = vec3(0.0, 0.0, 1.0);
+        if (uv.x < 0.01 || uv.x > 0.09) {
+            normal.y = 0.0;
+            normal = normalize(normal);
+        }
+        result.position -= uv.y * normal * coverDepth;
+        result.position.z = dimensions.y;
+    }
+    else if (side == SouthSide) {
+        result.uv = mapUVMirror(uv, TextureIndexBinderNorth);
+        result.normal = vec3(0.0, 0.0, -1.0);
+        if (uv.x == 0.0 || uv.x == 1.0) {
+            normal.y = 0.0;
+            normal = normalize(normal);
+        }
+        result.position -= uv.y * normal * coverDepth;
     }
     
     return result;
@@ -576,7 +638,7 @@ void main(void) {
         result.normal = rotateNormal(result.normal, modelMatrix);
     }
     
-    if((result.theta == 0.0 || result.theta == PI) && (body != PageBody)) {
+    if((result.theta == 0.0 || result.theta == PI) && (body != PageBody) && (body != BinderBody)) {
         float factor;
         if (result.theta ==  PI || body == FrontBlockBody) {
             factor = -1.0;

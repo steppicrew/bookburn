@@ -95,6 +95,9 @@ export const createBookParts = ({
     if (!vertices) {
         vertices = [defaultXVertices, defaultYVertices, defaultZVertices];
     }
+    if (!coverOverlap) {
+        coverOverlap = [width * 0.01, height * 0.01];
+    }
 
     const [xVertices, yVertices, zVertices] = vertices;
     const updates = updateWrapper();
@@ -147,9 +150,10 @@ export const createBookParts = ({
 
     // Build blocks and flip pages
     {
-        const xzVertices = [xVertices, zVertices] as XZInt;
-        const xyVertices = [xVertices, yVertices] as XZInt;
-        const yzVertices = [yVertices, zVertices] as XZInt;
+        const verticesXZ = [xVertices, zVertices] as XZInt;
+        const verticesXY = [xVertices, yVertices] as XZInt;
+        const verticesYZ = [yVertices, zVertices] as XZInt;
+        const vertices2Y1 = [2 * yVertices, 1] as XZInt;
         const vertices11 = [1, 1] as XZInt;
 
         {
@@ -166,11 +170,11 @@ export const createBookParts = ({
         {
             // build front and back block
             for (const body of [BookBody.FrontBlock, BookBody.BackBlock]) {
-                addElement(body, BookBodySide.Top, 0, xzVertices);
-                addElement(body, BookBodySide.North, 0, xyVertices);
-                addElement(body, BookBodySide.East, 0, yzVertices);
-                addElement(body, BookBodySide.South, 0, xyVertices);
-                addElement(body, BookBodySide.Binder, 0, yzVertices);
+                addElement(body, BookBodySide.Top, 0, verticesXZ);
+                addElement(body, BookBodySide.North, 0, verticesXY);
+                addElement(body, BookBodySide.East, 0, verticesYZ);
+                addElement(body, BookBodySide.South, 0, verticesXY);
+                // addElement(body, BookBodySide.Binder, 0, verticesYZ);
             }
         }
         {
@@ -180,18 +184,20 @@ export const createBookParts = ({
                     BookBody.Page,
                     BookBodySide.Top,
                     i as BookPageNum,
-                    xzVertices
+                    verticesXZ
                 );
                 addElement(
                     BookBody.Page,
                     BookBodySide.Bottom,
                     i as BookPageNum,
-                    xzVertices
+                    verticesXZ
                 );
             }
         }
         {
-            addElement(BookBody.Binder, BookBodySide.Binder, 0, vertices11);
+            addElement(BookBody.Binder, BookBodySide.North, 0, vertices2Y1);
+            addElement(BookBody.Binder, BookBodySide.Bottom, 0, vertices2Y1);
+            addElement(BookBody.Binder, BookBodySide.South, 0, vertices2Y1);
         }
     }
 
@@ -259,7 +265,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 0.0);
+    material.setFloat("time", 0.1);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt(
@@ -269,12 +275,7 @@ export const createBookParts = ({
     material.setVector2("dimensions", new BABYLON.Vector2(width, height));
     material.setFloat("pageDepth", pageDepth);
     material.setFloat("coverDepth", coverDepth);
-    material.setVector2(
-        "coverOverlap",
-        coverOverlap
-            ? new BABYLON.Vector2(...coverOverlap)
-            : new BABYLON.Vector2(width * 0.01, height * 0.01)
-    );
+    material.setVector2("coverOverlap", new BABYLON.Vector2(...coverOverlap));
     material.setArray4("textureUVs", textureMap.flat(2));
     material.setInt("textureCount", textureMap.length);
 

@@ -95,7 +95,7 @@ export const createScene1: CreateSceneFn = async (
 
     let book;
     const startTime = Date.now();
-    for (let i = 0; i < 125; ++i) {
+    for (let i = 0; i < 1; ++i) {
         console.log("BOOK", i);
         book = createAutoflipBook(scene, xrHelper, startTime);
         updates.addUpdates(book.updates);
@@ -105,7 +105,7 @@ export const createScene1: CreateSceneFn = async (
             (ii % 5) * 5,
             Math.floor(i / 25) * 5
         );
-        book.node.rotation = new BABYLON.Vector3(-0.5, 0.5, 0.3);
+        book.node.rotation = new BABYLON.Vector3(-0.5, 0, 0);
     }
 
     /*

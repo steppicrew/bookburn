@@ -62,25 +62,4 @@ export type TextureMap = [
     [maxX: number, maxY: number]
 ];
 
-// Indexes of pre defined areas
-export const textureMapIndex = {
-    [BookBody.FrontCover + BookBodySide.Top]: 0,
-    [BookBody.FrontCover + BookBodySide.Bottom]: 1,
-    [BookBody.FrontCover + BookBodySide.North]: 2,
-    [BookBody.FrontCover + BookBodySide.East]: 3,
-    [BookBody.FrontCover + BookBodySide.South]: 4,
-
-    [BookBody.FrontBlock + BookBodySide.North]: 5,
-    [BookBody.FrontBlock + BookBodySide.East]: 6,
-    [BookBody.FrontBlock + BookBodySide.South]: 7,
-
-    [BookBody.BackCover + BookBodySide.Top]: 8,
-    [BookBody.BackCover + BookBodySide.Bottom]: 9,
-    [BookBody.BackCover + BookBodySide.North]: 10,
-    [BookBody.BackCover + BookBodySide.East]: 11,
-    [BookBody.BackCover + BookBodySide.South]: 12,
-
-    [BookBodySide.Binder]: 13,
-} as const;
-
-export const textureMapPageIndexOffset = 14;
+export const textureMapPageIndexOffset = 16;
