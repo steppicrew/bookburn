@@ -283,16 +283,24 @@ export const createBookParts = ({
     // material.wireframe = true;
     mesh.material = material;
 
-    mesh.setBoundingInfo(
-        new BABYLON.BoundingInfo(
-            new BABYLON.Vector3(0, 0, 0),
-            new BABYLON.Vector3(
-                width,
-                2 * coverDepth + pageCount * pageDepth,
-                height
+    // Set BB to position on right side at time == 0, on left at time == 1, and on both sides at time in between
+    const setBB = (time: number) => {
+        const minX = time > 0 ? -width : 0;
+        const maxX = time < 1 ? width : 0;
+        mesh.computeWorldMatrix(true);
+        mesh.setBoundingInfo(
+            new BABYLON.BoundingInfo(
+                new BABYLON.Vector3(minX, 0, 0),
+                new BABYLON.Vector3(
+                    maxX,
+                    2 * coverDepth + pageCount * pageDepth,
+                    height
+                )
             )
-        )
-    );
+        );
+    };
+
+    setBB(0);
     // mesh.showBoundingBox = true;
 
     if (parentNode) {
@@ -320,10 +328,16 @@ export const createBookParts = ({
             material.setFloat("time", timeOffset);
             material.setInt("flipPages", flipPages);
 
+            let started = false;
+
             const update = () => {
                 const now = Date.now();
                 if (now < _startTime) {
                     return;
+                }
+                if (!started) {
+                    started = true;
+                    setBB(0.5);
                 }
                 const time = Math.min((now - _startTime) / msPerFlip, 1);
 
@@ -336,6 +350,7 @@ export const createBookParts = ({
                 material.setFloat("time", time1);
                 if (time === 1) {
                     updates.remove(update);
+                    setBB(1 - timeOffset);
                     resolve();
                 }
             };
