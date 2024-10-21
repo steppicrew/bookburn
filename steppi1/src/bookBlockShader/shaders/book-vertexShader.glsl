@@ -48,6 +48,7 @@ float frontBlockDepth; // depth of pages on front cover
 float backBlockDepth; // depth of pages on back cover
 float centerY; // point to rotate around
 float easedTime;
+float binderFactor;
 
 const float PI = 3.1415926535897932384626433832795;
 const float PI_2 = PI / 2.0;
@@ -99,7 +100,7 @@ const int TextureIndexBinderSouth = 15;
 const int TextureIndexPagesOffest = 16;
 
 float ease(float x) {
-    // return x;
+    return x;
     return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
 }
 
@@ -142,37 +143,37 @@ void init(void) {
     bookDepth = 2.0 * coverDepth + float(pageCount) * pageDepth;
     realMinPageIndex = min(max(minFlipPageIndex, 0), pageCount - 1);
     realMaxPageIndex = min(max(maxFlipPageIndex, 0), pageCount - 1);
-    frontBlockDepth = float(realMinPageIndex) * pageDepth;
+    frontBlockDepth = float(min(max(minFlipPageIndex, 0), pageCount)) * pageDepth;
     backBlockDepth = float(pageCount - realMaxPageIndex - 1) * pageDepth;
     
     centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
+    binderFactor = 0.5 - abs(abs(1.0 - easedTime) - 0.5);
 }
 
 float binderFnRaw(vec3 position) {
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
-        return 0.0;
-    }
     // x = sqrt(centerY + coverDepth - y)
     return sqrt(max(centerY + coverDepth - position.y, 0.0) / 3.0);
 }
 
-float binderFnFactor(void) {
-    return 0.5 - abs(abs(1.0 - easedTime) - 0.5);
-}
-
 float binderFn(vec3 position) {
-    return binderFnRaw(position) * binderFnFactor();
+    if (time == 0.0 || time == 1.0 || time == 2.0) {
+        return 0.0;
+    }
+    return binderFnRaw(position) * binderFactor;
 }
 
 // Normal vector on binderFn
-vec2 binderFnNorm(vec3 position) {
+vec3 binderFnNorm(vec3 position) {
     if (time == 0.0 || time == 1.0 || time == 2.0) {
-        return vec2(-1.0, 0.0);
+        return vec3(-1.0, 0.0, 0.0);
     }
-    // x' = (-1/2 / (sqrt(centerY + coverDepth - y))) * timeFactor = -1/2 / binderFnRaw() * binderFnFactor()
-    // => tangente = (binderFnRaw(), -1/2) * binderFnFactor()
-    // => normal = (-1/2, -binderFnRaw()) * finderFnFactor()
-    return normalize(vec2(-0.5, -binderFnRaw(position)) * binderFnFactor());
+    /*
+        x(y) = sqrt(centerY + coverPepth - y) * binderFactor
+        x'(y) = (1/2 / sqrt(centerY + coverDepth - y)) * (-1) * binderFactor = -binderFactor / (2*binderFnRaw())
+        => tangente(y) = (-binderFactor, 2 * binderFnRaw())
+        => normal(y) = (-2 * binderFnRaw(), -binderFactor)
+    */
+    return normalize(vec3(-2.0 * binderFnRaw(position), -binderFactor, 0.0));
 }
 
 vec3 scew(vec3 position) {
@@ -559,22 +560,22 @@ MyResult renderBinderBody(MyInput data) {
     float backMinX = 1.0 - backBlockDepth / width;
 
     if (uv.x <= frontMaxX) {
-        // Binder on front block
+        // Binder on front block (left)
         result.position.y = centerY - (frontMaxX - uv.x) * width;
         result.position.x = -binderFn(result.position);
     }
     else if (uv.x < backMinX) {
-        // Binder on flipping pages
+        // Binder on flipping pages (middle)
         result.position.y = centerY;
         float maxX = binderFn(result.position);
         result.position.x = (uv.x - frontMaxX) / (backMinX - frontMaxX) * 2.0 * maxX - maxX;
     }
     else {
-        // Binder on back block
+        // Binder on back block (right)
         result.position.y = centerY - (uv.x - backMinX) * width;
         result.position.x = binderFn(result.position);
     }
-    vec3 normal = vec3(binderFnNorm(result.position), 0.0);
+    vec3 normal = binderFnNorm(result.position);
     if (frontMaxX > 0.0 && uv.x <= frontMaxX) {
         normal.x = -normal.x;
     }
@@ -589,7 +590,7 @@ MyResult renderBinderBody(MyInput data) {
     else if (side == NorthSide) {
         result.uv = mapUV(uv, TextureIndexBinderNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
-        if (uv.x < 0.01 || uv.x > 0.09) {
+        if (uv.x == 0.0 || uv.x == 1.0) {
             normal.y = 0.0;
             normal = normalize(normal);
         }
