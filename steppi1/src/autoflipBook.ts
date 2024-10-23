@@ -11,7 +11,7 @@ export const createAutoflipBook = (
         pageDepth: 0.002,
         coverDepth: 0.02,
         maxFlipPageCount: 10,
-        texture: "assets/BookTexture.jpg",
+        texture: "assets/BookTexture-xcf.png",
     });
 
     if (true) {

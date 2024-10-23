@@ -3,7 +3,7 @@ import { createBookParts } from "./bookParts";
 import * as BABYLON from "babylonjs";
 import { TextureMap } from "./types";
 
-const defaultTexture = "assets/BookTexture.jpg";
+const defaultTexture = "assets/BookTexture-xcf.png";
 const defaultMsPerFlip = 500;
 
 const getTextureMap = (): TextureMap[] => {
@@ -44,6 +44,11 @@ const getTextureMap = (): TextureMap[] => {
         [2 / 3, 1 / 3],
     ];
 
+    const textureUVCut: TextureMap = [
+        [2854 / 3336, 4135 / 4500],
+        [1, 1],
+    ];
+
     return [
         // Front cover
         textureUVCoverFront, // Top
@@ -53,9 +58,9 @@ const getTextureMap = (): TextureMap[] => {
         textureUVCoverEdge, // South
 
         // Pages block
-        textureUVEmpty, // North
-        textureUVEmpty, // East
-        textureUVEmpty, // South
+        textureUVCut, // North
+        textureUVCut, // East
+        textureUVCut, // South
 
         // BackCover
         textureUVEmpty, // Top
