@@ -100,7 +100,7 @@ const int TextureIndexBinderSouth = 15;
 const int TextureIndexPagesOffest = 16;
 
 float ease(float x) {
-    return x;
+    // return x;
     return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
 }
 
@@ -169,7 +169,7 @@ vec3 binderFnNorm(vec3 position) {
     }
     /*
         x(y) = sqrt(centerY + coverPepth - y) * binderFactor
-        x'(y) = (1/2 / sqrt(centerY + coverDepth - y)) * (-1) * binderFactor = -binderFactor / (2*binderFnRaw())
+        x'(y) = dx/dy = (1/2 / sqrt(centerY + coverDepth - y)) * (-1) * binderFactor = -binderFactor / (2*binderFnRaw())
         => tangente(y) = (-binderFactor, 2 * binderFnRaw())
         => normal(y) = (-2 * binderFnRaw(), -binderFactor)
     */
@@ -228,10 +228,6 @@ vec3 rotateNormal(vec3 normal, mat4 transformMatrix) {
     
     // Step 2: Transform the normal using the normal matrix
     return normalize(normalMatrix * normal);  // Apply the normal matrix and normalize the result
-}
-
-int floatToInt(float number, float basis) {
-    return int(round(number * basis));
 }
 
 int getPageIndex(int pageNum, bool front) {

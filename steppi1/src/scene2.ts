@@ -95,7 +95,7 @@ export const createScene1: CreateSceneFn = async (
 
     let book;
     const startTime = Date.now();
-    for (let i = 0; i < 1; ++i) {
+    for (let i = 0; i < 125; ++i) {
         console.log("BOOK", i);
         book = createAutoflipBook(scene, xrHelper, startTime);
         updates.addUpdates(book.updates);
