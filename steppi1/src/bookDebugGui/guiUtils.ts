@@ -42,8 +42,8 @@ export const makeGui = (scene: BABYLON.Scene) => {
         grid.width = "100%";
         grid.height = "40px";
 
-        grid.addColumnDefinition(0.8);
-        grid.addColumnDefinition(0.1);
+        grid.addColumnDefinition(0.7);
+        grid.addColumnDefinition(0.2);
         grid.addColumnDefinition(0.1);
 
         const slider = new GUI.Slider();
