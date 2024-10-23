@@ -279,6 +279,7 @@ export const createBookParts = ({
     material.setVector2("coverOverlap", new BABYLON.Vector2(...coverOverlap));
     material.setArray4("textureUVs", textureMap.flat(2));
     material.setInt("textureCount", textureMap.length);
+    // material.setFloat("flipAngle", Math.PI / 3);
 
     material.setUniformBuffer("Lights", uniformBuffer);
 
@@ -347,6 +348,8 @@ export const createBookParts = ({
 
                 if (globals.useDebugTime) {
                     time1 = globals.debugTime;
+                    material.setFloat("time", time1);
+                    return;
                 }
 
                 material.setFloat("time", time1);

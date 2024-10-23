@@ -7,14 +7,14 @@ export const createAutoflipBook = (
     startTime?: number
 ) => {
     const book = setupBook(scene, xrHelper, {
-        pageCount: 5,
-        pageDepth: 0.02,
+        pageCount: 200,
+        pageDepth: 0.002,
         coverDepth: 0.02,
         maxFlipPageCount: 10,
         texture: "assets/BookTexture.jpg",
     });
 
-    if (false) {
+    if (true) {
         const flipLeft = (startTime?: number) =>
             book
                 .flipBook({
