@@ -152,7 +152,7 @@ void init(void) {
     
     centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
     binderFactor = 0.5 - abs(abs(1.0 - easedTime) - 0.5);
-    binderFactor *= 0.2;
+    binderFactor *= 0.4 * bookDepth;
 }
 
 float binderFnRaw(vec3 position) {
@@ -326,29 +326,33 @@ MyResult renderFrontBlockBody(MyInput data) {
     int side = data.side;
 
     vec2 pageDimensions = dimensions - coverOverlap - vec2(0.0, coverOverlap.y);
-    
+
+    float yPart = frontBlockDepth / (bookDepth - 2.0 * coverDepth);
+    vec2 UV = uv;
+    UV.y = 1.0 - (1.0 - UV.y) * yPart;
+
     if (side == BottomSide) {
         if (time == 0.0 || time == 1.0 || time == 2.0) {
             result.hide = true;
             return result;
         }
         int topPageIndex = getPageIndex(minFlipPageIndex < 0 ? 0 : realMinPageIndex - 1, false);
-        result.uv = mapUVMirror(uv, topPageIndex);
+        result.uv = mapUVMirror(UV, topPageIndex);
         result.normal = vec3(0.0, 1.0, 0.0);
         result.position = vec3(uv.x * pageDimensions.x, 0.0, uv.y * pageDimensions.y);
     }
     else if (side == NorthSide) {
-        result.uv = mapUV(uv, TextureIndexBlockNorth);
+        result.uv = mapUV(UV, TextureIndexBlockNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
         result.position = vec3(uv.x * pageDimensions.x, uv.y * frontBlockDepth, pageDimensions.y);
     }
     else if (side == SouthSide) {
-        result.uv = mapUVMirror(uv, TextureIndexBlockSouth);
+        result.uv = mapUVMirror(UV, TextureIndexBlockSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         result.position = vec3(uv.x * pageDimensions.x, uv.y * frontBlockDepth, 0);
     }
     else if (side == EastSide) {
-        result.uv = mapUV(uv, TextureIndexBlockEast);
+        result.uv = mapUV(UV, TextureIndexBlockEast);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(pageDimensions.x, uv.x * frontBlockDepth, uv.y * pageDimensions.y);
     }
@@ -453,28 +457,32 @@ MyResult renderBackBlockBody(MyInput data) {
     
     vec2 pageDimensions = dimensions - coverOverlap - vec2(0.0, coverOverlap.y);
 
+    float yPart = backBlockDepth / (bookDepth - 2.0 * coverDepth);
+    vec2 UV = uv;
+    UV.y = UV.y * yPart;
+
     if (side == TopSide) {
         if (time == 0.0 || time == 1.0 || time == 2.0) {
             result.hide = true;
             return result;
         }
         int topPageIndex = getPageIndex(maxFlipPageIndex < 0 ? 0 : maxFlipPageIndex + 1, true);
-        result.uv = mapUV(uv, topPageIndex);
+        result.uv = mapUV(UV, topPageIndex);
         result.normal = vec3(0.0, 1.0, 0.0);
         result.position = vec3(uv.x * pageDimensions.x, backBlockDepth, uv.y * pageDimensions.y);
     }
     else if (side == NorthSide) {
-        result.uv = mapUV(uv, TextureIndexBlockNorth);
+        result.uv = mapUV(UV, TextureIndexBlockNorth);
         result.normal = vec3(0.0, 0.0, 1.0);
         result.position = vec3(uv.x * pageDimensions.x, uv.y * backBlockDepth, pageDimensions.y);
     }
     else if (side == SouthSide) {
-        result.uv = mapUVMirror(uv, TextureIndexBlockSouth);
+        result.uv = mapUVMirror(UV, TextureIndexBlockSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         result.position = vec3(uv.x * pageDimensions.x, uv.y * backBlockDepth, 0);
     }
     else if (side == EastSide) {
-        result.uv = mapUV(uv, TextureIndexBlockEast);
+        result.uv = mapUV(UV, TextureIndexBlockEast);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(pageDimensions.x, uv.x * backBlockDepth, uv.y * pageDimensions.y);
     }
