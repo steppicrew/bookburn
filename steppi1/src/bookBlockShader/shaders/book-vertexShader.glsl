@@ -329,6 +329,9 @@ MyResult renderFrontBlockBody(MyInput data) {
 
     float yPart = frontBlockDepth / (bookDepth - 2.0 * coverDepth);
     vec2 UV = uv;
+    if (side == EastSide) {
+        UV = UV.yx;
+    }
     UV.y = 1.0 - (1.0 - UV.y) * yPart;
 
     if (side == BottomSide) {
@@ -459,6 +462,9 @@ MyResult renderBackBlockBody(MyInput data) {
 
     float yPart = backBlockDepth / (bookDepth - 2.0 * coverDepth);
     vec2 UV = uv;
+    if (side == EastSide) {
+        UV = UV.yx;
+    }
     UV.y = UV.y * yPart;
 
     if (side == TopSide) {
