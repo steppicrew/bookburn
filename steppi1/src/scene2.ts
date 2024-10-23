@@ -108,6 +108,21 @@ export const createScene1: CreateSceneFn = async (
         // book.node.rotation = new BABYLON.Vector3(-0.5, 0, 0);
     }
 
+    // Try anti-aliasing
+    if (false) {
+        var pipeline = new BABYLON.DefaultRenderingPipeline(
+            "default",
+            false,
+            scene,
+            scene.cameras
+        );
+
+        // Anti-aliasing
+        pipeline.samples = 4;
+        pipeline.fxaaEnabled = true;
+        pipeline.grainEnabled = true;
+        pipeline.grain.intensity = 3;
+    }
     /*
     if (false) {
         book.node.position.z = 1;
@@ -132,7 +147,7 @@ export const createScene1: CreateSceneFn = async (
     sphere.position.y = 1;
     sphere.position.z = 0;
 
-    new BABYLON.AxesViewer(scene);
+    // new BABYLON.AxesViewer(scene);
 
     return updates.update;
 };
