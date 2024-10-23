@@ -13,6 +13,8 @@ interface SliderProps {
     onValueChanged: (this: GUI.Slider, value: number) => void;
     minimum?: number;
     maximum?: number;
+    keyLeft?: string;
+    keyRight?: string;
 }
 
 interface CheckboxProps {
@@ -22,7 +24,6 @@ interface CheckboxProps {
 }
 
 export const makeGui = (scene: BABYLON.Scene) => {
-    // Create a fullscreen UI for the slider and checkbox
     const advancedTexture = GUI.AdvancedDynamicTexture.CreateFullscreenUI(
         "UI",
         true,
@@ -34,44 +35,112 @@ export const makeGui = (scene: BABYLON.Scene) => {
         onValueChanged,
         minimum = 0,
         maximum = 1,
+        keyLeft,
+        keyRight,
     }: SliderProps) => {
-        // Create a slider for time control (0 to 2 seconds)
+        const grid = new GUI.Grid();
+        grid.width = "100%";
+        grid.height = "40px";
+
+        grid.addColumnDefinition(0.8);
+        grid.addColumnDefinition(0.1);
+        grid.addColumnDefinition(0.1);
+
         const slider = new GUI.Slider();
         slider.name = name;
         slider.minimum = minimum;
         slider.maximum = maximum;
         slider.value = minimum;
+        slider.width = "100%";
         slider.height = "40px";
         slider.color = "gray";
         slider.background = "gray";
         slider.isEnabled = false;
-        // Action for when the slider value changes
-        slider.onValueChangedObservable.add(onValueChanged.bind(slider));
+
+        const keyText = new GUI.TextBlock();
+        keyText.text =
+            keyLeft && keyRight ? `[ ${keyLeft} ]/[ ${keyRight} ]` : "";
+        keyText.width = "100%";
+        keyText.textHorizontalAlignment =
+            GUI.Control.HORIZONTAL_ALIGNMENT_CENTER;
+        keyText.color = "white";
+
+        const valueText = new GUI.TextBlock();
+        valueText.text = slider.value.toFixed(2);
+        valueText.width = "100%";
+        valueText.textHorizontalAlignment =
+            GUI.Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        valueText.color = "white";
+
+        grid.addControl(slider, 0, 0);
+        grid.addControl(keyText, 0, 1);
+        grid.addControl(valueText, 0, 2);
+
+        const step = 0.05;
+
+        let insideSetValue = false;
+        const _setValue = (value: number) => {
+            if (!insideSetValue) {
+                insideSetValue = true;
+                slider.value = value;
+                onValueChanged.call(slider, slider.value);
+                valueText.text = slider.value.toFixed(2);
+                insideSetValue = false;
+            }
+        };
+
+        slider.onValueChangedObservable.add((value) => {
+            _setValue(Math.floor(value / step) * step);
+        });
 
         setControlPadding(slider);
+        setControlPadding(valueText);
 
         const setEnabled = (isEnabled: boolean) => {
             slider.isEnabled = isEnabled;
-            slider.color = isEnabled ? "green" : "gray";
+            slider.color = isEnabled ? "white" : "gray";
         };
 
-        return { node: slider, slider, setEnabled };
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (!slider.isEnabled) return;
+
+            if (
+                keyLeft &&
+                (event.key === keyLeft || event.key === keyLeft.toUpperCase())
+            ) {
+                _setValue(slider.value - step);
+            }
+            if (
+                keyRight &&
+                (event.key === keyRight || event.key === keyRight.toUpperCase())
+            ) {
+                _setValue(slider.value + step);
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+        grid.onDisposeObservable.add(() =>
+            window.removeEventListener("keydown", onKeyDown)
+        );
+
+        return { node: grid, slider, setEnabled };
     };
 
     const makeCheckbox = ({ name, onChecked, label }: CheckboxProps) => {
-        const panel1 = new GUI.StackPanel();
-        panel1.name = name;
-        panel1.isVertical = false; // This arranges the elements in a row (horizontal stack)
-        panel1.width = "100%";
-        panel1.height = "40px"; // Moves the panel 10px up from the bottom
-        setControlPadding(panel1);
+        const panel = new GUI.StackPanel();
+        panel.name = name;
+        panel.isVertical = false;
+        panel.width = "100%";
+        panel.height = "40px";
+        setControlPadding(panel);
 
         const checkbox = new GUI.Checkbox();
         checkbox.name = name + "Checkbox";
         checkbox.width = "30px";
         checkbox.height = "20px";
         checkbox.isChecked = false;
-        checkbox.color = "green";
+        checkbox.background = "#406040";
+        checkbox.color = "white";
         checkbox.paddingRight = "10px";
         checkbox.onIsCheckedChangedObservable.add(onChecked.bind(checkbox));
 
@@ -82,17 +151,24 @@ export const makeGui = (scene: BABYLON.Scene) => {
         checkboxLabel.width = "150px";
         checkboxLabel.textHorizontalAlignment =
             GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
+        checkboxLabel.color = "white";
 
-        panel1.addControl(checkbox);
-        panel1.addControl(checkboxLabel);
+        checkboxLabel.onPointerDownObservable.add(() => {
+            checkbox.isChecked = !checkbox.isChecked;
+            checkbox.onIsCheckedChangedObservable.notifyObservers(
+                checkbox.isChecked
+            );
+        });
 
-        return { node: panel1 };
+        panel.addControl(checkbox);
+        panel.addControl(checkboxLabel);
+
+        return { node: panel };
     };
 
-    // Create a stack panel to hold the checkbox and label
     const panel = new GUI.StackPanel();
     panel.name = "GuiPanel";
-    panel.width = "400px";
+    panel.width = "600px";
     panel.height = "100px"; // TODO: Make this a param
     panel.isVertical = true;
     panel.background = "#FFFFFF20";

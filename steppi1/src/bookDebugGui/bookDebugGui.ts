@@ -26,5 +26,7 @@ export const initBookDebugGui = (
                 onTimeChanged(value);
             }
         },
+        keyLeft: ",",
+        keyRight: ".",
     });
 };
