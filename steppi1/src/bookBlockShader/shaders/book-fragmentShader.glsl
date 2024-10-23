@@ -6,6 +6,8 @@ varying vec3 vPositionW;    // World position vector from vertex shader
 
 uniform sampler2D bookTexture; // Texture sampler
 
+const bool lights = false;
+
 layout(std140) uniform Lights {
     vec4 lightPositions[10];
     vec4 lightPositionsColors[10];
@@ -36,6 +38,11 @@ void main(void) {
     
     // Sample the texture at the fragment's UV coordinate
     vec4 textureColor = texture2D(bookTexture, vUV);
+
+    if (!lights) {
+        gl_FragColor = textureColor;
+        return;
+    }
     
     // Initialize final color to the sampled texture color
     vec3 finalColor = vec3(0.0);

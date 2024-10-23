@@ -170,12 +170,13 @@ export const createBookParts = ({
         {
             // build front and back block
             for (const body of [BookBody.FrontBlock, BookBody.BackBlock]) {
-                addElement(body, BookBodySide.Top, 0, verticesXZ);
                 addElement(body, BookBodySide.North, 0, verticesXY);
                 addElement(body, BookBodySide.East, 0, verticesYZ);
                 addElement(body, BookBodySide.South, 0, verticesXY);
                 // addElement(body, BookBodySide.Binder, 0, verticesYZ);
             }
+            addElement(BookBody.FrontBlock, BookBodySide.Bottom, 0, verticesXZ);
+            addElement(BookBody.BackBlock, BookBodySide.Top, 0, verticesXZ);
         }
         {
             // Build flip pages
@@ -265,7 +266,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 0.1);
+    material.setFloat("time", 1);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt(
@@ -278,6 +279,7 @@ export const createBookParts = ({
     material.setVector2("coverOverlap", new BABYLON.Vector2(...coverOverlap));
     material.setArray4("textureUVs", textureMap.flat(2));
     material.setInt("textureCount", textureMap.length);
+    // material.setFloat("flipAngle", Math.PI / 3);
 
     material.setUniformBuffer("Lights", uniformBuffer);
 
@@ -346,6 +348,8 @@ export const createBookParts = ({
 
                 if (globals.useDebugTime) {
                     time1 = globals.debugTime;
+                    material.setFloat("time", time1);
+                    return;
                 }
 
                 material.setFloat("time", time1);

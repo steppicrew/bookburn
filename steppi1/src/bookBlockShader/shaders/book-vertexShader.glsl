@@ -16,6 +16,7 @@ uniform float coverDepth; // Depth of one page
 uniform vec2 coverOverlap; // The width of the cover overlapping the pages
 uniform vec4 textureUVs[30]; // Texture clippings
 uniform int textureCount; // Number of textures
+uniform float flipAngle;
 
 varying vec2 vUV;
 varying vec3 vPositionW;
@@ -49,6 +50,7 @@ float backBlockDepth; // depth of pages on back cover
 float centerY; // point to rotate around
 float easedTime;
 float binderFactor;
+float maxAngle;
 
 const float PI = 3.1415926535897932384626433832795;
 const float PI_2 = PI / 2.0;
@@ -100,12 +102,14 @@ const int TextureIndexBinderSouth = 15;
 const int TextureIndexPagesOffest = 16;
 
 float ease(float x) {
-    // return x;
+    return x;
     return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
 }
 
 // Initialize global variables
 void init(void) {
+    maxAngle = flipAngle == 0.0 ? PI : flipAngle;
+
     /*
     tp: time1 to turn one page
     td: time1 between two ordniary pages
@@ -148,11 +152,12 @@ void init(void) {
     
     centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
     binderFactor = 0.5 - abs(abs(1.0 - easedTime) - 0.5);
+    binderFactor *= 0.2;
 }
 
 float binderFnRaw(vec3 position) {
-    // x = sqrt(centerY + coverDepth - y)
-    return sqrt(max(centerY + coverDepth - position.y, 0.0) / 3.0);
+    // x = PI - arcsin(y / centerY + coverDepth) - PI/2
+    return PI_2 - asin(position.y / (centerY + coverDepth));
 }
 
 float binderFn(vec3 position) {
@@ -168,12 +173,14 @@ vec3 binderFnNorm(vec3 position) {
         return vec3(-1.0, 0.0, 0.0);
     }
     /*
-        x(y) = sqrt(centerY + coverPepth - y) * binderFactor
-        x'(y) = dx/dy = (1/2 / sqrt(centerY + coverDepth - y)) * (-1) * binderFactor = -binderFactor / (2*binderFnRaw())
-        => tangente(y) = (-binderFactor, 2 * binderFnRaw())
-        => normal(y) = (-2 * binderFnRaw(), -binderFactor)
+        x = binderFn(position)
+        y(x) = sin((PI/2 + x) / binderFactor) * (centerY + coverDepth)
+        y'(x) = cos((PI/2 + x) / binderFactor) / binderFactor * (centerY + coverDepth)
+        => tangente(x) = (1, y'(x))
+        => normal(x) = (y'(x), -1)
     */
-    return normalize(vec3(-2.0 * binderFnRaw(position), -binderFactor, 0.0));
+    float x = binderFn(position);
+    return normalize(vec3(cos((PI_2 + x) / binderFactor) / binderFactor * (centerY + coverDepth), -1.0, 0.0));
 }
 
 vec3 scew(vec3 position) {
@@ -294,10 +301,10 @@ MyResult renderFrontCoverBody(MyInput data) {
     result.position.y += centerY + frontBlockDepth;
     
     if(easedTime > timePerPage && easedTime < 2.0 - timePerPage) {
-        result.theta = PI;
+        result.theta = maxAngle;
     } else {
         float t = easedTime < 1.0 ? easedTime : (2.0 - easedTime);
-        result.theta = PI * t / timePerPage;
+        result.theta = maxAngle * t / timePerPage;
     }
     
     return result;
@@ -316,15 +323,15 @@ MyResult renderFrontBlockBody(MyInput data) {
 
     vec2 pageDimensions = dimensions - coverOverlap - vec2(0.0, coverOverlap.y);
     
-    if (side == TopSide) {
+    if (side == BottomSide) {
         if (time == 0.0 || time == 1.0 || time == 2.0) {
             result.hide = true;
             return result;
         }
         int topPageIndex = getPageIndex(minFlipPageIndex < 0 ? 0 : realMinPageIndex - 1, false);
-        result.uv = mapUV(uv, topPageIndex);
-        result.normal = vec3(0.0, -1.0, 0.0);
-        result.position = vec3(uv.x * pageDimensions.x, frontBlockDepth, uv.y * pageDimensions.y);
+        result.uv = mapUVMirror(uv, topPageIndex);
+        result.normal = vec3(0.0, 1.0, 0.0);
+        result.position = vec3(uv.x * pageDimensions.x, 0.0, uv.y * pageDimensions.y);
     }
     else if (side == NorthSide) {
         result.uv = mapUV(uv, TextureIndexBlockNorth);
@@ -338,18 +345,14 @@ MyResult renderFrontBlockBody(MyInput data) {
     }
     else if (side == EastSide) {
         result.uv = mapUV(uv, TextureIndexBlockEast);
-        result.normal = vec3(-1.0, 0.0, 0.0);
-        result.position = vec3(0.0, frontBlockDepth - uv.x * frontBlockDepth, uv.y * pageDimensions.y);
-    }
-    else if (side == BinderSide) {
-        result.uv = mapUVMirror(vec2((frontBlockDepth + coverDepth - uv.x * frontBlockDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
         result.normal = vec3(1.0, 0.0, 0.0);
-        result.position = vec3(pageDimensions.x, frontBlockDepth - uv.x * frontBlockDepth, uv.y * dimensions.y - coverOverlap.y);
+        result.position = vec3(pageDimensions.x, uv.x * frontBlockDepth, uv.y * pageDimensions.y);
     }
-    result.position.x -= pageDimensions.x;
-    result.position.y += centerY - frontBlockDepth;
+    result.position.y += centerY;
     result.position.z += coverOverlap.y;
-    
+
+    result.theta = maxAngle;
+
     return result;
 }
 
@@ -383,6 +386,8 @@ MyResult renderPageBody(MyInput data) {
         // k: 1/r
         float normTime = 1.0 - _time;
         float k = -2.0 * floppyness * (0.5 - abs(0.5 - normTime)) * sign(1.0 - time);
+
+        k *= maxAngle / PI;
         
         // k = 0.0;
         
@@ -426,7 +431,7 @@ MyResult renderPageBody(MyInput data) {
     }
     
     float t = time < 1.0 ? (easedTime - frontCoverHeadStart) : ((2.0 - easedTime) - deltaPageTime);
-    result.theta = (t / deltaPageTime - float(index)) / float(flipPages) * PI;
+    result.theta = (t / deltaPageTime - float(index)) / float(flipPages) * maxAngle;
     
     return result;
 }
@@ -468,11 +473,6 @@ MyResult renderBackBlockBody(MyInput data) {
         result.uv = mapUV(uv, TextureIndexBlockEast);
         result.normal = vec3(1.0, 0.0, 0.0);
         result.position = vec3(pageDimensions.x, uv.x * backBlockDepth, uv.y * pageDimensions.y);
-    }
-    else if (side == BinderSide) {
-        result.uv = mapUVMirror(vec2((bookDepth - uv.x * backBlockDepth) / bookDepth, uv.y), TextureIndexBinderOuter);
-        result.normal = vec3(-1.0, 0.0, 0.0);
-        result.position = vec3(0.0, uv.x * backBlockDepth, uv.y * dimensions.y - coverOverlap.y);
     }
     result.position.y += centerY - backBlockDepth;
     result.position.z += coverOverlap.y;
@@ -529,11 +529,11 @@ MyResult renderBackCoverBody(MyInput data) {
     else {
         if (easedTime < 1.0) {
             float t = easedTime - (1.0 - timePerPage);
-            result.theta = PI * t / timePerPage;
+            result.theta = maxAngle * t / timePerPage;
         }
         else {
             float t = timePerPage - (easedTime - 1.0);
-            result.theta = PI * t / timePerPage;
+            result.theta = maxAngle * t / timePerPage;
         }
     }
     
@@ -594,7 +594,7 @@ MyResult renderBinderBody(MyInput data) {
         result.position.z = dimensions.y;
     }
     else if (side == SouthSide) {
-        result.uv = mapUVMirror(uv, TextureIndexBinderNorth);
+        result.uv = mapUVMirror(uv, TextureIndexBinderSouth);
         result.normal = vec3(0.0, 0.0, -1.0);
         if (uv.x == 0.0 || uv.x == 1.0) {
             normal.y = 0.0;
@@ -635,9 +635,9 @@ void main(void) {
         result.normal = rotateNormal(result.normal, modelMatrix);
     }
     
-    if((result.theta == 0.0 || result.theta == PI) && (body != PageBody) && (body != BinderBody)) {
+    if((result.theta == 0.0 || result.theta == maxAngle) && (body != PageBody) && (body != BinderBody)) {
         float factor;
-        if (result.theta ==  PI || body == FrontBlockBody) {
+        if (result.theta ==  maxAngle || body == FrontBlockBody) {
             factor = -1.0;
         }
         else {
