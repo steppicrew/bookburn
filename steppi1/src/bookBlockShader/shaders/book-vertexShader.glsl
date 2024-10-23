@@ -173,14 +173,18 @@ vec3 binderFnNorm(vec3 position) {
         return vec3(-1.0, 0.0, 0.0);
     }
     /*
-        x = binderFn(position)
-        y(x) = sin((PI/2 + x) / binderFactor) * (centerY + coverDepth)
-        y'(x) = cos((PI/2 + x) / binderFactor) / binderFactor * (centerY + coverDepth)
-        => tangente(x) = (1, y'(x))
-        => normal(x) = (y'(x), -1)
+        x(y) = (PI/2 - asin(y / (centerY + coverDepth))) * binderFactor
+        x(y) = PI/2 * binderFactor - asin(y / (centerY + coverDepth)) * binderFactor
+                    a(b) = asin(b) => a'(b) = 1/sqrt(1 - b²)
+        x'(y) = -1/sqrt(1 - y²/(centerY + coverDepth)²) / (centerY + coverDepth) * binderFactor;
+        => tangent(x) = (-1/sqrt(1 - y²/(centerY + coverDepth)²) * binderFactor, centerY + coverDepth)
+        => normal(x) = (-centerY - coverDepth, -1/sqrt(1 - y²/(centerY + coverDepth)²) * binderFactor)
     */
-    float x = binderFn(position);
-    return normalize(vec3(cos((PI_2 + x) / binderFactor) / binderFactor * (centerY + coverDepth), -1.0, 0.0));
+    return normalize(vec3(
+        -centerY - coverDepth,
+        -1.0 / sqrt(1.0 - position.y * position.y/((centerY + coverDepth)*(centerY + coverDepth))) * binderFactor,
+        0.0
+    ));
 }
 
 vec3 scew(vec3 position) {
