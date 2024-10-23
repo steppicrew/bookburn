@@ -6,7 +6,7 @@ varying vec3 vPositionW;    // World position vector from vertex shader
 
 uniform sampler2D bookTexture; // Texture sampler
 
-const bool lights = false;
+const bool lights = true;
 
 layout(std140) uniform Lights {
     vec4 lightPositions[10];
