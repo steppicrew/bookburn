@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 
+// Old, broken return type
 export const createCamera1 = (
     canvas: HTMLCanvasElement,
     scene: BABYLON.Scene
@@ -40,6 +41,9 @@ export const createCamera2 = async (
         scene
     );
     node.attachControl(canvas, true);
+    node.useNaturalPinchZoom = false; // Disable smooth zoom
+    node.zoomToMouseLocation = true; // Enable zoom to the mouse location
+    node.wheelDeltaPercentage = 0.02; // Slow down the zoom speed (lower values = slower zoom)
 
     return {
         node,
