@@ -16,8 +16,8 @@ const getTextureMap = (): TextureMap[] => {
         [2 / 3, 1],
     ];
     const textureUVCoverEdge: TextureMap = [
-        [0, 99 / 100],
-        [1 / 100, 1],
+        [0, 98 / 100],
+        [1 / 100, 99 / 100],
     ];
     const textureUVEmpty: TextureMap = [
         [2 / 3, 2 / 3],
