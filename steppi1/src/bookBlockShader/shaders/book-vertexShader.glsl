@@ -151,7 +151,7 @@ void init(void) {
     frontBlockDepth = float(min(max(minFlipPageIndex, 0), pageCount)) * pageDepth;
     backBlockDepth = float(pageCount - realMaxPageIndex - 1) * pageDepth;
     
-    centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
+    centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth) + float(realMaxPageIndex - realMinPageIndex) / 2.0 * pageDepth;
     binderFactor = 0.5 - abs(abs(1.0 - easedTime) - 0.5);
     binderFactor *= 0.4 * bookDepth;
 
@@ -432,7 +432,7 @@ MyResult renderPageBody(MyInput data) {
                     cos(theta_),
                     0.0));
         }
-        result.position.y += centerY;
+        result.position.y += centerY + (float(index - realMinPageIndex) - float(realMaxPageIndex - realMinPageIndex) / 2.0) * pageDepth;
         result.position.z += coverOverlap.y;
     }
     // End bendng page
@@ -637,27 +637,30 @@ void main(void) {
     
     MyResult result;
     
-    if(body == FrontCoverBody) {
+    if (body == FrontCoverBody) {
         result = renderFrontCoverBody(data);
-    } else if(body == FrontBlockBody) {
+    } else if (body == FrontBlockBody) {
         result = renderFrontBlockBody(data);
-    } else if(body == PageBody) {
+    } else if (body == PageBody) {
         result = renderPageBody(data);
-    } else if(body == BackBlockBody) {
+    } else if (body == BackBlockBody) {
         result = renderBackBlockBody(data);
-    } else if(body == BackCoverBody) {
+    } else if (body == BackCoverBody) {
         result = renderBackCoverBody(data);
-    } else if(body == BinderBody) {
+    } else if (body == BinderBody) {
         result = renderBinderBody(data);
     }
     
-    if(result.theta == 0.0 || result.theta == maxAngle) {
-        vec3 position = result.position;
+    vec3 position = result.position;
+    if (result.theta == 0.0 || result.theta == maxAngle) {
         if (result.theta == maxAngle) {
             position.y = 2.0 * centerY - result.position.y;
         }
-        result.position += scew(position);
     }
+    if (body == PageBody) {
+        position.y = centerY;
+    }
+    result.position += scew(position);
     
     if(!result.hide && result.theta != 0.0) {
         mat4 modelMatrix = getRotationMatrix(-result.theta, result.rotationOffset, vec3(0.0, 0.0, 1.0));
