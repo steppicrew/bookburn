@@ -243,6 +243,7 @@ export const createBookParts = ({
                 "worldViewProjection",
 
                 "time",
+                "flipAngle",
                 "floppyness",
                 "pageCount",
                 "flipPages",
@@ -315,11 +316,13 @@ export const createBookParts = ({
         msPerFlip,
         flipPages,
         startTime,
+        flipAngle,
     }: {
         direction: BookFlipDirection;
         msPerFlip: number;
         flipPages?: number;
         startTime?: number;
+        flipAngle?: number;
     }): Promise<void> =>
         new Promise((resolve) => {
             const _startTime = startTime || Date.now();
@@ -330,6 +333,7 @@ export const createBookParts = ({
 
             material.setFloat("time", timeOffset);
             material.setInt("flipPages", flipPages);
+            material.setFloat("flipAngle", flipAngle || 0);
 
             let started = false;
 

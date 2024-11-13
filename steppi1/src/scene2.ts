@@ -97,7 +97,10 @@ export const createScene1: CreateSceneFn = async (
     const startTime = Date.now();
     for (let i = 0; i < 1; ++i) {
         console.log("BOOK", i);
-        book = createAutoflipBook(scene, xrHelper, startTime);
+        book = createAutoflipBook(scene, xrHelper, {
+            startTime,
+            flipAngle: Math.PI / 3,
+        });
         updates.addUpdates(book.updates);
         const ii = i % 25;
         book.node.position = new BABYLON.Vector3(

@@ -51,6 +51,7 @@ float centerY; // point to rotate around
 float easedTime;
 float binderFactor;
 float maxAngle;
+float binderTop;
 
 const float PI = 3.1415926535897932384626433832795;
 const float PI_2 = PI / 2.0;
@@ -102,7 +103,7 @@ const int TextureIndexBinderSouth = 15;
 const int TextureIndexPagesOffest = 16;
 
 float ease(float x) {
-    // return x;
+    return x;
     return x < 0.5 ? 16.0 * x * x * x * x * x : 1.0 - pow(-2.0 * x + 2.0, 5.0) / 2.0;
 }
 
@@ -153,11 +154,13 @@ void init(void) {
     centerY = max(coverDepth + frontBlockDepth, coverDepth + backBlockDepth);
     binderFactor = 0.5 - abs(abs(1.0 - easedTime) - 0.5);
     binderFactor *= 0.4 * bookDepth;
+
+    binderTop = centerY + coverDepth * PI / maxAngle;
 }
 
 float binderFnRaw(vec3 position) {
     // x = PI - arcsin(y / centerY + coverDepth) - PI/2
-    return PI_2 - asin(position.y / (centerY + coverDepth));
+    return PI_2 - asin(position.y / binderTop);
 }
 
 float binderFn(vec3 position) {
@@ -182,7 +185,7 @@ vec3 binderFnNorm(vec3 position) {
     */
     return normalize(vec3(
         -centerY - coverDepth,
-        -1.0 / sqrt(1.0 - position.y * position.y/((centerY + coverDepth)*(centerY + coverDepth))) * binderFactor,
+        -1.0 / sqrt(1.0 - position.y * position.y/(binderTop * binderTop)) * binderFactor,
         0.0
     ));
 }
@@ -304,7 +307,7 @@ MyResult renderFrontCoverBody(MyInput data) {
     }
     result.position.y += centerY + frontBlockDepth;
     
-    if(easedTime > timePerPage && easedTime < 2.0 - timePerPage) {
+    if (easedTime > timePerPage && easedTime < 2.0 - timePerPage) {
         result.theta = maxAngle;
     } else {
         float t = easedTime < 1.0 ? easedTime : (2.0 - easedTime);
@@ -573,26 +576,27 @@ MyResult renderBinderBody(MyInput data) {
     float frontMaxX = frontBlockDepth / width;
     float backMinX = 1.0 - backBlockDepth / width;
 
+    vec3 position;
     if (uv.x <= frontMaxX) {
         // Binder on front block (left)
-        result.position.y = centerY - (frontMaxX - uv.x) * width;
-        result.position.x = -binderFn(result.position);
+        position= result.position;
+        position.y = centerY - (frontMaxX - uv.x) * width;
+        result.position.y = 2.0 * centerY - position.y;
+
+        result.theta = maxAngle;
     }
     else if (uv.x < backMinX) {
         // Binder on flipping pages (middle)
         result.position.y = centerY;
-        float maxX = binderFn(result.position);
-        result.position.x = (uv.x - frontMaxX) / (backMinX - frontMaxX) * 2.0 * maxX - maxX;
+        result.position.x = 0.0;
+        position= result.position;
     }
     else {
         // Binder on back block (right)
         result.position.y = centerY - (uv.x - backMinX) * width;
-        result.position.x = binderFn(result.position);
+        position= result.position;
     }
-    vec3 normal = binderFnNorm(result.position);
-    if (frontMaxX > 0.0 && uv.x <= frontMaxX) {
-        normal.x = -normal.x;
-    }
+    vec3 normal = binderFnNorm(position);
 
     if (side == BottomSide) {
         float uvOffset = coverDepth / bookDepth;
@@ -647,21 +651,18 @@ void main(void) {
         result = renderBinderBody(data);
     }
     
+    if(result.theta == 0.0 || result.theta == maxAngle) {
+        vec3 position = result.position;
+        if (result.theta == maxAngle) {
+            position.y = 2.0 * centerY - result.position.y;
+        }
+        result.position += scew(position);
+    }
+    
     if(!result.hide && result.theta != 0.0) {
         mat4 modelMatrix = getRotationMatrix(-result.theta, result.rotationOffset, vec3(0.0, 0.0, 1.0));
         result.position = rotatePosition(result.position, modelMatrix);
         result.normal = rotateNormal(result.normal, modelMatrix);
-    }
-    
-    if((result.theta == 0.0 || result.theta == maxAngle) && (body != PageBody) && (body != BinderBody)) {
-        float factor;
-        if (result.theta ==  maxAngle || body == FrontBlockBody) {
-            factor = -1.0;
-        }
-        else {
-            factor = 1.0;
-        }
-        result.position += factor * scew(result.position);
     }
     
     /*
