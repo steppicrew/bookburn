@@ -1,12 +1,12 @@
+import * as BABYLON from "babylonjs";
 import { TextureManager, updateWrapper } from "../sceneUtils";
 import { createBookParts } from "./bookParts";
-import * as BABYLON from "babylonjs";
 import { TextureMap } from "./types";
 
 const defaultTexture = "assets/BookTexture-xcf.png";
 const defaultMsPerFlip = 500;
 
-const getTextureMap = (): TextureMap[] => {
+const getTextureMap = (): [TextureMap[], number[]] => {
     const textureUVCoverFront: TextureMap = [
         [0, 2 / 3],
         [1 / 3, 1],
@@ -50,37 +50,52 @@ const getTextureMap = (): TextureMap[] => {
     ];
 
     return [
-        // Front cover
-        textureUVCoverFront, // Top
-        textureUVEmpty, // Bottom
-        textureUVCoverEdge, // North
-        textureUVCoverEdge, // East
-        textureUVCoverEdge, // South
+        [
+            textureUVCoverFront,
+            textureUVEmpty,
+            textureUVCoverEdge,
+            textureUVCut,
+            textureUVCoverBack,
+            textureUVPage1,
+            textureUVPage2,
+            textureUVPage3,
+            textureUVPage4,
+            textureUVPage5,
+        ],
+        [
+            // Front cover
+            0, // Top
+            1, // Bottom
+            2, // North
+            2, // East
+            2, // South
 
-        // Pages block
-        textureUVCut, // North
-        textureUVCut, // East
-        textureUVCut, // South
+            // Pages block
+            3, // North
+            3, // East
+            3, // South
 
-        // BackCover
-        textureUVEmpty, // Top
-        textureUVCoverBack, // Bottom
-        textureUVCoverEdge, // North
-        textureUVCoverEdge, // East
-        textureUVCoverEdge, // South
+            // BackCover
+            1, // Top
+            4, // Bottom
+            2, // North
+            2, // East
+            2, // South
 
-        // Edge outer
-        textureUVCoverFront,
-        textureUVCoverEdge, // North
-        textureUVCoverEdge, // South
+            // Binder
+            1, // Binder inner (top)
+            0, // Binder outer (bottom)
+            2, // North
+            2, // South
 
-        // Pages
-        textureUVPage1,
-        textureUVPage2,
-        textureUVPage3,
-        textureUVPage4,
-        textureUVPage5,
-    ];
+            // Pages
+            5,
+            6,
+            7,
+            8,
+            9,
+        ],
+    ] as const;
 };
 
 export const setupBook = (
@@ -103,7 +118,7 @@ export const setupBook = (
     const updates = updateWrapper();
     const bookNode = new BABYLON.TransformNode("book", scene);
 
-    const textureMap = getTextureMap();
+    const [textureMap, textureIndexes] = getTextureMap();
 
     bookNode.onDispose = () => {
         updates.dispose();
@@ -122,6 +137,7 @@ export const setupBook = (
         parentNode: bookNode,
         texture: TextureManager.get(texture, scene),
         textureMap: textureMap,
+        textureIndexes: textureIndexes,
         floppyness: 1,
         vertices: [20, 20, 1],
     });
