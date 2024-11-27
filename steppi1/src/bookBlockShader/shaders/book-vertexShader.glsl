@@ -58,7 +58,7 @@ const float PI = 3.1415926535897932384626433832795;
 const float PI_2 = PI / 2.0;
 
 const bool renderFrontCover = true;
-const bool renderFrontBlock = true;
+const bool renderFrontBlock = false;
 const bool renderPages = true;
 const bool renderBackBlock = true;
 const bool renderBackCover = true;
@@ -409,7 +409,8 @@ MyResult renderPageBody(MyInput data) {
         
         // k = 0.0;
         
-        if (k == 0.0) {
+        // There are floating point errors for too small k
+        if (abs(k) < 0.001) {
             result.position = vec3(uv.x * pageDimensions.x, 0.0, uv.y * pageDimensions.y);
             result.normal = vec3(0.0, 1.0, 0.0);
         } else {
@@ -583,7 +584,7 @@ MyResult renderBinderBody(MyInput data) {
     float backMinX = 1.0 - backBlockDepth / width;
 
     vec3 position;
-    if (uv.x <= frontMaxX) {
+    if (uv.x < frontMaxX) {
         // Binder on front block (left)
         position= result.position;
         position.y = centerY - (frontMaxX - uv.x) * width;
