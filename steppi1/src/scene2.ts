@@ -1,10 +1,10 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
+import { createAutoflipBook } from "./autoflipBook";
+import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
 import { CreateCamera2 } from "./camera1";
 import { CreateSceneFn } from "./sceneEx";
 import { updateWrapper } from "./sceneUtils";
-import { createAutoflipBook } from "./autoflipBook";
-import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
 
 // TODO: auslagern
 export const globals = {
@@ -99,7 +99,7 @@ export const createScene1: CreateSceneFn = async (
         console.log("BOOK", i);
         book = createAutoflipBook(scene, xrHelper, {
             startTime,
-            flipAngle: Math.PI / 4,
+            flipAngle: Math.PI,
         });
         updates.addUpdates(book.updates);
         const ii = i % 25;

@@ -1,21 +1,20 @@
 import * as BABYLON from "babylonjs";
-import vertexShader from "./shaders/book-vertexShader.glsl";
-import fragmentShader from "./shaders/book-fragmentShader.glsl";
+import { globals } from "../scene2";
 import { updateWrapper } from "../sceneUtils";
 import { setLights } from "../shaderTools";
+import fragmentShader from "./shaders/book-fragmentShader.glsl";
+import vertexShader from "./shaders/book-vertexShader.glsl";
 import {
     BookBody,
     BookBodySide,
     BookFlipDirection,
     BookPageNum,
     BookType,
-    MaxBookPageNum,
     RangeInt,
     TextureMap,
     XYZInt,
     XZInt,
 } from "./types";
-import { globals } from "../scene2";
 
 const defaultXVertices = 10;
 const defaultYVertices = 5;
@@ -73,6 +72,7 @@ export const createBookParts = ({
     flipPageCount,
     texture,
     textureMap,
+    textureIndexes,
     floppyness,
     vertices,
     parentNode,
@@ -88,6 +88,7 @@ export const createBookParts = ({
     flipPageCount?: BookPageNum;
     texture: BABYLON.Texture;
     textureMap: TextureMap[];
+    textureIndexes: number[];
     floppyness?: number;
     vertices?: XYZInt;
     parentNode: BABYLON.Node;
@@ -164,7 +165,6 @@ export const createBookParts = ({
                 addElement(body, BookBodySide.North, 0, vertices11);
                 addElement(body, BookBodySide.East, 0, vertices11);
                 addElement(body, BookBodySide.South, 0, vertices11);
-                addElement(body, BookBodySide.Binder, 0, vertices11);
             }
         }
         {
@@ -196,6 +196,7 @@ export const createBookParts = ({
             }
         }
         {
+            addElement(BookBody.Binder, BookBodySide.Top, 0, vertices2Y1);
             addElement(BookBody.Binder, BookBodySide.North, 0, vertices2Y1);
             addElement(BookBody.Binder, BookBodySide.Bottom, 0, vertices2Y1);
             addElement(BookBody.Binder, BookBodySide.South, 0, vertices2Y1);
@@ -252,6 +253,7 @@ export const createBookParts = ({
                 "coverDepth",
                 "coverOverlap",
                 "textureUVs",
+                "textureIndexes",
                 "textureCount",
             ],
             samplers: ["bookTexture"],
@@ -267,7 +269,7 @@ export const createBookParts = ({
 
     // mat.backFaceCulling = false;
     material.setTexture("bookTexture", texture);
-    material.setFloat("time", 1);
+    material.setFloat("time", 0);
     material.setFloat("floppyness", floppyness || 0);
     material.setInt("pageCount", pageCount);
     material.setInt(
@@ -279,7 +281,8 @@ export const createBookParts = ({
     material.setFloat("coverDepth", coverDepth);
     material.setVector2("coverOverlap", new BABYLON.Vector2(...coverOverlap));
     material.setArray4("textureUVs", textureMap.flat(2));
-    material.setInt("textureCount", textureMap.length);
+    material.setFloats("textureIndexes", textureIndexes);
+    material.setInt("textureCount", textureIndexes.length);
     // material.setFloat("flipAngle", Math.PI / 3);
 
     material.setUniformBuffer("Lights", uniformBuffer);
