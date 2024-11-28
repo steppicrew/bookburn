@@ -1,132 +1,151 @@
 import * as BABYLON from "babylonjs";
-import { CreateSceneFn } from "./sceneEx";
-import { CreateCamera2 } from "./camera1";
-import { createSkybox, createGround, createSphere } from "./baseScene";
-import { makeCreateFire } from "./fire4";
-import { updateWrapper } from "./sceneUtils";
+import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
 import { createAutoflipBook } from "./autoflipBook";
-import { initXR } from "./xr";
-
-const createLight = (scene: BABYLON.Scene) => {
-    const light = new BABYLON.DirectionalLight(
-        "light",
-        new BABYLON.Vector3(0.01, -1, 0.01),
-        scene
-    );
-    light.position = new BABYLON.Vector3(3, 20, 3);
-
-    // light.intensity = 1.0;
-
-    let angle = 0;
-
-    const update = () => {
-        /*
-        camera.node.position = new BABYLON.Vector3(
-            -4.142467027972506,
-            3.6664359864043488,
-            6.308459603515606
-        );
-        camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
-        camera.node.fov = 0.8;
-        */
-        /*
-        angle += 0.01;
-
-        light.direction = new BABYLON.Vector3(
-            Math.sin(angle),
-            -1,
-            Math.cos(angle)
-        );
-        */
-    };
-
-    var shadowGenerator = new BABYLON.ShadowGenerator(512, light);
-
-    return { light, update, shadowGenerator };
-};
-
-// Create a simple sphere to interact with
-const createBox = (
-    scene: BABYLON.Scene,
-    shadowGenerator: BABYLON.ShadowGenerator
-) => {
-    const mesh = BABYLON.MeshBuilder.CreateBox(
-        "sphere",
-        { width: 0.5, height: 0.5, depth: 0.5 },
-        scene
-    );
-    mesh.position.x = -3;
-    mesh.position.y = 1;
-    mesh.position.z = 2;
-    shadowGenerator.addShadowCaster(mesh);
-
-    const update = () => {
-        // nothing
-    };
-
-    return { box: mesh, update };
-};
+import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
+import { CreateCamera2 } from "./camera1";
+import { CreateSceneFn } from "./sceneEx";
+import { updateWrapper } from "./sceneUtils";
+import { globals } from "./globals";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    const updates = updateWrapper();
-
     scene.debugLayer.show();
 
-    const { update: updateLight, shadowGenerator } = createLight(scene);
-    updates.add(updateLight);
+    initBookDebugGui(
+        scene,
+        (manual) => {
+            globals.useDebugTime = manual;
+        },
+        (time) => {
+            globals.debugTime = time;
+        }
+    );
 
-    createSkybox(scene);
+    const updates = updateWrapper();
 
-    const ground = createGround(scene);
-    ground.isPickable = false;
-    xrHelper.teleportation.addFloorMesh(ground);
+    // *** Light ***
 
-    const { update: updateSphere } = createSphere(scene, shadowGenerator);
-    updates.add(updateSphere);
+    if (false) {
+        if (false) {
+            const light = new BABYLON.HemisphericLight(
+                "light",
+                new BABYLON.Vector3(0, 1, 0),
+                scene
+            );
+        } else {
+            const light = new BABYLON.PointLight(
+                "light",
+                new BABYLON.Vector3(0, 10000, 0),
+                scene
+            );
+        }
+        /*
+        const light2 = new BABYLON.HemisphericLight(
+            "light2",
+            new BABYLON.Vector3(0, 0, 1),
+            scene
+        );
+        */
+    } else {
+        const light = new BABYLON.HemisphericLight(
+            "light",
+            new BABYLON.Vector3(1.2, 1, 0),
+            // new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
 
-    createBox(scene, shadowGenerator);
+        let angle = 0;
 
-    initXR(scene, xrHelper);
+        updates.add(() => {
+            // return;
+            /*
+            camera.node.position = new BABYLON.Vector3(
+                -4.142467027972506,
+                3.6664359864043488,
+                6.308459603515606
+            );
+            camera.node.rotation = new BABYLON.Vector3(0, 0, 0);
+            camera.node.fov = 0.8;
+    */
+            angle += 0.01;
 
-    // *** Book ***
-    if (true) {
-        const book = createAutoflipBook(scene, xrHelper, {});
-        updates.addUpdates(book.updates);
-
-        book.node.position.z = 3;
-        book.node.position.x = -2.3;
-        book.node.position.y = 2;
-        // book.node.rotation.z = Math.PI / 2;
-        book.node.rotation.y = -Math.PI / 4;
-        book.node.rotation.x = -Math.PI / 6;
+            light.direction = new BABYLON.Vector3(
+                Math.sin(angle),
+                1,
+                Math.cos(angle)
+            );
+        });
+        new BABYLON.HemisphericLight(
+            "light2",
+            new BABYLON.Vector3(-1.2, -1, 0),
+            // new BABYLON.Vector3(0, 1, 0),
+            scene
+        );
     }
 
-    const createFire = makeCreateFire(scene);
+    // *** Book ***
 
-    // ** Fire **
-    const relX = 8;
+    let book;
+    const startTime = Date.now();
+    for (let i = 0; i < 1; ++i) {
+        console.log("BOOK", i);
+        book = createAutoflipBook(scene, xrHelper, {
+            startTime,
+            flipAngle: Math.PI,
+        });
+        updates.addUpdates(book.updates);
+        const ii = i % 25;
+        book.node.position = new BABYLON.Vector3(
+            Math.floor(ii / 5) * 5,
+            (ii % 5) * 5,
+            Math.floor(i / 25) * 5
+        );
+        // book.node.rotation = new BABYLON.Vector3(-0.5, 0, 0);
+    }
 
-    const fireNode1 = createFire(1000, 0.7);
-    fireNode1.position.x -= relX * 1;
+    // Try anti-aliasing
+    if (false) {
+        var pipeline = new BABYLON.DefaultRenderingPipeline(
+            "default",
+            false,
+            scene,
+            scene.cameras
+        );
 
+        // Anti-aliasing
+        pipeline.samples = 4;
+        pipeline.fxaaEnabled = true;
+        pipeline.grainEnabled = true;
+        pipeline.grain.intensity = 3;
+    }
     /*
-    const fireNode2 = createFire(50, 1);
-    fireNode2.position.x -= relX * 2;
-
-    const fireNode3 = createFire(50, 1);
-    fireNode3.position.x -= relX * 3;
-
-    const fireNode4 = createFire(10, 1);
-    fireNode4.position.x -= relX * 4;
+    if (false) {
+        book.node.position.z = 1;
+        book.node.position.x = 0.3;
+        book.node.position.y = 0;
+        //book.node.rotation.z = -Math.PI / 2;
+        // book.node.rotation.y = Math.PI / 4;
+        book.node.rotation.x = -Math.PI / 6;
+    }
     */
 
-    camera.node.setTarget(fireNode1.position);
+    // camera.node.setTarget(book!.node.position.clone());
+    camera.node.setTarget(new BABYLON.Vector3(0, 0, 0));
 
-    new BABYLON.AxesViewer(scene);
+    // Create a simple sphere to interact with
+    const sphere = BABYLON.MeshBuilder.CreateSphere(
+        "sphere",
+        { diameter: 1 },
+        scene
+    );
+    sphere.position.x = -2.5;
+    sphere.position.y = 1;
+    sphere.position.z = 0;
+
+    // new BABYLON.AxesViewer(scene);
 
     return updates.update;
 };

@@ -14,4 +14,5 @@ export default defineConfig({
         outDir: "dist", // Output directory for production build
     },
     plugins: [glsl(), basicSsl({})],
+    assetsInclude: ["**/*.gltf", "**/*.glb"],
 });

@@ -1,8 +1,9 @@
 import * as BABYLON from "babylonjs";
-import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
+import "babylonjs-loaders";
+
 import { SceneEx } from "./sceneEx";
 import { state } from "./state";
-import { createScene1 } from "./scene.Books";
+import { createScene1 } from "./scene.Gltf";
 
 const start = async () => {
     if (!state.canvas) {
