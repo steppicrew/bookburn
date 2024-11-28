@@ -104,17 +104,19 @@ export const makeGui = (scene: BABYLON.Scene) => {
         const onKeyDown = (event: KeyboardEvent) => {
             if (!slider.isEnabled) return;
 
+            const _step = event.shiftKey ? step / 10 : step;
+
             if (
                 keyLeft &&
                 (event.key === keyLeft || event.key === keyLeft.toUpperCase())
             ) {
-                _setValue(slider.value - step);
+                _setValue(slider.value - _step);
             }
             if (
                 keyRight &&
                 (event.key === keyRight || event.key === keyRight.toUpperCase())
             ) {
-                _setValue(slider.value + step);
+                _setValue(slider.value + _step);
             }
         };
 
