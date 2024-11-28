@@ -165,7 +165,6 @@ export const createBookParts = ({
                 addElement(body, BookBodySide.North, 0, vertices11);
                 addElement(body, BookBodySide.East, 0, vertices11);
                 addElement(body, BookBodySide.South, 0, vertices11);
-                addElement(body, BookBodySide.Binder, 0, vertices11);
             }
         }
         {

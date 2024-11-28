@@ -1,8 +1,8 @@
 precision highp float;
 
-varying vec2 vUV; // Receive UV coordinates from the vertex shader
-varying vec3 vNormalW;    // World normal vector from the vertex shader
-varying vec3 vPositionW;    // World position vector from vertex shader
+in vec2 vUV; // Receive UV coordinates from the vertex shader
+in vec3 vNormalW;    // World normal vector from the vertex shader
+in vec3 vPositionW;    // World position vector from vertex shader
 
 uniform sampler2D bookTexture; // Texture sampler
 
@@ -31,6 +31,10 @@ vec3 colorContribution(vec3 normal, vec3 lightDir, vec3 lightColor, float lightI
 }
 
 void main(void) {
+    // Debug normale
+    // gl_FragColor = vec4(normalize(vNormalW) / 2.0 + vec3(0.5, 0.5, 0.5), 1.0);
+    // return;
+
     if (dot(vNormalW, vNormalW) == 0.0) {
         discard;
         return;
