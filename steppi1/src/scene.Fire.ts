@@ -3,9 +3,9 @@ import "babylonjs-loaders"; // Optional: if you're loading external assets like 
 import { createAutoflipBook } from "./autoflipBook";
 import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
 import { CreateCamera2 } from "./camera1";
-import { globals } from "./gloabls";
 import { CreateSceneFn } from "./sceneEx";
 import { updateWrapper } from "./sceneUtils";
+import { globals } from "./globals";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,

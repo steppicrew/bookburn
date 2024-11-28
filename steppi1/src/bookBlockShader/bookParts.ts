@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { globals } from "../gloabls";
+import { globals } from "../globals";
 import { updateWrapper } from "../sceneUtils";
 import { setLights } from "../shaderTools";
 import fragmentShader from "./shaders/book-fragmentShader.glsl";

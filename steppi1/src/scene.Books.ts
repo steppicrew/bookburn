@@ -94,7 +94,7 @@ export const createScene1: CreateSceneFn = async (
 
     // *** Book ***
     if (true) {
-        const book = createAutoflipBook(scene, xrHelper);
+        const book = createAutoflipBook(scene, xrHelper, {});
         updates.addUpdates(book.updates);
 
         book.node.position.z = 3;
