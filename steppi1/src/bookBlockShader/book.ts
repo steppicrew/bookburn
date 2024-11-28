@@ -21,7 +21,7 @@ const getTextureMap = (): [TextureMap[], number[]] => {
     ];
     const textureUVEmpty: TextureMap = [
         [2 / 3, 2 / 3],
-        [1, 1],
+        [5 / 6, 1],
     ];
     const textureUVPage1: TextureMap = [
         [0, 1 / 3],
