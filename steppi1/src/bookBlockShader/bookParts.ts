@@ -374,5 +374,6 @@ export const createBookParts = ({
     return {
         flipBook,
         updates,
+        mesh,
     };
 };

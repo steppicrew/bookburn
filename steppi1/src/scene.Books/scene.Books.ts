@@ -1,13 +1,14 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
+import { globals } from "../bookBlockShader/globals";
 import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
 import { updateWrapper } from "../lib/sceneUtils";
-import { globals } from "../bookBlockShader/globals";
 
 import { createAutoflipBook } from "./autoflipBook";
 import { initBookDebugGui } from "./bookDebugGui";
+import { getInitializedHavok } from "./physics";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,
@@ -15,6 +16,14 @@ export const createScene1: CreateSceneFn = async (
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
     scene.debugLayer.show();
+
+    // Initialize physics
+    {
+        const havokInstance = await getInitializedHavok();
+        const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
+        const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
+        scene.enablePhysics(gravityVector, havokPlugin);
+    }
 
     initBookDebugGui(
         scene,
@@ -105,7 +114,16 @@ export const createScene1: CreateSceneFn = async (
             (ii % 5) * 5,
             Math.floor(i / 25) * 5
         );
-        // book.node.rotation = new BABYLON.Vector3(-0.5, 0, 0);
+        book.node.rotation = new BABYLON.Vector3(-1.3, 0, 0);
+
+        {
+            const bookAggregate = new BABYLON.PhysicsAggregate(
+                book.mesh,
+                BABYLON.PhysicsShapeType.BOX,
+                { mass: 0.1, restitution: 1 },
+                scene
+            );
+        }
     }
 
     // Try anti-aliasing
@@ -144,10 +162,57 @@ export const createScene1: CreateSceneFn = async (
         scene
     );
     sphere.position.x = -2.5;
-    sphere.position.y = 1;
+    sphere.position.y = 2;
     sphere.position.z = 0;
 
-    // new BABYLON.AxesViewer(scene);
+    // Add color
+    {
+        const sphereMaterial = new BABYLON.StandardMaterial(
+            "sphereMaterial",
+            scene
+        );
+        sphereMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red color
+        sphere.material = sphereMaterial; // Apply the material to the sphere
+    }
+
+    // Our built-in 'ground' shape.
+    const ground = BABYLON.MeshBuilder.CreateGround(
+        "ground",
+        { width: 10, height: 10 },
+        scene
+    );
+
+    // Ground color
+    {
+        const groundMaterial = new BABYLON.StandardMaterial(
+            "groundMaterial",
+            scene
+        );
+        groundMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        groundMaterial.backFaceCulling = false;
+        ground.material = groundMaterial;
+    }
+
+    // Physics
+    {
+        // Create a sphere shape and the associated body. Size will be determined automatically.
+        const sphereAggregate = new BABYLON.PhysicsAggregate(
+            sphere,
+            BABYLON.PhysicsShapeType.SPHERE,
+            { mass: 1, restitution: 0.75 },
+            scene
+        );
+
+        // Create a static box shape.
+        const groundAggregate = new BABYLON.PhysicsAggregate(
+            ground,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 0 },
+            scene
+        );
+    }
+
+    new BABYLON.AxesViewer(scene);
 
     return updates.update;
 };

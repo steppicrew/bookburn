@@ -148,5 +148,6 @@ export const setupBook = (
         updates: updates,
         node: bookNode,
         flipBook: bookParts.flipBook,
+        mesh: bookParts.mesh,
     };
 };

@@ -1,3 +1,4 @@
+import * as BABYLON from "babylonjs";
 import { UpdateWrapper } from "../lib/sceneUtils";
 
 // Helper type that increments numbers from 0 to N
@@ -33,6 +34,7 @@ export interface BookType {
         flipAngle?: number;
     }) => Promise<void>;
     updates: UpdateWrapper;
+    mesh: BABYLON.Mesh;
 }
 
 export const MaxBookPageNum = 64;
