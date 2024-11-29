@@ -3,7 +3,7 @@ import "babylonjs-loaders";
 
 import { SceneEx } from "./sceneEx";
 import { state } from "./state";
-import { createScene1 } from "./scene.Gltf";
+import { createScene1 } from "./scene.Gltf/scene.Gltf";
 
 const start = async () => {
     if (!state.canvas) {
