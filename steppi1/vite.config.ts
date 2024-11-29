@@ -1,7 +1,7 @@
-import { defineConfig, loadEnv } from "vite";
 import basicSsl from "@vitejs/plugin-basic-ssl";
-import glsl from "vite-plugin-glsl";
 import path from "path";
+import { defineConfig, loadEnv } from "vite";
+import glsl from "vite-plugin-glsl";
 
 // You can set your own entry point:
 // Create a file .env.local with this contents:
@@ -32,5 +32,6 @@ export default defineConfig(({ mode }) => {
         define: {
             "process.env.SCENE": JSON.stringify(entryScene), // To access in code
         },
+        optimizeDeps: { exclude: ["@babylonjs/havok"] }, // to serve HavokPhysics.wasm from it's original location
     };
 });
