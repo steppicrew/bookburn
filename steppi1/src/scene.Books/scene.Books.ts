@@ -163,7 +163,7 @@ export const createScene: CreateSceneFn = async (
             "sphereMaterial",
             scene
         );
-        sphereMaterial.diffuseColor = new BABYLON.Color3(1, 0, 0); // Red color
+        sphereMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0); // Red color
         sphere.material = sphereMaterial; // Apply the material to the sphere
     }
 
