@@ -34,7 +34,8 @@ export interface BookType {
         flipAngle?: number;
     }) => Promise<void>;
     updates: UpdateWrapper;
-    mesh: BABYLON.Mesh;
+    addPhysics: () => BABYLON.PhysicsAggregate;
+    dispose: () => void;
 }
 
 export const MaxBookPageNum = 64;

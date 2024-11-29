@@ -4,7 +4,10 @@ import { setupBook } from "../bookBlockShader/book";
 export const createAutoflipBook = (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience,
-    { startTime, flipAngle }: { startTime?: number; flipAngle?: number }
+    {
+        startTime,
+        flipAngle,
+    }: { startTime?: number; flipAngle?: number; withPhysics?: boolean }
 ) => {
     const book = setupBook(scene, xrHelper, {
         pageCount: 200,
@@ -16,7 +19,7 @@ export const createAutoflipBook = (
 
     if (true) {
         const flipLeft = (startTime?: number) =>
-            book
+            book.book
                 .flipBook({
                     direction: "left",
                     msPerFlip: 3000,
@@ -26,7 +29,7 @@ export const createAutoflipBook = (
                 })
                 .then(() => setTimeout(flipRight, 1000));
         const flipRight = () =>
-            book
+            book.book
                 .flipBook({
                     direction: "right",
                     msPerFlip: 2000,

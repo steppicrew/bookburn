@@ -123,6 +123,7 @@ export const setupBook = (
     bookNode.onDispose = () => {
         updates.dispose();
         TextureManager.reset();
+        bookParts.dispose();
     };
 
     const bookParts = createBookParts({
@@ -147,7 +148,6 @@ export const setupBook = (
     return {
         updates: updates,
         node: bookNode,
-        flipBook: bookParts.flipBook,
-        mesh: bookParts.mesh,
+        book: bookParts,
     };
 };

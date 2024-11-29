@@ -115,15 +115,7 @@ export const createScene: CreateSceneFn = async (
             Math.floor(i / 25) * 5
         );
         book.node.rotation = new BABYLON.Vector3(-1.3, 0, 0);
-
-        {
-            const bookAggregate = new BABYLON.PhysicsAggregate(
-                book.mesh,
-                BABYLON.PhysicsShapeType.BOX,
-                { mass: 0.1, restitution: 1 },
-                scene
-            );
-        }
+        const physicsAggregate = book.book.addPhysics();
     }
 
     // Try anti-aliasing
@@ -178,7 +170,7 @@ export const createScene: CreateSceneFn = async (
     // Our built-in 'ground' shape.
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
-        { width: 10, height: 10 },
+        { width: 100, height: 100 },
         scene
     );
 

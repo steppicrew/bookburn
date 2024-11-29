@@ -292,6 +292,8 @@ export const createBookParts = ({
     // material.wireframe = true;
     mesh.material = material;
 
+    let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
+
     // Set BB to position on right side at time == 0, on left at time == 1, and on both sides at time in between
     const setBoundingBox = (time: number) => {
         const minX = time > 0 ? -width : 0;
@@ -307,6 +309,9 @@ export const createBookParts = ({
                 )
             )
         );
+        if (false && physicsAggregate) {
+            addPhysics();
+        }
     };
 
     setBoundingBox(0);
@@ -315,6 +320,35 @@ export const createBookParts = ({
     if (parentNode) {
         mesh.parent = parentNode;
     }
+
+    const addPhysics = () => {
+        if (physicsAggregate) {
+            physicsAggregate.dispose();
+        }
+        physicsAggregate = new BABYLON.PhysicsAggregate(
+            mesh,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 0.1, restitution: 1 },
+            scene
+        );
+        return physicsAggregate;
+    };
+
+    const keybordObserver = scene.onKeyboardObservable.add((kbInfo) => {
+        if (!physicsAggregate) {
+            return;
+        }
+        switch (kbInfo.type) {
+            case BABYLON.KeyboardEventTypes.KEYDOWN:
+                switch (kbInfo.event.key.toLowerCase()) {
+                    case "u":
+                        physicsAggregate.body.applyImpulse(
+                            new BABYLON.Vector3(0, 0.2, 0),
+                            new BABYLON.Vector3(0.5, 0.5, 0)
+                        );
+                }
+        }
+    });
 
     const flipBook = ({
         direction,
@@ -371,9 +405,14 @@ export const createBookParts = ({
 
             updates.add(update);
         });
+
+    const dispose = () => {
+        scene.onKeyboardObservable.remove(keybordObserver);
+    };
     return {
         flipBook,
         updates,
-        mesh,
+        addPhysics,
+        dispose,
     };
 };
