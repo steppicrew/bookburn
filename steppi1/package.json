@@ -22,5 +22,10 @@
         "typescript": "5.7.2",
         "vite": "6.0.1",
         "vite-plugin-glsl": "1.3.0"
+    },
+    "overrides": {
+        "vite-plugin-glsl": {
+            "vite": "6.0.1"
+        }
     }
 }
