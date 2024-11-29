@@ -5,12 +5,12 @@ import path from "path";
 
 // You can set your own entry point:
 // Create a file .env.local with this contents:
-// VITE_ENTRY_POINT=main.Gltf.ts
+// VITE_SCENE=Gltf
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());
-    const entryPoint = env.VITE_ENTRY_POINT || "main";
-    console.log("ENTRY POINT:", entryPoint);
+    const entryScene = env.VITE_ENTRY_POINT;
+    console.log("ENTRY SCENE:", entryScene);
     return {
         server: {
             host: "0.0.0.0", // Bind to all interfaces
@@ -19,30 +19,18 @@ export default defineConfig(({ mode }) => {
                 overlay: true, // Ensure the error overlay is enabled
             },
         },
-        plugins: [
-            glsl(),
-            basicSsl({}),
-            {
-                name: "html-transform",
-                transformIndexHtml(html) {
-                    return html.replace(
-                        /<script type="module" src=".*"><\/script>/,
-                        `<script type="module" src="/src/${entryPoint}"></script>`
-                    );
-                },
-            },
-        ],
+        plugins: [glsl(), basicSsl({})],
         assetsInclude: ["**/*.gltf", "**/*.glb"],
         build: {
             outDir: "dist",
             rollupOptions: {
                 input: {
-                    main: path.resolve(__dirname, `src/${entryPoint}.ts`),
+                    main: path.resolve(__dirname, `src/main.ts`),
                 },
             },
         },
         define: {
-            "process.env.ENTRY_POINT": JSON.stringify(entryPoint), // Optional, to access in code
+            "process.env.SCENE": JSON.stringify(entryScene), // To access in code
         },
     };
 });

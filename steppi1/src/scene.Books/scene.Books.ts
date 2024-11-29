@@ -9,7 +9,7 @@ import { globals } from "../bookBlockShader/globals";
 import { createAutoflipBook } from "./autoflipBook";
 import { initBookDebugGui } from "./bookDebugGui";
 
-export const createScene1: CreateSceneFn = async (
+export const createScene: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience

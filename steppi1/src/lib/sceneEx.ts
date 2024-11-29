@@ -31,11 +31,21 @@ export class SceneEx {
         return new SceneEx(scene, camera, xrHelper);
     }
 
-    public async setup(createSceneFn: CreateSceneFn) {
+    private hmrData:
+        | {
+              cameraPosition: BABYLON.Vector3;
+              cameraRotation: BABYLON.Vector3;
+              cameraFov: number;
+          }
+        | undefined;
+
+    public async setupBeforeHMR() {
         // Save current camera parameters
         const cameraPosition = this.camera.node.position.clone();
         const cameraRotation = this.camera.node.rotation.clone();
         const cameraFov = this.camera.node.fov;
+
+        this.hmrData = { cameraPosition, cameraRotation, cameraFov };
 
         console.log("camera.position=", JSON.stringify(cameraPosition));
 
@@ -61,13 +71,29 @@ export class SceneEx {
 
         // Dispose of existing scene content
         disposeScene(this.scene, this.xrHelper);
+    }
 
+    public async setupCreateScene(createSceneFn: CreateSceneFn) {
         // Recreate Scene
         this._update = await createSceneFn(
             this.scene,
             this.camera,
             this.xrHelper
         );
+    }
+
+    public async setupAfterHMR() {
+        if (!this.hmrData) {
+            console.log("NO HMR DATA STORED");
+            return;
+        }
+
+        this.scene.markAllMaterialsAsDirty(
+            BABYLON.Constants.MATERIAL_AllDirtyFlag
+        );
+
+        const { cameraPosition, cameraRotation, cameraFov } = this.hmrData;
+        this.hmrData = undefined;
 
         // Restore camera parameters
         this.camera.node.position = cameraPosition;

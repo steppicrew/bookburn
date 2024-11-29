@@ -1,9 +1,18 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
-import { SceneEx } from "./lib/sceneEx";
+import { CreateSceneFn, SceneEx } from "./lib/sceneEx";
 import { state } from "./state";
-import { createScene1 } from "./scene.Books/scene.Books";
+
+import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
+import { createScene as createBooksScene } from "./scene.Books/scene.Books";
+
+let createScene1: CreateSceneFn;
+if (import.meta.env["VITE_SCENE"] === "Gltf") {
+    createScene1 = createGltfScene;
+} else {
+    createScene1 = createBooksScene;
+}
 
 const start = async () => {
     if (!state.canvas) {
@@ -26,7 +35,7 @@ const start = async () => {
     if (!state.sceneEx) {
         // Initialize the scene only once
         state.sceneEx = await SceneEx.create(state.engine, state.canvas);
-        await state.sceneEx.setup(createScene1);
+        await state.sceneEx.setupCreateScene(createScene1);
     }
 
     // Start the render loop if not already running
@@ -42,6 +51,7 @@ window.addEventListener("DOMContentLoaded", start);
 
 // Vite HMR support
 if (import.meta.hot) {
+    /*
     if (false) {
         const ms = [
             "beforeUpdate",
@@ -54,18 +64,23 @@ if (import.meta.hot) {
             "ws:connect",
         ];
         ms.forEach((event) =>
-            import.meta.hot!.on(`vite:${event}`, (args) => {
+            import.meta.hot.on(`vite:${event}`, (args) => {
                 console.log("HMR EVENT", event, args);
             })
         );
     }
+    */
 
-    import.meta.hot!.on("vite:afterUpdate", (args) => {
+    import.meta.hot.on("vite:beforeUpdate", (args) => {
+        console.log("HMR EVENT beforeUpdate: remove scene");
+        state.sceneEx.setupBeforeHMR();
+    });
+
+    import.meta.hot.on("vite:afterUpdate", async (args) => {
         console.log("HMR EVENT afterUpdate: re-create scene");
-        state.sceneEx.setup(createScene1);
+        await state.sceneEx.setupCreateScene(createScene1);
+        state.sceneEx.setupAfterHMR();
     });
 
-    import.meta.hot.accept(() => {
-        // Dummy
-    });
+    // import.meta.hot.accept(() => {}
 }

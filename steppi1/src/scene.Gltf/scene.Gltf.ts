@@ -6,9 +6,9 @@ import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
 import { updateWrapper } from "../lib/sceneUtils";
 import { createGround, createSkybox } from "../lib/baseScene";
-import { assetLoader, getAsset } from "./assetLoader";
+import { sceneContent } from "./sceneContent";
 
-export const createScene1: CreateSceneFn = async (
+export const createScene: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
@@ -29,21 +29,9 @@ export const createScene1: CreateSceneFn = async (
 
     // ====================================
 
-    await assetLoader(scene);
+    await sceneContent(scene);
 
-    const useMeshInstances = async (assetName: string) => {
-        const asset = await getAsset(scene, "furniture/books");
-
-        for (let i = 0; i < 3; i++) {
-            const instance = asset.clone(`instance_${i}`, null);
-            if (instance) {
-                instance.position = new BABYLON.Vector3(i * 2, 0, 1); // Offset each instance
-                console.log(`Instance created: ${instance.name}`);
-            }
-        }
-    };
-
-    useMeshInstances("furniture/books");
+    // ====================================
 
     const updates = updateWrapper();
 
