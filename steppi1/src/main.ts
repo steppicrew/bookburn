@@ -4,8 +4,8 @@ import "babylonjs-loaders";
 import { CreateSceneFn, SceneEx } from "./lib/sceneEx";
 import { state } from "./state";
 
-import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
+import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 
 let createScene1: CreateSceneFn;
 if (import.meta.env["VITE_SCENE"] === "Gltf") {
@@ -64,7 +64,7 @@ if (import.meta.hot) {
             "ws:connect",
         ];
         ms.forEach((event) =>
-            import.meta.hot.on(`vite:${event}`, (args) => {
+            import.meta.hot!.on(`vite:${event}`, (args) => {
                 console.log("HMR EVENT", event, args);
             })
         );
@@ -82,5 +82,5 @@ if (import.meta.hot) {
         state.sceneEx.setupAfterHMR();
     });
 
-    // import.meta.hot.accept(() => {}
+    import.meta.hot.accept(() => {});
 }

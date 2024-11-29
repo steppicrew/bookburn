@@ -9,7 +9,7 @@ import glsl from "vite-plugin-glsl";
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());
-    const entryScene = env.VITE_ENTRY_POINT;
+    const entryScene = env.VITE_SCENE;
     console.log("ENTRY SCENE:", entryScene);
     return {
         server: {
