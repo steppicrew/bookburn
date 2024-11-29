@@ -1,5 +1,4 @@
 import * as BABYLON from "babylonjs";
-import { Vector2 } from "babylonjs/Maths/math.vector";
 
 // https://www.babylonjs-playground.com/#1KWR9W#1
 // Simpler:

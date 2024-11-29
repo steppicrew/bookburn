@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
-import vertexShader from "./shaders/fire3-vertexShader.glsl";
-import fragmentShader from "./shaders/fire3-fragmentShader.glsl";
+// import vertexShader from "./shaders/fire3-vertexShader.glsl";
+// import fragmentShader from "./shaders/fire3-fragmentShader.glsl";
 
 // https://www.babylonjs-playground.com/#1KWR9W#1
 // Simpler:

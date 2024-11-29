@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { SceneEx } from "./sceneEx";
+import { SceneEx } from "./lib/sceneEx";
 
 type State = {
     engine: BABYLON.Engine;

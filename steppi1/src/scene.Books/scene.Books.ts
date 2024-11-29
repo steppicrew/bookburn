@@ -1,11 +1,13 @@
 import * as BABYLON from "babylonjs";
-import "babylonjs-loaders"; // Optional: if you're loading external assets like glTF models
+import "babylonjs-loaders";
+
+import { CreateCamera2 } from "../lib/camera1";
+import { CreateSceneFn } from "../lib/sceneEx";
+import { updateWrapper } from "../lib/sceneUtils";
+import { globals } from "../bookBlockShader/globals";
+
 import { createAutoflipBook } from "./autoflipBook";
-import { initBookDebugGui } from "./bookDebugGui/bookDebugGui";
-import { CreateCamera2 } from "./camera1";
-import { CreateSceneFn } from "./sceneEx";
-import { updateWrapper } from "./sceneUtils";
-import { globals } from "./globals";
+import { initBookDebugGui } from "./bookDebugGui";
 
 export const createScene1: CreateSceneFn = async (
     scene: BABYLON.Scene,

@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { makeGui } from "./guiUtils";
+import { makeGui } from "../lib/guiUtils";
 
 // TODO: Make this a GUI Library:
 

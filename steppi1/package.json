@@ -17,6 +17,7 @@
         "babylonjs-loaders": "7.36.0"
     },
     "devDependencies": {
+        "@types/node": "^22.10.1",
         "@vitejs/plugin-basic-ssl": "1.2.0",
         "concurrently": "9.1.0",
         "typescript": "5.7.2",

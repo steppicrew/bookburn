@@ -1,4 +1,4 @@
-import { UpdateWrapper } from "../sceneUtils";
+import { UpdateWrapper } from "../lib/sceneUtils";
 
 // Helper type that increments numbers from 0 to N
 type BuildRange<

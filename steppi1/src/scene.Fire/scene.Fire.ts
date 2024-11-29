@@ -1,11 +1,14 @@
 import * as BABYLON from "babylonjs";
-import { CreateSceneFn } from "./sceneEx";
-import { CreateCamera2 } from "./camera1";
-import { createSkybox, createGround, createSphere } from "./baseScene";
+
+import { CreateSceneFn } from "../lib/sceneEx";
+import { CreateCamera2 } from "../lib/camera1";
+import { createSkybox, createGround, createSphere } from "../lib/baseScene";
+import { updateWrapper } from "../lib/sceneUtils";
+import { initXR } from "../lib/xr";
+
 import { makeCreateFire } from "./fire4";
-import { updateWrapper } from "./sceneUtils";
-import { createAutoflipBook } from "./autoflipBook";
-import { initXR } from "./xr";
+
+import { createAutoflipBook } from "../scene.Books/autoflipBook";
 
 const createLight = (scene: BABYLON.Scene) => {
     const light = new BABYLON.DirectionalLight(

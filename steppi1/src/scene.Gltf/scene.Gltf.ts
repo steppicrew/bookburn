@@ -2,10 +2,10 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 // import "@babylonjs/loaders/glTF/2.0/glTFLoader";
 
-import { CreateCamera2 } from "../camera1";
-import { CreateSceneFn } from "../sceneEx";
-import { updateWrapper } from "../sceneUtils";
-import { createGround, createSkybox } from "../baseScene";
+import { CreateCamera2 } from "../lib/camera1";
+import { CreateSceneFn } from "../lib/sceneEx";
+import { updateWrapper } from "../lib/sceneUtils";
+import { createGround, createSkybox } from "../lib/baseScene";
 import { assetLoader, getAsset } from "./assetLoader";
 
 export const createScene1: CreateSceneFn = async (
