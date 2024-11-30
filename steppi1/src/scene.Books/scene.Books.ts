@@ -105,7 +105,7 @@ export const createScene: CreateSceneFn = async (
         console.log("BOOK", i);
         book = createAutoflipBook(scene, xrHelper, {
             startTime,
-            flipAngle: Math.PI,
+            flipAngle: (Math.PI * 1) / 3,
         });
         updates.addUpdates(book.updates);
         const ii = i % 25;

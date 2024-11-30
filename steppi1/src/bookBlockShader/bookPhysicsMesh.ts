@@ -1,11 +1,52 @@
 import * as BABYLON from "babylonjs";
+import { XYZ } from "./types";
 
 const SHOW_WIRE_FRAME = true;
 
-type HullUpdate = [
-    [positionIndexes: number[], coordinate: number],
-    value: number
-][];
+const baseVector = new BABYLON.Vector2(1, 0).normalize();
+
+const clamp = (n: number, min: number, max: number) =>
+    Math.min(Math.max(n, min), max);
+
+const getAngle = (v1: BABYLON.Vector2, v2: BABYLON.Vector2): number => {
+    // Compute the dot product
+    const dotProduct = clamp(v1.dot(v2), -1, 1);
+
+    // Compute the angle in radians
+    const angleRadians = Math.acos(dotProduct);
+
+    // Return the angle in radians
+    return angleRadians;
+};
+
+const rotateByAngle = (p: XYZ, angle: number): XYZ => {
+    const cosTheta = Math.cos(angle);
+    const sinTheta = Math.sin(angle);
+
+    const x = p[0] * cosTheta - p[1] * sinTheta;
+    const y = p[0] * sinTheta + p[1] * cosTheta;
+
+    return [x, y, p[2]] as const;
+};
+
+const foldPositions = (positions: XYZ[], angle: number): number[] => {
+    if (angle === Math.PI) {
+        return positions.flat();
+    }
+    const foldPosition = (position: XYZ): XYZ => {
+        if (position[0] === 0 && position[1] === 0) {
+            return position;
+        }
+        const vNormal = new BABYLON.Vector2(
+            position[0],
+            position[1]
+        ).normalize();
+        const vAngle = getAngle(vNormal, baseVector);
+        const rotAngle = (vAngle / Math.PI) * angle - vAngle;
+        return rotateByAngle(position, rotAngle);
+    };
+    return positions.map(foldPosition).flat();
+};
 
 /**
         4        3
@@ -24,7 +65,19 @@ export const getPhysicsMesh = (
 ) => {
     const w2 = width / 2;
     const h2 = (Math.sqrt(3) / 2) * width + depth / 2;
-    const positions: [number, number, number][] = [
+    const positions_0: XYZ[] = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [width, 0, 0],
+        [width, depth, 0],
+        [0, depth, 0],
+        [0, 0, height],
+        [0, 0, height],
+        [width, 0, height],
+        [width, depth, height],
+        [0, depth, height],
+    ];
+    const positions_x: XYZ[] = [
         [-width, 0, 0],
         [0, 0, 0],
         [width, 0, 0],
@@ -51,7 +104,7 @@ export const getPhysicsMesh = (
     {
         const vertexData = new BABYLON.VertexData();
         vertexData.indices = indexes;
-        vertexData.positions = positions.flat();
+        vertexData.positions = positions_0.flat();
         vertexData.applyToMesh(mesh);
     }
 
@@ -63,53 +116,33 @@ export const getPhysicsMesh = (
     }
 
     const getUpdate = (() => {
-        const _hullUpdate = (updates: HullUpdate): boolean => {
-            let updated = false;
-            for (const [[positionIndexes, index], value] of updates) {
-                for (const pIndex of positionIndexes) {
-                    if (positions[pIndex][index] != value) {
-                        updated = true;
-                        positions[pIndex][index] = value;
-                    }
-                }
+        let lastPositions: number[] | undefined = undefined;
+        const update = (positions: number[]) => {
+            if (positions === lastPositions) {
+                return;
             }
-            return updated;
+            lastPositions = positions;
+            mesh.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
+            addPhysics();
         };
 
         return (maxAngle: number) => {
-            const time_0: HullUpdate = [
-                [[[0, 4, 5, 9], 0], 0],
-                [[[3, 8], 0], width],
-                [[[3, 4, 8, 9], 1], depth],
-            ];
-            const time_1: HullUpdate = [
-                [[[2, 3, 7, 8], 0], 0],
-                [[[4, 9], 0], -width],
-                [[[3, 4, 8, 9], 1], depth],
-            ];
-            const time_x: HullUpdate = [
-                [[[0, 5], 0], -width],
-                [[[2, 7], 0], width],
-                [[[4, 9], 0], -w2],
-                [[[3, 8], 0], w2],
-                [[[3, 4, 8, 9], 1], h2],
-            ];
+            const _positions_0 = positions_0.flat();
+            const _positions_x = foldPositions(positions_x, maxAngle);
+            const _positions_1 = positions_0
+                .map((p) => rotateByAngle(p, maxAngle))
+                .map((p) => [p[0], p[1] + depth, p[2]])
+                .flat();
+
+            update(_positions_0);
 
             return (time: number) => {
-                let updated = false;
                 if (time == 0 || time == 2) {
-                    updated = _hullUpdate(time_0);
+                    update(_positions_0);
                 } else if (time == 1) {
-                    updated = _hullUpdate(time_1);
+                    update(_positions_1);
                 } else {
-                    updated = _hullUpdate(time_x);
-                }
-                if (updated) {
-                    mesh.setVerticesData(
-                        BABYLON.VertexBuffer.PositionKind,
-                        positions.flat()
-                    );
-                    addPhysics();
+                    update(_positions_x);
                 }
             };
         };
