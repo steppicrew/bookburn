@@ -53,31 +53,27 @@ export const createSkybox = (scene: BABYLON.Scene) => {
     // visible as a background in the scene but is used primarily for
     // lighting, reflections, and overall environment effects.
 
-    const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
-        "assets/Runyon_Canyon_A_2k_cube_specular.dds",
-        scene
-    );
-    hdrTexture.name = "envTex";
-    hdrTexture.gammaSpace = false;
-
-    scene.registerBeforeRender(() => {
-        hdrTexture.setReflectionTextureMatrix(BABYLON.Matrix.RotationY(0));
-    });
-
-    scene.environmentTexture = hdrTexture;
-
     const skybox = BABYLON.MeshBuilder.CreateBox(
         "skyBox",
         { size: 1000.0 },
         scene
     );
+
+    const hdrTexture = new BABYLON.CubeTexture("assets/skybox1/skybox", scene);
+    hdrTexture.name = "envTex";
+    hdrTexture.gammaSpace = false; // ??
+
     const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
     skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.disableLighting = true;
     skyboxMaterial.reflectionTexture = hdrTexture;
     skyboxMaterial.reflectionTexture.coordinatesMode =
         BABYLON.Texture.SKYBOX_MODE;
-    skyboxMaterial.disableLighting = true;
+
     skybox.material = skyboxMaterial;
+    skybox.infiniteDistance = true;
+
+    scene.environmentTexture = hdrTexture;
 
     return skybox;
 };
