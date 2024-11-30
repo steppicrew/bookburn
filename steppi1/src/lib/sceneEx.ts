@@ -1,10 +1,7 @@
 import * as BABYLON from "babylonjs";
 
-// Optional: if you're loading external assets like glTF models
-// import "babylonjs-loaders";
-
 import { CreateCamera2, createCamera2 } from "./camera1";
-import { disposeScene } from "./sceneUtils";
+import { disposeScene } from "./disposeScene";
 
 export type CreateSceneFn = (
     scene: BABYLON.Scene,

@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
-import { UpdateWrapper } from "../lib/sceneUtils";
+
+import { UpdateWrapper } from "../lib/updateWrapper";
 
 // Helper type that increments numbers from 0 to N
 type BuildRange<

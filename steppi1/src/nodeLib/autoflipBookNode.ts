@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import { setupBook } from "../bookBlockShader/book";
 
-export const createAutoflipBook = (
+export const addAutoflipBook = (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience,
     {

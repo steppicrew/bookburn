@@ -23,20 +23,6 @@ export const createWallSegments = (outline: number[]): Segment[] => {
         [0, -1],
     ] as const;
 
-    /*
-    // Calc isRightTurn
-    const table: any[] = [];
-    for (let d1 = 0; d1 < 4; ++d1) {
-        const line: boolean[] = [];
-        for (let d2 = 0; d2 < 4; ++d2) {
-            line.push(((d1 + d2 * 3) & 3) === 3);
-        }
-        table.push(line);
-    }
-
-    console.table(table);
-    */
-
     type Walls = {
         x: number;
         y: number;
@@ -92,8 +78,8 @@ export const createWallSegments = (outline: number[]): Segment[] => {
 
     // console.table(walls);
 
-    const isRightTurn = (dir1: number, dir2: number) =>
-        ((dir1 + dir2 * 3) & 3) === 3;
+    // const isRightTurn = (dir1: number, dir2: number) =>
+    //     ((dir1 + dir2 * 3) & 3) === 3;
 
     const segments: Segment[] = [];
 
@@ -107,7 +93,6 @@ export const createWallSegments = (outline: number[]): Segment[] => {
     for (let i = 0; i < walls.length; i++) {
         const wall = walls[i];
         const lastWall = walls[(i + walls.length - 1) % walls.length];
-        const nextWall = walls[(i + 1) % walls.length];
 
         {
             const p1 = wall.points[0];
@@ -130,7 +115,6 @@ export const createWallSegments = (outline: number[]): Segment[] => {
             });
         }
 
-        console.table(wall.points);
         for (let j = 0; j < wall.points.length; ++j) {
             if (j + 2 < wall.points.length) {
                 const p1 = wall.points[j];

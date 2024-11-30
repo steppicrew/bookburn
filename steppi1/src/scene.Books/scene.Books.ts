@@ -4,10 +4,10 @@ import "babylonjs-loaders";
 import { globals } from "../bookBlockShader/globals";
 import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
-import { updateWrapper } from "../lib/sceneUtils";
-
-import { createAutoflipBook } from "./autoflipBook";
+import { addAutoflipBook } from "../nodeLib/autoflipBookNode";
 import { initBookDebugGui } from "./bookDebugGui";
+import { updateWrapper } from "../lib/updateWrapper";
+
 import { getInitializedHavok } from "./physics";
 
 export const createScene: CreateSceneFn = async (
@@ -103,7 +103,7 @@ export const createScene: CreateSceneFn = async (
     const startTime = Date.now();
     for (let i = 0; i < 1; ++i) {
         console.log("BOOK", i);
-        book = createAutoflipBook(scene, xrHelper, {
+        book = addAutoflipBook(scene, xrHelper, {
             startTime,
             flipAngle: (Math.PI * 1) / 3,
         });

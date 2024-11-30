@@ -1,6 +1,7 @@
 import * as BABYLON from "babylonjs";
 
-import { updateWrapper } from "../lib/sceneUtils";
+import { updateWrapper } from "../lib/updateWrapper";
+
 import { createBookMesh } from "./bookMesh";
 import { getPhysicsMesh } from "./bookPhysicsMesh";
 import { globals } from "./globals";

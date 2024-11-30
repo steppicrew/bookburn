@@ -4,9 +4,9 @@ import "babylonjs-loaders";
 
 import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
-import { updateWrapper } from "../lib/sceneUtils";
 import { createGround, createSkybox } from "../lib/baseScene";
 import { sceneContent } from "./sceneContent";
+import { updateWrapper } from "../lib/updateWrapper";
 
 export const createScene: CreateSceneFn = async (
     scene: BABYLON.Scene,

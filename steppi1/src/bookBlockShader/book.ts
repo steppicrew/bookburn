@@ -1,5 +1,7 @@
 import * as BABYLON from "babylonjs";
-import { TextureManager } from "../lib/sceneUtils";
+
+import { TextureManager } from "../lib/TextureManager";
+
 import { createBookParts } from "./bookParts";
 import { TextureMap } from "./types";
 

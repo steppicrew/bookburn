@@ -3,12 +3,11 @@ import * as BABYLON from "babylonjs";
 import { CreateSceneFn } from "../lib/sceneEx";
 import { CreateCamera2 } from "../lib/camera1";
 import { createSkybox, createGround, createSphere } from "../lib/baseScene";
-import { updateWrapper } from "../lib/sceneUtils";
 import { initXR } from "../lib/xr";
+import { addAutoflipBook } from "../nodeLib/autoflipBookNode";
+import { updateWrapper } from "../lib/updateWrapper";
 
 import { makeCreateFire } from "./fire4";
-
-import { createAutoflipBook } from "../scene.Books/autoflipBook";
 
 const createLight = (scene: BABYLON.Scene) => {
     const light = new BABYLON.DirectionalLight(
@@ -97,7 +96,7 @@ export const createScene: CreateSceneFn = async (
 
     // *** Book ***
     if (true) {
-        const book = createAutoflipBook(scene, xrHelper, {});
+        const book = addAutoflipBook(scene, xrHelper, {});
         updates.addUpdates(book.updates);
 
         book.node.position.z = 3;
