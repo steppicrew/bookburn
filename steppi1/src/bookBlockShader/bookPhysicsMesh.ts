@@ -34,9 +34,9 @@ const foldPositions = (
     positions: XYZ[],
     offsetY: number,
     angle: number
-): number[] => {
+): XYZ[] => {
     if (angle === Math.PI) {
-        return positions.flat();
+        return positions;
     }
     const foldPosition = (position: XYZ, i: number): XYZ => {
         let rotAngle = 0;
@@ -51,6 +51,9 @@ const foldPositions = (
             case 3:
                 rotAngle = (2 * angle) / 3;
                 break;
+            case 6:
+                position[1] = offsetY;
+                break;
         }
 
         return addYOffset(
@@ -58,7 +61,7 @@ const foldPositions = (
             offsetY
         );
     };
-    return positions.map(foldPosition).flat();
+    return positions.map(foldPosition);
 };
 
 /**
@@ -125,9 +128,21 @@ export const getPhysicsMesh = (
             addPhysics();
         };
 
+        const count = 10;
+        const range = Array.from({ length: count }).map((_, i) => i);
+
         return (maxAngle: number) => {
             const _positions_0 = positions.flat();
-            const _positions_x = foldPositions(positions, depth / 2, maxAngle);
+            const _positions_x = range.map((i) => {
+                const offset = (depth / (count + 1)) * (i + 1);
+                return foldPositions(positions, offset, maxAngle)
+                    .map((p) => [
+                        p[0],
+                        p[1] + 2 * (depth / 2 - Math.min(depth / 2, offset)),
+                        p[2],
+                    ])
+                    .flat();
+            });
             const _positions_1 = positions
                 .map((p) => rotateByAngle(p, maxAngle))
                 .map((p) => [p[0], p[1] + depth, p[2]])
@@ -141,7 +156,8 @@ export const getPhysicsMesh = (
                 } else if (time == 1) {
                     update(_positions_1);
                 } else {
-                    update(_positions_x);
+                    const t = Math.floor(Math.abs(1 - time) * count);
+                    update(_positions_x[t]);
                 }
             };
         };
