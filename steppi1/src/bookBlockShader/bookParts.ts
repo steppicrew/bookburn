@@ -64,8 +64,6 @@ export const createBookParts = (parameters: {
         dispose();
     };
 
-    let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
-
     // Set BB to position on right side at time == 0, on left at time == 1, and on both sides at time in between
     const setBoundingBox = (time: number) => {
         const minX = time > 0 ? -width : 0;
@@ -81,15 +79,16 @@ export const createBookParts = (parameters: {
                 )
             )
         );
-        if (false && physicsAggregate) {
-            addPhysics();
-        }
     };
 
     setBoundingBox(0);
     // mesh.showBoundingBox = true;
 
-    const { mesh: hullMesh, getUpdate: hullGetUpdate } = getPhysicsMesh(
+    const {
+        mesh: hullMesh,
+        getUpdate: hullGetUpdate,
+        addPhysics,
+    } = getPhysicsMesh(
         scene,
         width,
         height,
@@ -99,22 +98,7 @@ export const createBookParts = (parameters: {
     mesh.parent = bookNode;
     hullMesh.parent = bookNode;
 
-    const addPhysics = () => {
-        if (physicsAggregate) {
-            physicsAggregate.dispose();
-        }
-        physicsAggregate = new BABYLON.PhysicsAggregate(
-            hullMesh,
-            BABYLON.PhysicsShapeType.MESH,
-            { mass: 0.1, restitution: 1 },
-            scene
-        );
-    };
-
     const beforeRenderObservable = scene.onBeforeRenderObservable.add(() => {
-        if (!physicsAggregate) {
-            return;
-        }
         mesh.position.copyFrom(hullMesh.position);
         if (hullMesh.rotationQuaternion) {
             if (mesh.rotationQuaternion) {
@@ -129,14 +113,15 @@ export const createBookParts = (parameters: {
     });
 
     const keybordObserver = scene.onKeyboardObservable.add((kbInfo) => {
-        if (!physicsAggregate) {
+        const body = hullMesh.physicsBody;
+        if (!body) {
             return;
         }
         switch (kbInfo.type) {
             case BABYLON.KeyboardEventTypes.KEYDOWN:
                 switch (kbInfo.event.key.toLowerCase()) {
                     case "u":
-                        physicsAggregate.body.applyImpulse(
+                        body.applyImpulse(
                             new BABYLON.Vector3(0, 0.2, 0),
                             new BABYLON.Vector3(0.5, 0.5, 0)
                         );

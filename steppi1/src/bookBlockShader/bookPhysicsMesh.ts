@@ -1,6 +1,11 @@
 import * as BABYLON from "babylonjs";
 
-const SHOW_WIRE_FRAME = false;
+const SHOW_WIRE_FRAME = true;
+
+type HullUpdate = [
+    [positionIndexes: number[], coordinate: number],
+    value: number
+][];
 
 /**
         4        3
@@ -57,51 +62,71 @@ export const getPhysicsMesh = (
         mesh.isVisible = false;
     }
 
-    const getUpdate = (maxAngle: number) => {
-        return (time: number) => {
-            if (time == 0 || time == 2) {
-                for (const i of [0, 4, 5, 9]) {
-                    positions[i][0] = 0;
-                }
-                for (const i of [3, 8]) {
-                    positions[i][0] = width;
-                }
-                for (const i of [3, 4, 8, 9]) {
-                    positions[i][1] = depth;
-                }
-            } else if (time == 1) {
-                for (const i of [2, 3, 7, 8]) {
-                    positions[i][0] = 0;
-                }
-                for (const i of [4, 9]) {
-                    positions[i][0] = -width;
-                }
-                for (const i of [3, 4, 8, 9]) {
-                    positions[i][1] = depth;
-                }
-            } else {
-                for (const i of [0, 5]) {
-                    positions[i][0] = -width;
-                }
-                for (const i of [2, 7]) {
-                    positions[i][0] = width;
-                }
-                for (const i of [4, 9]) {
-                    positions[i][0] = -w2;
-                }
-                for (const i of [3, 8]) {
-                    positions[i][0] = w2;
-                }
-                for (const i of [3, 4, 8, 9]) {
-                    positions[i][1] = h2;
+    const getUpdate = (() => {
+        const _hullUpdate = (updates: HullUpdate): boolean => {
+            let updated = false;
+            for (const [[positionIndexes, index], value] of updates) {
+                for (const pIndex of positionIndexes) {
+                    if (positions[pIndex][index] != value) {
+                        updated = true;
+                        positions[pIndex][index] = value;
+                    }
                 }
             }
-            mesh.setVerticesData(
-                BABYLON.VertexBuffer.PositionKind,
-                positions.flat()
-            );
+            return updated;
         };
+
+        return (maxAngle: number) => {
+            const time_0: HullUpdate = [
+                [[[0, 4, 5, 9], 0], 0],
+                [[[3, 8], 0], width],
+                [[[3, 4, 8, 9], 1], depth],
+            ];
+            const time_1: HullUpdate = [
+                [[[2, 3, 7, 8], 0], 0],
+                [[[4, 9], 0], -width],
+                [[[3, 4, 8, 9], 1], depth],
+            ];
+            const time_x: HullUpdate = [
+                [[[0, 5], 0], -width],
+                [[[2, 7], 0], width],
+                [[[4, 9], 0], -w2],
+                [[[3, 8], 0], w2],
+                [[[3, 4, 8, 9], 1], h2],
+            ];
+
+            return (time: number) => {
+                let updated = false;
+                if (time == 0 || time == 2) {
+                    updated = _hullUpdate(time_0);
+                } else if (time == 1) {
+                    updated = _hullUpdate(time_1);
+                } else {
+                    updated = _hullUpdate(time_x);
+                }
+                if (updated) {
+                    mesh.setVerticesData(
+                        BABYLON.VertexBuffer.PositionKind,
+                        positions.flat()
+                    );
+                    addPhysics();
+                }
+            };
+        };
+    })();
+
+    let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
+    const addPhysics = () => {
+        if (physicsAggregate) {
+            physicsAggregate.dispose();
+        }
+        physicsAggregate = new BABYLON.PhysicsAggregate(
+            mesh,
+            BABYLON.PhysicsShapeType.MESH,
+            { mass: 0.1, restitution: 1 },
+            scene
+        );
     };
 
-    return { mesh, getUpdate };
+    return { mesh, getUpdate, addPhysics };
 };
