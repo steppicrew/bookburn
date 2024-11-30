@@ -4,8 +4,8 @@ import "babylonjs-loaders";
 import { CreateSceneFn, SceneEx } from "./lib/sceneEx";
 import { state } from "./state";
 
-import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
+import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 
 let createScene: CreateSceneFn;
 if (import.meta.env["VITE_SCENE"] === "Gltf") {

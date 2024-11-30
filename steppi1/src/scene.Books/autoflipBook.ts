@@ -4,7 +4,10 @@ import { setupBook } from "../bookBlockShader/book";
 export const createAutoflipBook = (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience,
-    { startTime, flipAngle }: { startTime?: number; flipAngle?: number }
+    {
+        startTime,
+        flipAngle,
+    }: { startTime?: number; flipAngle?: number; withPhysics?: boolean }
 ) => {
     const book = setupBook(scene, xrHelper, {
         pageCount: 200,

@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { TextureManager, updateWrapper } from "../lib/sceneUtils";
+import { TextureManager } from "../lib/sceneUtils";
 import { createBookParts } from "./bookParts";
 import { TextureMap } from "./types";
 
@@ -115,15 +115,7 @@ export const setupBook = (
     const maxFlipPageCount = options?.maxFlipPageCount || 50;
     const texture = options?.texture || defaultTexture;
 
-    const updates = updateWrapper();
-    const bookNode = new BABYLON.TransformNode("book", scene);
-
     const [textureMap, textureIndexes] = getTextureMap();
-
-    bookNode.onDispose = () => {
-        updates.dispose();
-        TextureManager.reset();
-    };
 
     const bookParts = createBookParts({
         scene,
@@ -134,7 +126,6 @@ export const setupBook = (
         maxFlipPageCount: Math.min(maxFlipPageCount, pageCount) as never,
         flipPageCount: 10,
         pageCount: pageCount,
-        parentNode: bookNode,
         texture: TextureManager.get(texture, scene),
         textureMap: textureMap,
         textureIndexes: textureIndexes,
@@ -142,12 +133,5 @@ export const setupBook = (
         vertices: [20, 20, 1],
     });
 
-    updates.addUpdates(bookParts.updates);
-
-    return {
-        updates: updates,
-        node: bookNode,
-        flipBook: bookParts.flipBook,
-        mesh: bookParts.mesh,
-    };
+    return bookParts;
 };
