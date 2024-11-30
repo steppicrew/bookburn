@@ -269,5 +269,7 @@ export const createBookMesh = ({
     // material.wireframe = true;
     mesh.material = material;
 
+    // mesh.isVisible = false;
+
     return { mesh, material };
 };
