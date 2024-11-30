@@ -7,11 +7,11 @@ import { state } from "./state";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 
-let createScene1: CreateSceneFn;
+let createScene: CreateSceneFn;
 if (import.meta.env["VITE_SCENE"] === "Gltf") {
-    createScene1 = createGltfScene;
+    createScene = createGltfScene;
 } else {
-    createScene1 = createBooksScene;
+    createScene = createBooksScene;
 }
 
 const start = async () => {
@@ -35,7 +35,7 @@ const start = async () => {
     if (!state.sceneEx) {
         // Initialize the scene only once
         state.sceneEx = await SceneEx.create(state.engine, state.canvas);
-        await state.sceneEx.setupCreateScene(createScene1);
+        await state.sceneEx.setupCreateScene(createScene);
     }
 
     // Start the render loop if not already running
@@ -64,23 +64,23 @@ if (import.meta.hot) {
             "ws:connect",
         ];
         ms.forEach((event) =>
-            import.meta.hot.on(`vite:${event}`, (args) => {
+            import.meta.hot!.on(`vite:${event}`, (args) => {
                 console.log("HMR EVENT", event, args);
             })
         );
     }
     */
 
-    import.meta.hot.on("vite:beforeUpdate", (args) => {
+    import.meta.hot.on("vite:beforeUpdate", async (_args) => {
         console.log("HMR EVENT beforeUpdate: remove scene");
-        state.sceneEx.setupBeforeHMR();
+        await state.sceneEx.setupBeforeHMR();
     });
 
-    import.meta.hot.on("vite:afterUpdate", async (args) => {
+    import.meta.hot.on("vite:afterUpdate", async (_args) => {
         console.log("HMR EVENT afterUpdate: re-create scene");
-        await state.sceneEx.setupCreateScene(createScene1);
-        state.sceneEx.setupAfterHMR();
+        await state.sceneEx.setupCreateScene(createScene);
+        await state.sceneEx.setupAfterHMR();
     });
 
-    // import.meta.hot.accept(() => {}
+    import.meta.hot.accept(() => {});
 }

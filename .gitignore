@@ -2,5 +2,8 @@
 node_modules
 downloads
 
-steppi1/assets/kenney_building-kit
 .env.local
+
+*.bak
+stash.txt
+dr2/

@@ -1,4 +1,5 @@
 import * as BABYLON from "babylonjs";
+import { AssetKey } from "../lib/AssetKey";
 
 const loadGlbAsset = async (
     scene: BABYLON.Scene,
@@ -47,9 +48,10 @@ const assetsByName: Record<string, BABYLON.TransformNode> = {};
 const assetsPathMap: Record<string, string> = {
     root: "assets/",
     furniture: "assets/kenney_furniture-kit/",
+    building: "assets/kenney_building-kit/",
 };
 
-const loadAsset = async (scene: BABYLON.Scene, assetKey: string) => {
+const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
     const [prefix, name] = assetKey.split("/");
     if (!(prefix in assetsPathMap)) {
         throw new Error("Unknown assets path");
@@ -61,7 +63,9 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: string) => {
         name
     );
 
-    //    assetKey= scene.
+    if (prefix === "furniture") {
+        asset.scaling = new BABYLON.Vector3(2, 2, 2);
+    }
 
     assetsByName[assetKey] = asset;
     console.log(`Registering ${assetKey}`);
@@ -75,7 +79,7 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: string) => {
     };
 };
 
-export const getAsset = async (scene: BABYLON.Scene, assetKey: string) => {
+export const getAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
     if (!(assetKey in assetsByName)) {
         await loadAsset(scene, assetKey);
     }
@@ -85,4 +89,24 @@ export const getAsset = async (scene: BABYLON.Scene, assetKey: string) => {
     }
 
     return assetsByName[assetKey];
+};
+
+const nextCloneIndex: Record<string, number> = {};
+
+export const getAssetClone = async (
+    scene: BABYLON.Scene,
+    assetKey: AssetKey
+) => {
+    const asset = await getAsset(scene, assetKey);
+    let index = 0;
+    if (assetKey in nextCloneIndex) {
+        index = ++nextCloneIndex[assetKey];
+    } else {
+        nextCloneIndex[assetKey] = index;
+    }
+    const clone = asset.clone(`${assetKey}_${index}`, null);
+    if (clone === null) {
+        throw new Error("asset.clone() === null");
+    }
+    return clone;
 };
