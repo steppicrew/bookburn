@@ -19,7 +19,7 @@ export const createAutoflipBook = (
 
     if (true) {
         const flipLeft = (startTime?: number) =>
-            book.book
+            book
                 .flipBook({
                     direction: "left",
                     msPerFlip: 3000,
@@ -29,7 +29,7 @@ export const createAutoflipBook = (
                 })
                 .then(() => setTimeout(flipRight, 1000));
         const flipRight = () =>
-            book.book
+            book
                 .flipBook({
                     direction: "right",
                     msPerFlip: 2000,

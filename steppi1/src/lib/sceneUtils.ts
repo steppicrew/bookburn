@@ -142,6 +142,9 @@ export const TextureManager = (() => {
             }
             {
                 const texture = new BABYLON.Texture(url, scene);
+                texture.onDispose = () => {
+                    textures.delete(url);
+                };
                 textures.set(url, texture);
                 return texture;
             }

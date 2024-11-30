@@ -111,11 +111,11 @@ export const createScene: CreateSceneFn = async (
         const ii = i % 25;
         book.node.position = new BABYLON.Vector3(
             Math.floor(ii / 5) * 5,
-            (ii % 5) * 5,
+            (ii % 5) * 5 + 0.5,
             Math.floor(i / 25) * 5
         );
-        book.node.rotation = new BABYLON.Vector3(-1.3, 0, 0);
-        const physicsAggregate = book.book.addPhysics();
+        book.node.rotation = new BABYLON.Vector3(-0.8, 0, 0);
+        const physicsAggregate = book.addPhysics();
     }
 
     // Try anti-aliasing
@@ -147,46 +147,28 @@ export const createScene: CreateSceneFn = async (
     // camera.node.setTarget(book!.node.position.clone());
     camera.node.setTarget(new BABYLON.Vector3(0, 0, 0));
 
-    // Create a simple sphere to interact with
-    const sphere = BABYLON.MeshBuilder.CreateSphere(
-        "sphere",
-        { diameter: 1 },
-        scene
-    );
-    sphere.position.x = -2.5;
-    sphere.position.y = 2;
-    sphere.position.z = 0;
-
-    // Add color
+    // Sphere
     {
-        const sphereMaterial = new BABYLON.StandardMaterial(
-            "sphereMaterial",
+        // Create a simple sphere to interact with
+        const sphere = BABYLON.MeshBuilder.CreateSphere(
+            "sphere",
+            { diameter: 1 },
             scene
         );
-        sphereMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0); // Red color
-        sphere.material = sphereMaterial; // Apply the material to the sphere
-    }
+        sphere.position.x = -2.5;
+        sphere.position.y = 2;
+        sphere.position.z = 0;
 
-    // Our built-in 'ground' shape.
-    const ground = BABYLON.MeshBuilder.CreateGround(
-        "ground",
-        { width: 100, height: 100 },
-        scene
-    );
+        // Add color
+        {
+            const sphereMaterial = new BABYLON.StandardMaterial(
+                "sphereMaterial",
+                scene
+            );
+            sphereMaterial.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // Red color
+            sphere.material = sphereMaterial; // Apply the material to the sphere
+        }
 
-    // Ground color
-    {
-        const groundMaterial = new BABYLON.StandardMaterial(
-            "groundMaterial",
-            scene
-        );
-        groundMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-        groundMaterial.backFaceCulling = false;
-        ground.material = groundMaterial;
-    }
-
-    // Physics
-    {
         // Create a sphere shape and the associated body. Size will be determined automatically.
         const sphereAggregate = new BABYLON.PhysicsAggregate(
             sphere,
@@ -194,6 +176,27 @@ export const createScene: CreateSceneFn = async (
             { mass: 1, restitution: 0.75 },
             scene
         );
+    }
+
+    // Ground
+    if (true) {
+        // Our built-in 'ground' shape.
+        const ground = BABYLON.MeshBuilder.CreateGround(
+            "ground",
+            { width: 100, height: 100 },
+            scene
+        );
+
+        // Ground color
+        {
+            const groundMaterial = new BABYLON.StandardMaterial(
+                "groundMaterial",
+                scene
+            );
+            groundMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+            groundMaterial.backFaceCulling = false;
+            ground.material = groundMaterial;
+        }
 
         // Create a static box shape.
         const groundAggregate = new BABYLON.PhysicsAggregate(
