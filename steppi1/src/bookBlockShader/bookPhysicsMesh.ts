@@ -77,13 +77,15 @@ const foldPositions2 = (
         let rotAngle = 0;
         switch (i % 7) {
             case 3:
+                position = [position[0], offsetY, position[2]];
+            // Fall through
             case 4:
             case 5:
                 rotAngle = angle;
                 break;
             case 2:
             case 6:
-                position[1] = offsetY;
+                position = [position[0], offsetY, position[2]];
                 break;
         }
 
