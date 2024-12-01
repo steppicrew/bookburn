@@ -63,10 +63,22 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
     let dir: number;
     let area: Record<string, [x: number, y: number]> = {};
 
+    let fillX: number;
+    let fillY: number;
+
     if (outline[outline.length - 1] < 0) {
         dir = 1;
+        fillY = -1;
     } else {
         dir = 3;
+        fillY = 1;
+    }
+    if (outline[0] < 0) {
+        dir = 1;
+        fillX = -1;
+    } else {
+        dir = 3;
+        fillX = 1;
     }
     for (let i = 0; i < outline.length; i++) {
         let nextDir: number;
@@ -79,18 +91,14 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
         let nextX = x;
         let nextY = y;
         const points: Array<[x: number, y: number]> = [];
-        if (dxy[dir][0]) {
-            area[`${nextX}:${nextY}`] = [nextX, nextY];
-        }
+        area[`${nextX}:${nextY}`] = [nextX, nextY];
         for (let j = Math.abs(outline[i]) * 2; j > 0; --j) {
             nextX += dxy[nextDir][0];
             nextY += dxy[nextDir][1];
             if (j > 1) {
                 points.push([nextX, nextY]);
             }
-            if (dxy[dir][0]) {
-                area[`${nextX}:${nextY}`] = [nextX, nextY];
-            }
+            area[`${nextX}:${nextY}`] = [nextX, nextY];
         }
 
         walls.push({
@@ -163,23 +171,34 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
         }
     }
 
-    // Calculate floor area
+    // Calculate bound for error checking
     const allX = Array.from(Object.values(area), ([x]) => x);
     const allY = Array.from(Object.values(area), ([, y]) => y);
     const minX = Math.min(...allX);
     const maxX = Math.max(...allX);
     const minY = Math.min(...allY);
     const maxY = Math.max(...allY);
-    const floorArea: FloorArea = new Set<[x: number, y: number]>();
-    for (let y = minY; y <= maxY; ++y) {
-        let inside = false;
-        for (let x = minX; x <= maxX; ++x) {
-            if (`${x}:${y}` in area) {
-                inside = !inside;
+
+    const floorArea: FloorArea = new Set(Object.values(area));
+    const nextFill: Array<[number, number]> = [[fillX, fillY]];
+
+    while (nextFill.length) {
+        const xy = nextFill.pop() as [number, number];
+        const [x, y] = xy;
+        area[`${x}:${y}`] = [x, y];
+        floorArea.add([x, y]);
+        for (let j = 0; j < 4; ++j) {
+            const x1 = x + dxy[j][0];
+            const y1 = y + dxy[j][1];
+            if (`${x1}:${y1}` in area) {
+                continue;
             }
-            if (inside) {
-                floorArea.add([x, y]);
+            if (x1 < minX || x1 > maxX || y1 < minY || y1 > maxY) {
+                throw new Error(
+                    `x/y out of bounds ${x1}/${y1} ${minX}/${minY}-${maxX}/${maxY}`
+                );
             }
+            nextFill.push([x1, y1]);
         }
     }
 

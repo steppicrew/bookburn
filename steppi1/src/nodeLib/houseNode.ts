@@ -109,7 +109,7 @@ export const addHouse = async (
     for (const [floorX, floorY] of floorArea) {
         const instance = await getAssetInstance(
             scene,
-            "building/roof-flat-center"
+            "building/roof-flat-patch"
         );
         instance.forEach((mesh) => {
             mesh.position = new BABYLON.Vector3(x + floorX, y, z + floorY);

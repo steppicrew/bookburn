@@ -37,7 +37,7 @@ export const sceneContent = async (
         xrHelper,
     });
 
-    await addHouse(scene, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], -20, -15, {
+    await addHouse(scene, [3, 4, 2, 2, 5, 1, 5, 10, -4, -3], -20, -15, {
         floors: 2,
         shadowGenerator,
         xrHelper,
