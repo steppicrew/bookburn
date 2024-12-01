@@ -9,8 +9,8 @@ export const createGround = (scene: BABYLON.Scene) => {
     );
 
     const texture = new BABYLON.Texture("assets/grass.jpg", scene);
-    texture.uScale = 20.0;
-    texture.vScale = 20.0;
+    texture.uScale = 20;
+    texture.vScale = 20;
 
     const groundMaterial = new BABYLON.BackgroundMaterial(
         "groundMaterial",
@@ -22,6 +22,11 @@ export const createGround = (scene: BABYLON.Scene) => {
 
     ground.material = groundMaterial;
     ground.receiveShadows = true;
+
+    // TODO: Test!
+    // ground.onReady = function () {
+    //     ground.optimize(100);
+    // }
 
     return ground;
 };

@@ -6,8 +6,9 @@ const loadGlbAsset = async (
     path: string,
     prefix: string,
     name: string
-) => {
-    console.log(`Loading asset ${prefix}/${name}`);
+): Promise<BABYLON.Mesh[]> => {
+    const assetKey = `${prefix}/${name}`;
+    console.log(`Loading asset ${assetKey}`);
 
     const result = await BABYLON.SceneLoader.ImportMeshAsync(
         "",
@@ -16,12 +17,13 @@ const loadGlbAsset = async (
         scene
     );
 
-    const root = new BABYLON.TransformNode(name, scene);
-    root.setEnabled(false);
+    const meshes = result.meshes.filter((mesh) => {
+        if (mesh.parent === null) {
+            return false;
+        }
 
-    result.meshes.forEach((mesh) => {
-        if (mesh instanceof BABYLON.Mesh && mesh.parent === null) {
-            mesh.parent = root;
+        if (!(mesh instanceof BABYLON.Mesh)) {
+            throw new Error(`Mesh type ${typeof mesh} not allowed`);
         }
 
         // PBRMaterial don't work with HMR. Replace them with StandardMaterial
@@ -37,13 +39,17 @@ const loadGlbAsset = async (
                 `Reassigned material ${mesh.material.name} to mesh ${mesh.name}`
             );
         }
+
+        mesh.bakeCurrentTransformIntoVertices();
+        mesh.isVisible = false;
+        return true;
     });
 
-    return root;
+    return meshes as BABYLON.Mesh[];
 };
 
 // TODO: Does not support the same name in multiple Scenes
-const assetsByName: Record<string, BABYLON.TransformNode> = {};
+const assetsByName: Record<string, BABYLON.Mesh[]> = {};
 
 const assetsPathMap: Record<string, string> = {
     root: "assets/",
@@ -64,19 +70,27 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
     );
 
     if (prefix === "furniture") {
-        asset.scaling = new BABYLON.Vector3(2, 2, 2);
+        asset.forEach((mesh) => (mesh.scaling = new BABYLON.Vector3(2, 2, 2)));
     }
 
     assetsByName[assetKey] = asset;
     console.log(`Registering ${assetKey}`);
 
-    asset.onDispose = () => {
-        console.log(`Unregistering ${assetKey}`);
-        if (!assetsByName[assetKey].isDisposed) {
-            assetsByName[assetKey].dispose();
-        }
-        delete assetsByName[`${assetKey}`];
-    };
+    asset.forEach((mesh) => {
+        mesh.onDispose = () => {
+            const index = assetsByName[assetKey].findIndex((m) => m === mesh);
+            if (index < 0) {
+                throw new Error(
+                    `Mesh not found while unregistering ${assetKey}`
+                );
+            }
+            assetsByName[assetKey].splice(index, 1);
+            if (assetsByName[assetKey].length === 0) {
+                console.log(`Unregistering ${assetKey}`);
+                delete assetsByName[assetKey];
+            }
+        };
+    });
 };
 
 export const getAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
@@ -84,16 +98,18 @@ export const getAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
         await loadAsset(scene, assetKey);
     }
 
-    if (assetsByName[assetKey].isDisposed()) {
-        throw `getAsset holds a disposed asset! ${assetKey}`;
-    }
+    assetsByName[assetKey].forEach((mesh) => {
+        if (mesh.isDisposed()) {
+            throw `getAsset holds a disposed asset: ${assetKey}`;
+        }
+    });
 
     return assetsByName[assetKey];
 };
 
 const nextCloneIndex: Record<string, number> = {};
 
-export const getAssetClone = async (
+export const getAssetInstance = async (
     scene: BABYLON.Scene,
     assetKey: AssetKey
 ) => {
@@ -104,9 +120,12 @@ export const getAssetClone = async (
     } else {
         nextCloneIndex[assetKey] = index;
     }
-    const clone = asset.clone(`${assetKey}_${index}`, null);
-    if (clone === null) {
-        throw new Error("asset.clone() === null");
-    }
-    return clone;
+    return asset.map((mesh) => {
+        const instance = mesh.createInstance(`${assetKey}_${index}`);
+        if (instance === null) {
+            throw new Error("asset.instance() === null");
+        }
+        instance.isVisible = true;
+        return instance;
+    });
 };

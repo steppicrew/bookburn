@@ -14,14 +14,16 @@ export const sceneContent = async (scene: BABYLON.Scene) => {
 
     addDebugGrid(scene);
 
-    const house1 = await addHouse(scene, [-3, 1, -2, 2, 5, -3], 2);
+    const house1 = await addHouse(scene, [-3, 1, -2, 2, 5, -3], 0, 0, 2);
 
-    const house2 = await addHouse(scene, [4, 2, -4, -2], 5);
-    house2.position.x = 10;
+    const house2 = await addHouse(scene, [4, 2, -4, -2], 10, 0, 5);
 
-    const house3 = await addHouse(scene, [7, 3, 9, 5, -8, 2, -7, -6, -1, -4]);
-    house3.position.x = 4;
-    house3.position.z = 10;
+    const house3 = await addHouse(
+        scene,
+        [7, 3, 9, 5, -8, 2, -7, -6, -1, -4],
+        4,
+        10
+    );
 
     // const outline2 = [6, 6, -6, -6];
     // const outline2 = [2, 2, -2, -2];
