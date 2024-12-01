@@ -63,8 +63,7 @@ const loadGlbAsset = async (
         }
 
         mesh.bakeCurrentTransformIntoVertices();
-        // mesh.isVisible = false;
-        // mesh.visibility = 0;
+        mesh.isVisible = false;
         return true;
     });
 

@@ -29,10 +29,12 @@ export const addHouse = async (
         floors = 1,
         startFloor = 0,
         shadowGenerator,
+        xrHelper,
     }: {
         floors?: number;
         startFloor?: number;
         shadowGenerator?: BABYLON.ShadowGenerator;
+        xrHelper?: BABYLON.WebXRDefaultExperience;
     }
 ) => {
     const { segments, floorArea } = createWalls(outline);
@@ -112,6 +114,7 @@ export const addHouse = async (
         instance.forEach((mesh) => {
             mesh.position = new BABYLON.Vector3(x + floorX, y, z + floorY);
             shadowGenerator?.addShadowCaster(mesh);
+            xrHelper?.teleportation.addFloorMesh(mesh);
         });
     }
 };

@@ -46,6 +46,7 @@ export const createScene: CreateSceneFn = async (
         1024,
         directionalLight
     );
+    /*
     const shadow = 3;
     if (shadow === 1) {
         shadowGenerator.useBlurExponentialShadowMap = true; // Enable soft shadows
@@ -61,6 +62,7 @@ export const createScene: CreateSceneFn = async (
         shadowGenerator.useContactHardeningShadow = true;
         shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_LOW;
     }
+    */
     // shadowGenerator.enableSoftTransparentShadow = true;
     // shadowGenerator.bias = 0.00001;
     // shadowGenerator.forceBackFacesOnly;
@@ -68,12 +70,15 @@ export const createScene: CreateSceneFn = async (
 
     shadowGenerator.lambda = 1;
     // shadowGenerator.autoCalcDepthBounds = true;
-    shadowGenerator.freezeShadowCastersBoundingInfo = false;
+    shadowGenerator.freezeShadowCastersBoundingInfo = true;
     shadowGenerator.cascadeBlendPercentage = 0; // perf
 
     // shadowGenerator.depthClamp = true;
     // shadowGenerator.stabilizeCascades = false;
 
+    directionalLight.autoUpdateExtends = false;
+
+    /*
     if (false) {
         const shadowMap = shadowGenerator.getShadowMap();
         if (shadowMap) {
@@ -83,8 +88,9 @@ export const createScene: CreateSceneFn = async (
         }
         directionalLight.autoUpdateExtends = false;
     }
+    */
 
-    await sceneContent(scene, shadowGenerator);
+    await sceneContent(scene, shadowGenerator, xrHelper);
 
     // ====================================
 
