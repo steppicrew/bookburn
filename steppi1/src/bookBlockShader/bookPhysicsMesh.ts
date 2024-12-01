@@ -1,4 +1,5 @@
 import * as BABYLON from "babylonjs";
+import { getCollisionTracker } from "../lib/collisionTracker";
 import { XYZ } from "./types";
 
 const SHOW_WIRE_FRAME = true;
@@ -64,6 +65,38 @@ const foldPositions = (
     return positions.map(foldPosition);
 };
 
+const foldPositions2 = (
+    positions: XYZ[],
+    offsetY: number,
+    angle: number
+): XYZ[] => {
+    if (angle === Math.PI) {
+        return positions;
+    }
+    const foldPosition = (position: XYZ, i: number): XYZ => {
+        let rotAngle = 0;
+        switch (i % 7) {
+            case 3:
+                position = [position[0], offsetY, position[2]];
+            // Fall through
+            case 4:
+            case 5:
+                rotAngle = angle;
+                break;
+            case 2:
+            case 6:
+                position = [position[0], offsetY, position[2]];
+                break;
+        }
+
+        return addYOffset(
+            rotateByAngle(addYOffset(position, -offsetY), rotAngle),
+            offsetY
+        );
+    };
+    return positions.map(foldPosition);
+};
+
 /**
  * 5/12 +---------------------------------+ 4/11
  *      |                                 |
@@ -117,6 +150,43 @@ export const getPhysicsMesh = (
         mesh.isVisible = false;
     }
 
+    let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
+
+    const collisionTracker = getCollisionTracker({});
+    const addPhysics = () => {
+        let angularVelocity: BABYLON.Vector3 | undefined = undefined;
+        let linearVelocity: BABYLON.Vector3 | undefined = undefined;
+        if (physicsAggregate) {
+            const body = physicsAggregate.body;
+            angularVelocity = body.getAngularVelocity();
+            linearVelocity = body.getLinearVelocity();
+            physicsAggregate.dispose();
+        }
+        physicsAggregate = new BABYLON.PhysicsAggregate(
+            mesh,
+            BABYLON.PhysicsShapeType.MESH,
+            { mass: 1, restitution: 0.1 },
+            scene
+        );
+
+        const body = physicsAggregate.body;
+        if (linearVelocity) {
+            body.setLinearVelocity(linearVelocity);
+        }
+        if (angularVelocity) {
+            body.setAngularVelocity(angularVelocity);
+        }
+        body.setCollisionCallbackEnabled(true);
+        const observable = body.getCollisionObservable();
+        observable.add(collisionTracker.onEvent);
+    };
+
+    let enabled = true;
+    const setEnabled = (newState: boolean) => {
+        console.log("setEnabled", enabled);
+        enabled = newState;
+    };
+
     const getUpdate = (() => {
         let lastPositions: number[] | undefined = undefined;
         const update = (positions: number[]) => {
@@ -128,13 +198,16 @@ export const getPhysicsMesh = (
             addPhysics();
         };
 
-        const count = 10;
-        const range = Array.from({ length: count }).map((_, i) => i);
+        const intermediateHullsCount = 10;
+        const range = Array.from({ length: intermediateHullsCount }).map(
+            (_, i) => i
+        );
 
+        let positions_stopped: number[] | undefined = undefined;
         return (maxAngle: number) => {
-            const _positions_0 = positions.flat();
-            const _positions_x = range.map((i) => {
-                const offset = (depth / (count + 1)) * (i + 1);
+            const positions_0 = positions.flat();
+            const positions_x = range.map((i) => {
+                const offset = (depth / (intermediateHullsCount + 1)) * (i + 1);
                 return foldPositions(positions, offset, maxAngle)
                     .map((p) => [
                         p[0],
@@ -143,38 +216,62 @@ export const getPhysicsMesh = (
                     ])
                     .flat();
             });
-            const _positions_1 = positions
+            const positions_1 = positions
                 .map((p) => rotateByAngle(p, maxAngle))
                 .map((p) => [p[0], p[1] + depth, p[2]])
                 .flat();
 
-            update(_positions_0);
+            if (enabled) {
+                update(positions_0);
+            }
 
             return (time: number) => {
-                if (time == 0 || time == 2) {
-                    update(_positions_0);
-                } else if (time == 1) {
-                    update(_positions_1);
+                collisionTracker.onPreEnd();
+
+                if (enabled) {
+                    if (positions_stopped) {
+                        positions_stopped = undefined;
+                    }
                 } else {
-                    const t = Math.floor(Math.abs(1 - time) * count);
-                    update(_positions_x[t]);
+                    if (!positions_stopped) {
+                        if (time == 0 || time == 2) {
+                            positions_stopped = positions_0;
+                        } else if (time == 1) {
+                            positions_stopped = positions_1;
+                        } else {
+                            const offset = Math.abs(1 - time) * depth;
+                            const _positions_stopped = foldPositions2(
+                                positions,
+                                offset,
+                                maxAngle
+                            ).map((p) => [
+                                p[0],
+                                p[1] +
+                                    2 *
+                                        (depth / 2 -
+                                            Math.min(depth / 2, offset)),
+                                p[2],
+                            ]);
+                            positions_stopped = _positions_stopped.flat();
+                        }
+                        update(positions_stopped);
+                    }
+                    return;
+                }
+
+                if (time == 0 || time == 2) {
+                    update(positions_0);
+                } else if (time == 1) {
+                    update(positions_1);
+                } else {
+                    const t = Math.floor(
+                        Math.abs(1 - time) * intermediateHullsCount
+                    );
+                    update(positions_x[t]);
                 }
             };
         };
     })();
 
-    let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
-    const addPhysics = () => {
-        if (physicsAggregate) {
-            physicsAggregate.dispose();
-        }
-        physicsAggregate = new BABYLON.PhysicsAggregate(
-            mesh,
-            BABYLON.PhysicsShapeType.MESH,
-            { mass: 0.1, restitution: 1 },
-            scene
-        );
-    };
-
-    return { mesh, getUpdate, addPhysics };
+    return { mesh, getUpdate, addPhysics, collisionTracker, setEnabled };
 };
