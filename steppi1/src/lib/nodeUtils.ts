@@ -1,4 +1,6 @@
-function getMeshWorldDimensions(
+import * as BABYLON from "babylonjs";
+
+export function getMeshWorldDimensions(
     node: BABYLON.TransformNode
 ): BABYLON.Vector3 | null {
     if (!(node instanceof BABYLON.AbstractMesh)) {
@@ -23,7 +25,7 @@ function getMeshWorldDimensions(
     return dimensions;
 }
 
-function getNodeWorldDimensions(
+export function getNodeWorldDimensions(
     node: BABYLON.TransformNode
 ): BABYLON.Vector3 | null {
     // Get all child meshes of the node

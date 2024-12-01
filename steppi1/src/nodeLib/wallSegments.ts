@@ -1,21 +1,8 @@
-const createRandom = (seed: number) => {
-    return (): number => {
-        // Linear Congruential Generator constants
-        const a = 1664525;
-        const c = 1013904223;
-        const m = 2 ** 32;
-
-        seed = (a * seed + c) % m;
-        return seed;
-    };
-};
-
 export type CornerSegment = {
     type: "corner";
     cx: number;
     cy: number;
     dir: number;
-    random: number;
 };
 
 export type WallSegment = {
@@ -23,7 +10,6 @@ export type WallSegment = {
     cx: number;
     cy: number;
     dir: number;
-    random: number;
 };
 
 export type Segment = CornerSegment | WallSegment;
@@ -46,11 +32,6 @@ type Walls = {
 };
 
 export const createWallSegments = (outline: number[]): Segment[] => {
-    console.log(outline);
-    const nextRandom = createRandom(
-        outline.reduce((a, b) => (a * a * Math.abs(b + 1)) & 0xfffff)
-    );
-
     const walls: Walls[] = [];
 
     let x = 0;
@@ -131,7 +112,6 @@ export const createWallSegments = (outline: number[]): Segment[] => {
                 cx,
                 cy,
                 dir,
-                random: nextRandom(),
             });
         }
 
@@ -147,7 +127,6 @@ export const createWallSegments = (outline: number[]): Segment[] => {
                     cx,
                     cy,
                     dir: wall.dir,
-                    random: nextRandom(),
                 });
             }
         }

@@ -14,9 +14,9 @@ export const sceneContent = async (scene: BABYLON.Scene) => {
 
     addDebugGrid(scene);
 
-    const house1 = await addHouse(scene, [-3, 1, -2, 2, 5, -3]);
+    const house1 = await addHouse(scene, [-3, 1, -2, 2, 5, -3], 2);
 
-    const house2 = await addHouse(scene, [4, 2, -4, -2]);
+    const house2 = await addHouse(scene, [4, 2, -4, -2], 5);
     house2.position.x = 10;
 
     const house3 = await addHouse(scene, [7, 3, 9, 5, -8, 2, -7, -6, -1, -4]);

@@ -37,7 +37,7 @@ export const createScene: CreateSceneFn = async (
 
     new BABYLON.HemisphericLight(
         "light",
-        new BABYLON.Vector3(0, 10, 0), // See update some lines down
+        new BABYLON.Vector3(4, 20, 3), // See update some lines down
         scene
     );
 
