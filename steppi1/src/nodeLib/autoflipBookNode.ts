@@ -11,8 +11,8 @@ export const addAutoflipBook = (
 ) => {
     const book = setupBook(scene, xrHelper, {
         pageCount: 200,
-        pageDepth: 0.002,
-        coverDepth: 0.02,
+        pageDepth: 0.0002,
+        coverDepth: 0.002,
         maxFlipPageCount: 10,
         texture: "assets/BookTexture-xcf.png",
     });
@@ -27,7 +27,7 @@ export const addAutoflipBook = (
                     startTime,
                     flipAngle,
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => false && console.log(error))
                 .then(() => setTimeout(flipRight, 1000));
         const flipRight = () =>
             book
@@ -37,7 +37,7 @@ export const addAutoflipBook = (
                     flipPages: 10,
                     flipAngle,
                 })
-                .catch((error) => console.log(error))
+                .catch((error) => false && console.log(error))
                 .then(() => setTimeout(flipLeft, 1000));
         setTimeout(() => flipLeft(startTime), 1000);
     }

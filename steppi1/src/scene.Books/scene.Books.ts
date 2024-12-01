@@ -8,6 +8,8 @@ import { updateWrapper } from "../lib/updateWrapper";
 import { addAutoflipBook } from "../nodeLib/autoflipBookNode";
 import { initBookDebugGui } from "./bookDebugGui";
 
+import { initXR } from "../lib/xr";
+import { createHand, simulateHandMovement } from "../nodeLib/handSimulator";
 import { getInitializedHavok } from "./physics";
 
 export const createScene: CreateSceneFn = async (
@@ -24,6 +26,8 @@ export const createScene: CreateSceneFn = async (
         const havokPlugin = new BABYLON.HavokPlugin(true, havokInstance);
         scene.enablePhysics(gravityVector, havokPlugin);
     }
+
+    initXR(scene, xrHelper);
 
     initBookDebugGui(
         scene,
@@ -208,6 +212,60 @@ export const createScene: CreateSceneFn = async (
     }
 
     new BABYLON.AxesViewer(scene);
+
+    if (false) {
+        let grabbedMesh: BABYLON.Nullable<BABYLON.AbstractMesh> = null;
+        let grabbedMaterial: BABYLON.Nullable<BABYLON.Material> = null;
+        scene.onPointerDown = (event, pickResult) => {
+            if (pickResult.hit) {
+                const pickedMesh = pickResult.pickedMesh;
+                if (pickedMesh) {
+                    grabbedMesh = pickedMesh;
+                    grabbedMaterial = pickedMesh.material;
+                    const material = new BABYLON.StandardMaterial(
+                        "highlight",
+                        scene
+                    );
+                    material.diffuseColor = BABYLON.Color3.Red();
+                    grabbedMesh.material = material;
+                }
+            }
+        };
+        scene.onPointerUp = (event, pickResult) => {
+            if (grabbedMesh) {
+                grabbedMesh.material = grabbedMaterial;
+                grabbedMesh = grabbedMaterial = null;
+            }
+        };
+
+        const plane = new BABYLON.Plane(0, 1, 0, 0); // Horizontal plane
+
+        scene.onPointerMove = (evt) => {
+            if (grabbedMesh) {
+            }
+        };
+
+        {
+            const leftHand = createHand(scene, "left-hand");
+            simulateHandMovement(leftHand, scene);
+            console.log(xrHelper.input);
+            /*
+            const handTracker = xrHelper.input.getHandById("right");
+            if (handTracker) {
+                handTracker.joints.forEach((joint) => {
+                    const jointMesh = MeshBuilder.CreateSphere(
+                        "joint",
+                        { diameter: 0.1 },
+                        scene
+                    );
+                    scene.registerBeforeRender(() => {
+                        jointMesh.position = joint.position.clone();
+                    });
+                });
+            }
+            */
+        }
+    }
 
     return updates.update;
 };
