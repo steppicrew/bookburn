@@ -3,8 +3,12 @@ import "babylonjs-loaders";
 
 import { createWallSegments } from "./wallSegments";
 import { getAssetClone } from "../scene.Gltf/assetLoader";
+import { AssetKey } from "../lib/AssetKey";
 
 let houseIndex = 0;
+
+const chooseFrom = <T>(random: number, cands: T[]) =>
+    cands[random % cands.length];
 
 export const addHouse = async (scene: BABYLON.Scene, outline: number[]) => {
     const segments = createWallSegments(outline);
@@ -13,7 +17,15 @@ export const addHouse = async (scene: BABYLON.Scene, outline: number[]) => {
 
     for (const seg of segments) {
         if (seg.type === "wall") {
-            const instance = await getAssetClone(scene, "building/wall");
+            const assetKey = chooseFrom<AssetKey>(seg.random, [
+                "building/wall-doorway-round",
+                "building/wall",
+                "building/wall-window-round",
+                "building/wall-window-round-detailed",
+                "building/wall-window-square",
+            ]);
+            console.log("ASSETKEY", assetKey);
+            const instance = await getAssetClone(scene, assetKey);
             instance.parent = rootNode;
             instance.position = new BABYLON.Vector3(seg.cx + 0, 0, seg.cy - 0);
             instance.setPivotPoint(new BABYLON.Vector3(-0.0, 0, 0.0));
