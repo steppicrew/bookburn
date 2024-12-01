@@ -31,12 +31,37 @@ type Walls = {
     points: Array<[x: number, y: number]>;
 };
 
-export const createWallSegments = (outline: number[]): Segment[] => {
+type FloorArea = Set<[x: number, y: number]>;
+
+type CreateWallSegments = {
+    segments: Segment[];
+    floorArea: FloorArea;
+};
+
+export const createWalls = (outline: number[]): CreateWallSegments => {
+    if (outline.length & 1) {
+        throw new Error("outline must have even count of elements");
+    }
+    let sumX = 0;
+    let sumY = 0;
+    for (let i = 0; i < outline.length; i += 2) {
+        sumX += outline[i];
+        sumY += outline[i + 1];
+    }
+    if (sumX !== 0 && sumY !== 0) {
+        outline.push(-sumX, -sumY);
+    } else if (sumX !== 0 || sumY !== 0) {
+        throw new Error(
+            `sumX=${sumX}, sumY=${sumY} - can't autocorrect (${outline})`
+        );
+    }
+
     const walls: Walls[] = [];
 
     let x = 0;
     let y = 0;
     let dir: number;
+    let area: Record<string, [x: number, y: number]> = {};
 
     if (outline[outline.length - 1] < 0) {
         dir = 1;
@@ -54,11 +79,17 @@ export const createWallSegments = (outline: number[]): Segment[] => {
         let nextX = x;
         let nextY = y;
         const points: Array<[x: number, y: number]> = [];
+        if (dxy[dir][0]) {
+            area[`${nextX}:${nextY}`] = [nextX, nextY];
+        }
         for (let j = Math.abs(outline[i]) * 2; j > 0; --j) {
             nextX += dxy[nextDir][0];
             nextY += dxy[nextDir][1];
             if (j > 1) {
                 points.push([nextX, nextY]);
+            }
+            if (dxy[dir][0]) {
+                area[`${nextX}:${nextY}`] = [nextX, nextY];
             }
         }
 
@@ -132,5 +163,25 @@ export const createWallSegments = (outline: number[]): Segment[] => {
         }
     }
 
-    return segments;
+    // Calculate floor area
+    const allX = Array.from(Object.values(area), ([x]) => x);
+    const allY = Array.from(Object.values(area), ([, y]) => y);
+    const minX = Math.min(...allX);
+    const maxX = Math.max(...allX);
+    const minY = Math.min(...allY);
+    const maxY = Math.max(...allY);
+    const floorArea: FloorArea = new Set<[x: number, y: number]>();
+    for (let y = minY; y <= maxY; ++y) {
+        let inside = false;
+        for (let x = minX; x <= maxX; ++x) {
+            if (`${x}:${y}` in area) {
+                inside = !inside;
+            }
+            if (inside) {
+                floorArea.add([x, y]);
+            }
+        }
+    }
+
+    return { segments, floorArea };
 };

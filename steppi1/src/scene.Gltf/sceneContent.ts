@@ -4,26 +4,53 @@ import { addPerson } from "../nodeLib/personNode";
 import { addDebugGrid } from "../nodeLib/debugGridNode";
 import { addHouse } from "../nodeLib/houseNode";
 
-export const sceneContent = async (scene: BABYLON.Scene) => {
+export const sceneContent = async (
+    scene: BABYLON.Scene,
+    shadowGenerator: BABYLON.ShadowGenerator
+) => {
     addPerson(scene);
+    // addDebugGrid(scene);
 
-    const WIDTH = 2;
-    const HEIGHT = 2.5790634155273438;
-    // const DEPTH = 0.17819999903440475;
-    const DEPTH = 0.1;
+    await addHouse(scene, [-3, 1, -2, 2, 5, -3], 0, 0, {
+        floors: 2,
+        shadowGenerator,
+    });
+    await addHouse(scene, [2, 2], -4, -2, { startFloor: 2, shadowGenerator });
 
-    addDebugGrid(scene);
+    await addHouse(scene, [7, 3, 9, 5, -8, 2, -7, -6, -1, -4], 4, 10, {
+        shadowGenerator,
+    });
+    await addHouse(scene, [4, 2, -4, -2], 10, 0, {
+        floors: 5,
+        shadowGenerator,
+    });
+    await addHouse(scene, [3, 3], 4, 10, { startFloor: 1, shadowGenerator });
 
-    const house1 = await addHouse(scene, [-3, 1, -2, 2, 5, -3], 0, 0, 2);
+    await addHouse(scene, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], -20, -15, {
+        floors: 2,
+        shadowGenerator,
+    });
 
-    const house2 = await addHouse(scene, [4, 2, -4, -2], 10, 0, 5);
+    await addHouse(scene, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], -50, -15, {
+        floors: 2,
+        shadowGenerator,
+    });
 
-    const house3 = await addHouse(
-        scene,
-        [7, 3, 9, 5, -8, 2, -7, -6, -1, -4],
-        4,
-        10
-    );
+    await addHouse(scene, [4, 50], 42, 50, {
+        floors: 2,
+        shadowGenerator,
+    });
+
+    await addHouse(scene, [3, 30], 42, 50, {
+        floors: 2,
+        startFloor: 2,
+        shadowGenerator,
+    });
+
+    await addHouse(scene, [20, 8], -42, 40, {
+        floors: 4,
+        shadowGenerator,
+    });
 
     // const outline2 = [6, 6, -6, -6];
     // const outline2 = [2, 2, -2, -2];

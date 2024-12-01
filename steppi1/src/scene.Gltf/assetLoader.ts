@@ -63,7 +63,8 @@ const loadGlbAsset = async (
         }
 
         mesh.bakeCurrentTransformIntoVertices();
-        mesh.isVisible = false;
+        // mesh.isVisible = false;
+        // mesh.visibility = 0;
         return true;
     });
 
@@ -150,7 +151,6 @@ export const getAssetInstance = async (
         instance.isVisible = true;
 
         // FIXME: Remove hack
-        console.log("XXX", instance.material?.name);
         if (instance.material?.name.startsWith("glass")) {
             instance.material.alpha = 0.5;
         }

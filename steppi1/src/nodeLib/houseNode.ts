@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
-import { createWallSegments } from "./wallSegments";
+import { createWalls } from "./createWalls";
 import { getAssetInstance } from "../scene.Gltf/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
 
@@ -17,8 +17,6 @@ const createRandom = (seed: number) => {
     };
 };
 
-let houseIndex = 0;
-
 const chooseFrom = <T>(random: number, cands: T[]) =>
     cands[random % cands.length];
 
@@ -27,18 +25,24 @@ export const addHouse = async (
     outline: number[],
     x: number,
     z: number,
-    floors = 1
+    {
+        floors = 1,
+        startFloor = 0,
+        shadowGenerator,
+    }: {
+        floors?: number;
+        startFloor?: number;
+        shadowGenerator?: BABYLON.ShadowGenerator;
+    }
 ) => {
-    const segments = createWallSegments(outline);
+    const { segments, floorArea } = createWalls(outline);
     const nextRandom = createRandom(
         outline.reduce((a, b) => (a * a * Math.abs(b + 1)) & 0xfffff)
     );
+    const height = 2.4;
 
-    // UNUSED! Reparenting detroys instantiating
-    const rootNode = new BABYLON.TransformNode(`house_${++houseIndex}`, scene);
-
-    for (let floor = 0; floor < floors; ++floor) {
-        const y = floor * 2.4;
+    let y = startFloor * height;
+    for (let floor = 0; floor < floors; ++floor, y += height) {
         for (const seg of segments) {
             if (seg.type === "wall") {
                 const assetKey = chooseFrom<AssetKey>(nextRandom(), [
@@ -53,7 +57,6 @@ export const addHouse = async (
                 // console.log(assetKey, getNodeWorldDimensions(instance));
 
                 instance.forEach((mesh) => {
-                    //instance.parent = rootNode;
                     mesh.position = new BABYLON.Vector3(
                         x + seg.cx,
                         y,
@@ -64,6 +67,7 @@ export const addHouse = async (
                         new BABYLON.Vector3(0, 1, 0),
                         ((5 - seg.dir) * Math.PI) / 2
                     );
+                    shadowGenerator?.addShadowCaster(mesh);
                 });
             }
             if (seg.type === "corner") {
@@ -83,6 +87,7 @@ export const addHouse = async (
                         new BABYLON.Vector3(0, 1, 0),
                         ((6 - +seg.dir) * Math.PI) / 2
                     );
+                    shadowGenerator?.addShadowCaster(mesh);
                 });
 
                 /*
@@ -99,5 +104,14 @@ export const addHouse = async (
         }
     }
 
-    return rootNode;
+    for (const [floorX, floorY] of floorArea) {
+        const instance = await getAssetInstance(
+            scene,
+            "building/roof-flat-center"
+        );
+        instance.forEach((mesh) => {
+            mesh.position = new BABYLON.Vector3(x + floorX, y, z + floorY);
+            shadowGenerator?.addShadowCaster(mesh);
+        });
+    }
 };

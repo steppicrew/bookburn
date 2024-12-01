@@ -82,3 +82,60 @@ export const createSkybox = (scene: BABYLON.Scene) => {
 
     return skybox;
 };
+
+export const createGround1 = (scene: BABYLON.Scene) => {
+    // Create a ground mesh
+    const ground = BABYLON.MeshBuilder.CreateGround(
+        "ground",
+        { width: 100, height: 100 },
+        scene
+    );
+
+    // Create a standard material with a solid color
+    const groundMaterial = new BABYLON.StandardMaterial(
+        "groundMaterial",
+        scene
+    );
+
+    // Set the diffuse color for the ground (e.g., light green for grass)
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.8, 0.4); // Light green
+    groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0); // No specular highlights
+
+    // Apply the material to the ground
+    ground.material = groundMaterial;
+
+    // Enable the ground to receive shadows
+    ground.receiveShadows = true;
+
+    return ground;
+};
+
+export const createSkybox1 = (scene: BABYLON.Scene) => {
+    // Create a large sphere for the sky
+    const skybox = BABYLON.MeshBuilder.CreateSphere(
+        "skybox",
+        { diameter: 1000 },
+        scene
+    );
+
+    // Create a basic material
+    const skyboxMaterial = new BABYLON.StandardMaterial(
+        "skyboxMaterial",
+        scene
+    );
+    skyboxMaterial.diffuseColor = BABYLON.Color3.FromHexString("#87CEEB"); // Light sky blue
+    skyboxMaterial.specularColor = BABYLON.Color3.Black(); // No specular highlights
+    skyboxMaterial.emissiveColor = BABYLON.Color3.FromHexString("#87CEEB"); // Glow with sky color
+
+    skyboxMaterial.backFaceCulling = false; // Render the inside of the sphere
+
+    // Apply the material to the skybox
+    skybox.material = skyboxMaterial;
+
+    // Prevent the skybox from casting or receiving shadows
+    skybox.isPickable = false;
+    skybox.checkCollisions = false;
+    skybox.infiniteDistance = true;
+
+    return skybox;
+};
