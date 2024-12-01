@@ -51,6 +51,8 @@ export const createBookParts = (parameters: {
 
     const updates = updateWrapper();
 
+    let meshEnabled = true;
+
     const { mesh, material } = createBookMesh({
         ...parameters,
         vertices,
@@ -89,6 +91,8 @@ export const createBookParts = (parameters: {
         mesh: hullMesh,
         getUpdate: hullGetUpdate,
         addPhysics,
+        collisionTracker,
+        setEnabled: setHullEnabled,
     } = getPhysicsMesh(
         scene,
         width,
@@ -98,6 +102,27 @@ export const createBookParts = (parameters: {
 
     mesh.parent = bookNode;
     hullMesh.parent = bookNode;
+
+    collisionTracker.addEventListerner(({ state, event }) => {
+        switch (state) {
+            case "started":
+                setHullEnabled(false);
+                meshEnabled = false;
+            // Fall through
+            case "continued":
+                break;
+                console.log(
+                    "collision point",
+                    state,
+                    event,
+                    event?.collider.transformNode,
+                    event?.collidedAgainst.transformNode
+                );
+                break;
+            case "ended":
+                console.log("collision ended");
+        }
+    });
 
     const beforeRenderObservable = scene.onBeforeRenderObservable.add(() => {
         mesh.position.copyFrom(hullMesh.position);
@@ -143,7 +168,11 @@ export const createBookParts = (parameters: {
         startTime?: number;
         flipAngle?: number;
     }): Promise<void> =>
-        new Promise((resolve) => {
+        new Promise((resolve, reject) => {
+            if (!meshEnabled) {
+                reject("Mesh disabled");
+                return;
+            }
             const _startTime = startTime || Date.now();
             if (!flipPages || flipPages > maxFlipPageCount) {
                 flipPages = maxFlipPageCount;
@@ -160,6 +189,10 @@ export const createBookParts = (parameters: {
 
             const update = () => {
                 const now = Date.now();
+                if (!meshEnabled) {
+                    updates.remove(update);
+                    reject("Mesh disabled");
+                }
                 if (now < _startTime) {
                     return;
                 }

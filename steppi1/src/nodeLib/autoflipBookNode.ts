@@ -27,6 +27,7 @@ export const addAutoflipBook = (
                     startTime,
                     flipAngle,
                 })
+                .catch((error) => console.log(error))
                 .then(() => setTimeout(flipRight, 1000));
         const flipRight = () =>
             book
@@ -36,6 +37,7 @@ export const addAutoflipBook = (
                     flipPages: 10,
                     flipAngle,
                 })
+                .catch((error) => console.log(error))
                 .then(() => setTimeout(flipLeft, 1000));
         setTimeout(() => flipLeft(startTime), 1000);
     }
