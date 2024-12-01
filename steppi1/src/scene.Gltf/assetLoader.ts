@@ -1,5 +1,8 @@
 import * as BABYLON from "babylonjs";
+
 import { AssetKey } from "../lib/AssetKey";
+import { serializeMaterial, unserializeMaterial } from "./materialUtils";
+import { kenneyMaterials } from "./kenneyMaterials";
 
 const loadGlbAsset = async (
     scene: BABYLON.Scene,
@@ -23,21 +26,40 @@ const loadGlbAsset = async (
         }
 
         if (!(mesh instanceof BABYLON.Mesh)) {
-            throw new Error(`Mesh type ${typeof mesh} not allowed`);
+            throw new Error(`Mesh type ${mesh.getClassName()} not allowed`);
         }
 
-        // PBRMaterial don't work with HMR. Replace them with StandardMaterial
-        if (mesh.material instanceof BABYLON.PBRMaterial) {
-            const nextMaterial = new BABYLON.StandardMaterial(
-                mesh.material.name + "_1",
-                scene
-            );
-            nextMaterial.diffuseColor = mesh.material.albedoColor;
-            nextMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-            mesh.material = nextMaterial;
-            console.log(
-                `Reassigned material ${mesh.material.name} to mesh ${mesh.name}`
-            );
+        if (mesh.material) {
+            /*
+            TODO: Make this work:
+            if (mesh.material.name in kenneyMaterials) {
+                const substituteMaterialName = `${mesh.material.name}_substitute`;
+                let material = scene.getMaterialByName(substituteMaterialName);
+                if (!material) {
+                    material = unserializeMaterial(
+                        scene,
+                        kenneyMaterials[mesh.material.name],
+                        substituteMaterialName
+                    );
+                }
+                mesh.material.dispose();
+                mesh.material = material;
+            } else 
+            */
+
+            if (mesh.material instanceof BABYLON.PBRMaterial) {
+                // PBRMaterial don't work with HMR. Replace them with StandardMaterial
+                const nextMaterial = new BABYLON.StandardMaterial(
+                    mesh.material.name + "_1",
+                    scene
+                );
+                nextMaterial.diffuseColor = mesh.material.albedoColor;
+                nextMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+                mesh.material = nextMaterial;
+                console.log(
+                    `Reassigned material ${mesh.material.name} to mesh ${mesh.name}`
+                );
+            }
         }
 
         mesh.bakeCurrentTransformIntoVertices();
@@ -126,6 +148,13 @@ export const getAssetInstance = async (
             throw new Error("asset.instance() === null");
         }
         instance.isVisible = true;
+
+        // FIXME: Remove hack
+        console.log("XXX", instance.material?.name);
+        if (instance.material?.name.startsWith("glass")) {
+            instance.material.alpha = 0.5;
+        }
+
         return instance;
     });
 };
