@@ -183,8 +183,8 @@ export const getPhysicsMesh = (
 
     let enabled = true;
     const setEnabled = (newState: boolean) => {
-        console.log("setEnabled", enabled);
         enabled = newState;
+        console.log("setEnabled", enabled);
     };
 
     const getUpdate = (() => {

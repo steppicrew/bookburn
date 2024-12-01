@@ -121,8 +121,8 @@ export const setupBook = (
 
     const bookParts = createBookParts({
         scene,
-        width: 2.1,
-        height: 2.7,
+        width: 0.21,
+        height: 0.27,
         coverDepth,
         pageDepth,
         maxFlipPageCount: Math.min(maxFlipPageCount, pageCount) as never,
