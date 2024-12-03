@@ -1,7 +1,8 @@
 import * as BABYLON from "babylonjs";
 // import * as BABYLON_MATERIALS from "babylonjs-materials";
 
-export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
+/*
+export const glassMaterial_OLD = (scene: BABYLON.Scene, name: string) => {
     let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
     if (!material) {
         material = new BABYLON.PBRMaterial(name, scene);
@@ -19,27 +20,23 @@ export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
             0.215670541,
             0.280335039
         );
+    }
+    return material;
+};
+*/
 
-        /* 
-        // Adapted from https://www.babylonjs-playground.com/#9AB3AV#9
-        // But doesn't work :-(
-        // Needs: npm install babylonjs-materials
-        material = new BABYLON_MATERIALS.CustomMaterial(name, scene);
-        material.alpha = 0.1;
-        material.Fragment_Before_FragColor(`
-            float fs = min(1.0, max(0.0, 1.0 - pow(dot(vNormalW, normalize((vEyePosition.xyz) - vPositionW)), 1.1)));
+export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
+    let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
+    if (!material) {
+        material = new BABYLON.PBRMaterial(name, scene);
+        material.alpha = 0.99;
+        const glassMaterialPlugin = new GlassMaterialPlugin(material);
+        material.freeze();
 
-            vec3 f1 = 1.51 * refract(vNormalW, normalize(vec3(100.0) - vPositionW), 1.2);
-            float l1 = sin(length(f1 * 0.1) * 1.2 + min((f1.y + abs(f1.x)), min(sin(f1.y), cos(0.01 * f1.x))) * 0.5 + 1.5) * 0.5;
-
-            vec3 f2 = 2.151 * refract(vNormalW, normalize((vEyePosition.xyz) - vPositionW) * 2.0, 1.15);
-            float l2 = sin(length(f2 * 0.1) * 1.2 + min((f2.y + abs(f2.y)), min(sin(f2.z), cos(0.01 * f2.x))) * 0.5 + 1.5) * 0.5;
-            l2 = min(1.0, max(0.0, l2));
-
-            color = vec4(vec3(1.0) * l2 + color.xyz, pow(l1, 5.0) + pow(l2 * 0.83 + (1.0 - fs), 12.0) * 0.5);
-        `);
-        material.backFaceCulling = true;
-        */
+        material.onDisposeObservable.add(() => {
+            console.log("Removing glassMaterialPlugin");
+            glassMaterialPlugin.dispose();
+        });
     }
 
     return material;
@@ -80,3 +77,104 @@ export const createMaterialFromKenneyBuildingKitColormap = (
 
     return material;
 };
+
+export const createPlainMaterial = (
+    scene: BABYLON.Scene,
+    name: string,
+    r: number,
+    g: number,
+    b: number
+): BABYLON.StandardMaterial => {
+    const material = new BABYLON.StandardMaterial(name, scene);
+    material.diffuseColor = new BABYLON.Color3(r, g, b);
+    material.specularColor = BABYLON.Color3.Black();
+    material.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    return material;
+};
+
+export class GlassMaterialPlugin extends BABYLON.MaterialPluginBase {
+    constructor(material: BABYLON.Material) {
+        super(material, "GlassMaterial", 200, { GlassMaterialEnabled: false });
+
+        console.log("Adding glassMaterialPlugin");
+
+        // Enable the plugin by default
+        this.isEnabled = true;
+    }
+
+    private _isEnabled = false;
+
+    // Enable or disable the plugin
+    get isEnabled() {
+        return this._isEnabled;
+    }
+
+    set isEnabled(enabled: boolean) {
+        if (this._isEnabled === enabled) {
+            return;
+        }
+        this._isEnabled = enabled;
+        this.markAllDefinesAsDirty();
+        this._enable(this._isEnabled);
+    }
+
+    prepareDefines(
+        defines: BABYLON.MaterialDefines,
+        scene: BABYLON.Scene,
+        mesh: BABYLON.AbstractMesh
+    ) {
+        defines["GlassMaterialEnabled"] = this._isEnabled;
+    }
+
+    getClassName() {
+        return "GlassMaterialPlugin";
+    }
+
+    isCompatible(shaderLanguage: BABYLON.ShaderLanguage) {
+        switch (shaderLanguage) {
+            case BABYLON.ShaderLanguage.GLSL:
+                return true;
+            default:
+                console.log("GlassMaterialPlugin: GLSL required");
+                return false;
+        }
+    }
+
+    getCustomCode(shaderType: "vertex" | "fragment") {
+        if (shaderType === "fragment") {
+            return {
+                CUSTOM_FRAGMENT_MAIN_END: `
+                    // Compute the Fresnel effect
+                    vec3 viewDirection = normalize(vEyePosition.xyz - vPositionW);
+                    float normalDotView = dot(vNormalW, viewDirection);
+                    float fresnelEffect = pow(1.0 - normalDotView, 1.1);
+                    float fs = clamp(1.0 - fresnelEffect, 0.0, 1.0);
+
+                    // Compute the first refraction vector and light modulation
+                    vec3 refractionVector1 = 1.51 * refract(vNormalW, normalize(vec3(100.0) - vPositionW), 1.2);
+                    float refractionLength1 = length(refractionVector1 * 0.1);
+                    float lightModulation1 = refractionLength1 * 1.2 + min((refractionVector1.y + abs(refractionVector1.x)), 
+                        min(sin(refractionVector1.y), cos(0.01 * refractionVector1.x))) * 0.5 + 1.5;
+                    float l1 = sin(lightModulation1);
+
+                    // Compute the second refraction vector and light modulation
+                    vec3 refractionVector2 = 2.151 * refract(vNormalW, viewDirection * 2.0, 1.15);
+                    float refractionLength2 = length(refractionVector2 * 0.1);
+                    float lightModulation2 = refractionLength2 * 1.2 + min((refractionVector2.y + abs(refractionVector2.y)), 
+                        min(sin(refractionVector2.z), cos(0.01 * refractionVector2.x))) * 0.5 + 1.5;
+                    float l2 = clamp(sin(lightModulation2) * 0.5, 0.0, 1.0);
+
+                    // Combine the results to compute the final color
+                    // *** Changed from vec3(1.0) * l2
+                    vec3 baseColor1 = vec3(0.8, 0.8, 1.0) * (1.0 - l2); //  + gl_FragColor.xyz;
+                    // *** Changed from 12.0 to 2.0
+                    float alpha1 = pow(l1, 5.0) * 0.4 + pow(l2 * 0.83 + (1.0 - fs), 2.0) * 0.3 + 0.3;
+
+                    // Output the final fragment color
+                    gl_FragColor = vec4(baseColor1, alpha1);
+            `,
+            };
+        }
+        return null;
+    }
+}

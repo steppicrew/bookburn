@@ -11,12 +11,6 @@ export const sceneContent = async (
     // addPerson(scene);
     // addDebugGrid(scene);
 
-    await addHouse(scene, -4, -2, [2, 2], {
-        startFloor: 0,
-        shadowGenerator,
-        xrHelper,
-    });
-
     await addHouse(scene, 0, 0, [-3, 1, -2, 2, 5, -3], {
         floors: 2,
         shadowGenerator,

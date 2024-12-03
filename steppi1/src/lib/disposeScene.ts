@@ -33,8 +33,13 @@ export const disposeScene = (
     });
 
     scene.materials.slice().forEach((material) => {
-        cl.log(`Disposing material: ${material.name}`);
-        material.dispose();
+        if (material instanceof BABYLON.ShaderMaterial) {
+            cl.log(`Disposing shader material: ${material.name}`);
+            material.dispose(true, true);
+        } else {
+            cl.log(`Disposing material: ${material.name}`);
+            material.dispose();
+        }
     });
 
     // Dispose all textures, except environmentTexture

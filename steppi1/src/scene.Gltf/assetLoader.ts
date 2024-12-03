@@ -4,6 +4,7 @@ import { AssetKey } from "../lib/AssetKey";
 import { makeConsoleLogger } from "./ConsoleLogger";
 import {
     createMaterialFromKenneyBuildingKitColormap,
+    createPlainMaterial,
     glassMaterial,
 } from "./materialUtils";
 
@@ -13,20 +14,10 @@ const makeMaterials =
     // : Record<string, (scene: BABYLON.Scene, name:string) => BABYLON.Material>
     {
         roof: (scene: BABYLON.Scene, name: string) => {
-            return createMaterialFromKenneyBuildingKitColormap(
-                scene,
-                name,
-                10,
-                2
-            );
+            return createPlainMaterial(scene, name, 0.4, 0.1, 0.1);
         },
         stairs: (scene: BABYLON.Scene, name: string) => {
-            return createMaterialFromKenneyBuildingKitColormap(
-                scene,
-                name,
-                12,
-                3
-            );
+            return createPlainMaterial(scene, name, 0.4, 0.5, 0.5);
         },
         glass: (scene: BABYLON.Scene, name: string) => {
             return glassMaterial(scene, name);

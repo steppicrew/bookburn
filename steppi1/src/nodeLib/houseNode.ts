@@ -119,7 +119,7 @@ export const addHouse = async (
             if (segment.type === "stairs") {
                 const instance = await getAssetInstance(
                     scene,
-                    "building/stairs-open",
+                    "building/stairs-closed",
                     shadowGenerator
                 );
                 instance.forEach((mesh) => {
@@ -141,6 +141,7 @@ export const addHouse = async (
                         new BABYLON.Vector3(0, 1, 0),
                         ((6 - segment.dir) * Math.PI) / 2
                     );
+                    xrHelper?.teleportation.addFloorMesh(mesh);
                 });
                 // debugInstance(scene, instance);
                 continue;
