@@ -1,3 +1,5 @@
+// FIXME: does not belong in nodeLib
+
 export type CornerSegment = {
     type: "corner";
     cx: number;
@@ -12,15 +14,24 @@ export type WallSegment = {
     dir: number;
 };
 
-export type Segment = CornerSegment | WallSegment;
+export type StairsSegment = {
+    type: "stairs";
+    cx: number;
+    cy: number;
+    dir: number;
+};
+
+export type Segment = CornerSegment | WallSegment | StairsSegment;
 
 // 0 = +x, 1 = -y, 2 = -x, 3 = +y
-const dxy = [
+export const dirXY = [
     [1, 0],
     [0, 1],
     [-1, 0],
     [0, -1],
 ] as const;
+
+type Points = Array<[x: number, y: number, index: number]>;
 
 type Walls = {
     x: number;
@@ -28,17 +39,28 @@ type Walls = {
     nextX: number;
     nextY: number;
     dir: number;
-    points: Array<[x: number, y: number]>;
+    points: Points;
 };
 
 type FloorArea = Set<[x: number, y: number]>;
 
-type CreateWallSegments = {
+type MakeWalls = {
     segments: Segment[];
     floorArea: FloorArea;
 };
 
-export const createWalls = (outline: number[]): CreateWallSegments => {
+type StairsFeature = {
+    type: "stairs";
+    index: number;
+};
+
+type Feature = StairsFeature;
+export type WallFeatures = Feature[];
+
+export const makeWalls = (
+    outline: number[],
+    features: WallFeatures = []
+): MakeWalls => {
     if (outline.length & 1) {
         throw new Error("outline must have even count of elements");
     }
@@ -80,6 +102,9 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
         dir = 3;
         fillX = 1;
     }
+
+    let pointIndex = 0;
+
     for (let i = 0; i < outline.length; i++) {
         let nextDir: number;
         if (outline[i] < 0 !== dir <= 1) {
@@ -90,13 +115,13 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
 
         let nextX = x;
         let nextY = y;
-        const points: Array<[x: number, y: number]> = [];
+        const points: Points = [];
         area[`${nextX}:${nextY}`] = [nextX, nextY];
         for (let j = Math.abs(outline[i]) * 2; j > 0; --j) {
-            nextX += dxy[nextDir][0];
-            nextY += dxy[nextDir][1];
+            nextX += dirXY[nextDir][0];
+            nextY += dirXY[nextDir][1];
             if (j > 1) {
-                points.push([nextX, nextY]);
+                points.push([nextX, nextY, pointIndex++]);
             }
             area[`${nextX}:${nextY}`] = [nextX, nextY];
         }
@@ -122,7 +147,7 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
 
     const segments: Segment[] = [];
 
-    const cornerRots = [
+    const cornerDirs = [
         [-1, 2, -1, 3],
         [0, -1, 3, -1],
         [-1, 1, -1, 0],
@@ -138,7 +163,7 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
             const p2 = lastWall.points[lastWall.points.length - 1];
             const cx = (p1[0] + p2[0]) / 2;
             const cy = (p1[1] + p2[1]) / 2;
-            const dir = cornerRots[wall.dir][lastWall.dir];
+            const dir = cornerDirs[wall.dir][lastWall.dir];
             if (dir < 0) {
                 throw new Error("dir < 0");
             }
@@ -154,9 +179,28 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
             });
         }
 
+        const checkFeature = ([cx, cy, index]: Points[number], dir: number) => {
+            features
+                .filter((feature) => feature.index === index)
+                .forEach((feature) => {
+                    if (feature.type === "stairs") {
+                        segments.push({
+                            type: "stairs",
+                            cx,
+                            cy,
+                            dir,
+                        });
+                        return;
+                    }
+                    throw new Error(`Unknown Feature.type: ${feature.type}`);
+                });
+        };
+
         for (let j = 0; j < wall.points.length; ++j) {
             if (j + 2 < wall.points.length) {
                 const p1 = wall.points[j];
+                checkFeature(p1, wall.dir);
+                checkFeature(wall.points[j + 1], wall.dir);
                 j += 1;
                 const p2 = wall.points[j + 1];
                 const cx = (p1[0] + p2[0]) / 2;
@@ -167,6 +211,8 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
                     cy,
                     dir: wall.dir,
                 });
+            } else {
+                // throw new Error(`Gap detected ${j}/${wall.points.length}`);
             }
         }
     }
@@ -188,8 +234,8 @@ export const createWalls = (outline: number[]): CreateWallSegments => {
         area[`${x}:${y}`] = [x, y];
         floorArea.add([x, y]);
         for (let j = 0; j < 4; ++j) {
-            const x1 = x + dxy[j][0];
-            const y1 = y + dxy[j][1];
+            const x1 = x + dirXY[j][0];
+            const y1 = y + dirXY[j][1];
             if (`${x1}:${y1}` in area) {
                 continue;
             }

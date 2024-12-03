@@ -5,70 +5,77 @@ import { addHouse } from "../nodeLib/houseNode";
 
 export const sceneContent = async (
     scene: BABYLON.Scene,
-    shadowGenerator: BABYLON.ShadowGenerator,
-    xrHelper: BABYLON.WebXRDefaultExperience
+    shadowGenerator?: BABYLON.ShadowGenerator,
+    xrHelper?: BABYLON.WebXRDefaultExperience
 ) => {
-    addPerson(scene);
+    // addPerson(scene);
     // addDebugGrid(scene);
 
-    await addHouse(scene, [-3, 1, -2, 2, 5, -3], 0, 0, {
-        floors: 2,
+    await addHouse(scene, -4, -2, [2, 2], {
+        startFloor: 0,
         shadowGenerator,
         xrHelper,
     });
-    await addHouse(scene, [2, 2], -4, -2, {
+
+    await addHouse(scene, 0, 0, [-3, 1, -2, 2, 5, -3], {
+        floors: 2,
+        shadowGenerator,
+        xrHelper,
+        features: [{ type: "stairs", index: 0 }],
+    });
+
+    await addHouse(scene, -4, -2, [2, 2], {
         startFloor: 2,
         shadowGenerator,
         xrHelper,
     });
 
-    await addHouse(scene, [7, 3, 9, 5, -8, 2, -7, -6, -1, -4], 4, 10, {
+    await addHouse(scene, 4, 10, [7, 3, 9, 5, -8, 2, -7, -6, -1, -4], {
         shadowGenerator,
         xrHelper,
     });
-    await addHouse(scene, [4, 2, -4, -2], 10, 0, {
+    await addHouse(scene, 10, 0, [4, 2, -4, -2], {
         floors: 5,
         shadowGenerator,
         xrHelper,
+        features: [{ type: "stairs", index: 0 }],
     });
-    await addHouse(scene, [3, 3], 4, 10, {
+    await addHouse(scene, 4, 10, [3, 3], {
         startFloor: 1,
         shadowGenerator,
         xrHelper,
     });
 
-    await addHouse(scene, [3, 4, 2, 2, 5, 1, 5, 10, -4, -3], -20, -15, {
+    await addHouse(scene, -20, -15, [3, 4, 2, 2, 5, 1, 5, 10, -4, -3], {
         floors: 2,
         shadowGenerator,
         xrHelper,
     });
 
-    await addHouse(scene, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], -50, -15, {
+    await addHouse(scene, -50, -15, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], {
         floors: 2,
         shadowGenerator,
         xrHelper,
     });
 
-    await addHouse(scene, [4, 50], 42, 50, {
+    await addHouse(scene, 42, 50, [4, 50], {
         floors: 2,
         shadowGenerator,
         xrHelper,
+        features: [{ type: "stairs", index: 140 }],
     });
 
-    await addHouse(scene, [3, 30], 42, 50, {
+    await addHouse(scene, 42, 50, [3, 30], {
         floors: 2,
         startFloor: 2,
         shadowGenerator,
         xrHelper,
     });
 
-    await addHouse(scene, [20, 8], -42, 40, {
+    await addHouse(scene, -42, 40, [20, 8], {
         floors: 4,
         shadowGenerator,
         xrHelper,
+        features: [{ type: "stairs", index: 40 }],
     });
-
-    // const outline2 = [6, 6, -6, -6];
-    // const outline2 = [2, 2, -2, -2];
-    // const outline2 = [4, 2, -4, -2];
 };

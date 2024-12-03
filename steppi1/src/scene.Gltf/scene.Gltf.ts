@@ -8,6 +8,92 @@ import { createGround1, createSkybox1 } from "../lib/baseScene";
 import { sceneContent } from "./sceneContent";
 import { updateWrapper } from "../lib/updateWrapper";
 
+const light1 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
+    shadowGenerator.useBlurExponentialShadowMap = true; // Enable soft shadows
+    shadowGenerator.useKernelBlur = true;
+    shadowGenerator.blurKernel = 16; // Smaller value for VR performance
+    shadowGenerator.depthScale = 0.5; // Reduce depth precision for better performance
+    shadowGenerator.setDarkness(0.4);
+    return shadowGenerator;
+};
+
+const light2 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
+    // PCF
+    shadowGenerator.usePercentageCloserFiltering = true;
+    shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_LOW;
+    shadowGenerator.setDarkness(0.4);
+    return shadowGenerator;
+};
+
+const light3 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
+    // PCSS?
+    shadowGenerator.useContactHardeningShadow = true;
+    shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_LOW;
+    return shadowGenerator;
+};
+
+// best1
+const light4 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.CascadedShadowGenerator(
+        1024,
+        directionalLight
+    );
+    shadowGenerator.setDarkness(0.4);
+
+    shadowGenerator.lambda = 1;
+    shadowGenerator.freezeShadowCastersBoundingInfo = true;
+    shadowGenerator.cascadeBlendPercentage = 0; // perf
+
+    // shadowGenerator.autoCalcDepthBounds = true;
+
+    return shadowGenerator;
+};
+
+// best2
+const light5 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
+    shadowGenerator.bias = 0.001;
+    shadowGenerator.normalBias = 0.5;
+    shadowGenerator.setDarkness(0.4);
+    directionalLight.position = new BABYLON.Vector3(6, 20, -10);
+    directionalLight.direction = new BABYLON.Vector3(-1, -2, -1);
+    directionalLight.shadowMinZ = -40;
+    directionalLight.shadowMaxZ = 55;
+    return shadowGenerator;
+};
+
+//
+const light6 = (directionalLight: BABYLON.DirectionalLight) => {
+    const shadowGenerator = new BABYLON.CascadedShadowGenerator(
+        1024,
+        directionalLight
+    );
+    shadowGenerator.setDarkness(0.4);
+
+    shadowGenerator.lambda = 1;
+    shadowGenerator.freezeShadowCastersBoundingInfo = true;
+    shadowGenerator.cascadeBlendPercentage = 0; // perf
+    shadowGenerator.shadowMaxZ = 1000;
+    shadowGenerator.stabilizeCascades = true;
+
+    shadowGenerator.usePercentageCloserFiltering = true;
+    shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
+
+    // shadowGenerator.numCascades = 2;
+
+    // shadowGenerator.autoCalcDepthBounds = true;
+
+    directionalLight.position = new BABYLON.Vector3(6, 20, -10);
+    directionalLight.direction = new BABYLON.Vector3(-1, -2, -1);
+    directionalLight.shadowMinZ = -40;
+    directionalLight.shadowMaxZ = 55;
+
+    return shadowGenerator;
+};
+
 export const createScene: CreateSceneFn = async (
     scene: BABYLON.Scene,
     camera: CreateCamera2,
@@ -42,39 +128,7 @@ export const createScene: CreateSceneFn = async (
         scene
     );
 
-    const shadowGenerator = new BABYLON.CascadedShadowGenerator(
-        1024,
-        directionalLight
-    );
-    /*
-    const shadow = 3;
-    if (shadow === 1) {
-        shadowGenerator.useBlurExponentialShadowMap = true; // Enable soft shadows
-        shadowGenerator.useKernelBlur = true;
-        shadowGenerator.blurKernel = 16; // Smaller value for VR performance
-        shadowGenerator.depthScale = 0.5; // Reduce depth precision for better performance
-    }
-    if (shadow === 2) {
-        shadowGenerator.usePercentageCloserFiltering = true;
-        shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_LOW;
-    }
-    if (shadow === 3) {
-        shadowGenerator.useContactHardeningShadow = true;
-        shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_LOW;
-    }
-    */
-    // shadowGenerator.enableSoftTransparentShadow = true;
-    // shadowGenerator.bias = 0.00001;
-    // shadowGenerator.forceBackFacesOnly;
-    shadowGenerator.setDarkness(0.4);
-
-    shadowGenerator.lambda = 1;
-    // shadowGenerator.autoCalcDepthBounds = true;
-    shadowGenerator.freezeShadowCastersBoundingInfo = true;
-    shadowGenerator.cascadeBlendPercentage = 0; // perf
-
-    // shadowGenerator.depthClamp = true;
-    // shadowGenerator.stabilizeCascades = false;
+    const shadowGenerator = light6(directionalLight);
 
     directionalLight.autoUpdateExtends = false;
 

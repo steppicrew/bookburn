@@ -1,8 +1,11 @@
 import * as BABYLON from "babylonjs";
 
 import { AssetKey } from "../lib/AssetKey";
+import { makeConsoleLogger } from "./ConsoleLogger";
 import { serializeMaterial, unserializeMaterial } from "./materialUtils";
 import { kenneyMaterials } from "./kenneyMaterials";
+
+const cl = makeConsoleLogger("assetLoader", true);
 
 const loadGlbAsset = async (
     scene: BABYLON.Scene,
@@ -11,7 +14,7 @@ const loadGlbAsset = async (
     name: string
 ): Promise<BABYLON.Mesh[]> => {
     const assetKey = `${prefix}/${name}`;
-    console.log(`Loading asset ${assetKey}`);
+    cl.log(`Loading asset ${assetKey}`);
 
     const result = await BABYLON.SceneLoader.ImportMeshAsync(
         "",
@@ -30,12 +33,22 @@ const loadGlbAsset = async (
         }
 
         if (mesh.material) {
+            // TODO: Make this work:
             /*
-            TODO: Make this work:
             if (mesh.material.name in kenneyMaterials) {
                 const substituteMaterialName = `${mesh.material.name}_substitute`;
                 let material = scene.getMaterialByName(substituteMaterialName);
                 if (!material) {
+                    console.log(
+                        "COLOR",
+                        mesh.material.name,
+                        mesh.material,
+                        console.table(
+                            Object.entries(mesh.material)
+                            //.filter(                                (kv) => !kv[0].startsWith("_")                            )
+                        )
+                    );
+
                     material = unserializeMaterial(
                         scene,
                         kenneyMaterials[mesh.material.name],
@@ -45,18 +58,21 @@ const loadGlbAsset = async (
                 mesh.material.dispose();
                 mesh.material = material;
             } else 
-            */
-
+             */
             if (mesh.material instanceof BABYLON.PBRMaterial) {
                 // PBRMaterial don't work with HMR. Replace them with StandardMaterial
                 const nextMaterial = new BABYLON.StandardMaterial(
                     mesh.material.name + "_1",
                     scene
                 );
-                nextMaterial.diffuseColor = mesh.material.albedoColor;
+                let color = mesh.material.albedoColor;
+                if (assetKey.startsWith("building/roof-")) {
+                    color = new BABYLON.Color3(0.6, 0.2, 0.2);
+                }
+                nextMaterial.diffuseColor = color;
                 nextMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
                 mesh.material = nextMaterial;
-                console.log(
+                cl.log(
                     `Reassigned material ${mesh.material.name} to mesh ${mesh.name}`
                 );
             }
@@ -64,6 +80,7 @@ const loadGlbAsset = async (
 
         mesh.bakeCurrentTransformIntoVertices();
         mesh.isVisible = false;
+        mesh.receiveShadows = true;
         return true;
     });
 
@@ -96,7 +113,7 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
     }
 
     assetsByName[assetKey] = asset;
-    console.log(`Registering ${assetKey}`);
+    cl.log(`Registering ${assetKey}`);
 
     asset.forEach((mesh) => {
         mesh.onDispose = () => {
@@ -108,7 +125,7 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
             }
             assetsByName[assetKey].splice(index, 1);
             if (assetsByName[assetKey].length === 0) {
-                console.log(`Unregistering ${assetKey}`);
+                cl.log(`Unregistering ${assetKey}`);
                 delete assetsByName[assetKey];
             }
         };
@@ -133,7 +150,8 @@ const nextCloneIndex: Record<string, number> = {};
 
 export const getAssetInstance = async (
     scene: BABYLON.Scene,
-    assetKey: AssetKey
+    assetKey: AssetKey,
+    shadowGenerator?: BABYLON.ShadowGenerator
 ) => {
     const asset = await getAsset(scene, assetKey);
     let index = 0;
@@ -148,10 +166,12 @@ export const getAssetInstance = async (
             throw new Error("asset.instance() === null");
         }
         instance.isVisible = true;
+        shadowGenerator?.addShadowCaster(instance);
 
         // FIXME: Remove hack
+        // FIXME: DrawCell killer
         if (instance.material?.name.startsWith("glass")) {
-            instance.material.alpha = 0.5;
+            // instance.material.alpha = 0.5;
         }
 
         return instance;

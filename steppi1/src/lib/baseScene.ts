@@ -123,7 +123,7 @@ export const createSkybox1 = (scene: BABYLON.Scene) => {
         "skyboxMaterial",
         scene
     );
-    skyboxMaterial.diffuseColor = BABYLON.Color3.FromHexString("#87CEEB"); // Light sky blue
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 1); // Light sky blue
     skyboxMaterial.specularColor = BABYLON.Color3.Black(); // No specular highlights
     skyboxMaterial.emissiveColor = BABYLON.Color3.FromHexString("#87CEEB"); // Glow with sky color
 
