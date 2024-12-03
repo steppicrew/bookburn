@@ -111,31 +111,38 @@ export const createGround1 = (scene: BABYLON.Scene) => {
 };
 
 export const createSkybox1 = (scene: BABYLON.Scene) => {
-    // Create a large sphere for the sky
-    const skybox = BABYLON.MeshBuilder.CreateSphere(
+    // Create a large box for the skybox
+    const skybox = BABYLON.MeshBuilder.CreateBox(
         "skybox",
-        { diameter: 1000 },
+        { size: 1000 },
         scene
     );
 
-    // Create a basic material
+    // Create a lightweight material
     const skyboxMaterial = new BABYLON.StandardMaterial(
         "skyboxMaterial",
         scene
     );
-    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 1); // Light sky blue
+
+    // Set colors for the skybox
+    skyboxMaterial.diffuseColor = BABYLON.Color3.Black(); // Avoid diffuse calculations
     skyboxMaterial.specularColor = BABYLON.Color3.Black(); // No specular highlights
-    skyboxMaterial.emissiveColor = BABYLON.Color3.FromHexString("#87CEEB"); // Glow with sky color
+    skyboxMaterial.emissiveColor = new BABYLON.Color3(0.53, 0.81, 0.92); // Light blue emissive glow
 
-    skyboxMaterial.backFaceCulling = false; // Render the inside of the sphere
+    // Ensure inside faces are rendered
+    skyboxMaterial.backFaceCulling = false;
 
-    // Apply the material to the skybox
+    // Disable lighting calculations for better performance
+    skyboxMaterial.disableLighting = true;
+
+    // Assign the material to the skybox
     skybox.material = skyboxMaterial;
 
-    // Prevent the skybox from casting or receiving shadows
-    skybox.isPickable = false;
-    skybox.checkCollisions = false;
-    skybox.infiniteDistance = true;
+    // Optimize skybox for performance
+    skybox.isPickable = false; // Not interactable
+    skybox.checkCollisions = false; // No collisions
+    skybox.infiniteDistance = true; // Always rendered at infinite distance
+    skybox.freezeWorldMatrix(); // Prevent unnecessary matrix updates
 
     return skybox;
 };

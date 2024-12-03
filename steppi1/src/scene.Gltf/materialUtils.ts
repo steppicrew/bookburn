@@ -1,204 +1,82 @@
 import * as BABYLON from "babylonjs";
+// import * as BABYLON_MATERIALS from "babylonjs-materials";
 
-interface SerializedTexture {
-    name: string;
-    url: string | null;
-    uScale: number;
-    vScale: number;
-    uOffset: number;
-    vOffset: number;
-}
+export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
+    let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
+    if (!material) {
+        material = new BABYLON.PBRMaterial(name, scene);
+        material.indexOfRefraction = 0.52;
+        material.alpha = 0.5;
+        material.directIntensity = 0.0;
+        material.environmentIntensity = 0.7;
+        material.cameraExposure = 0.66;
+        material.cameraContrast = 1.66;
+        material.microSurface = 1;
+        material.reflectivityColor = new BABYLON.Color3(1, 1, 1);
+        material.albedoColor = new BABYLON.Color3(0.8, 0.9, 0.95);
+        material.emissiveColor = new BABYLON.Color3(
+            0.203648046,
+            0.215670541,
+            0.280335039
+        );
 
-interface SerializedMaterialBase {
-    type:
-        | "PBRMaterial"
-        | "StandardMaterial"
-        | "ShadowOnlyMaterial"
-        | "GridMaterial"
-        | "LiquidMaterial"
-        | "MultiMaterial"
-        | "NodeMaterial"
-        | "ShaderMaterial"
-        | "BackgroundMaterial";
-    name: string;
-    alpha: number;
-}
+        /* 
+        // Adapted from https://www.babylonjs-playground.com/#9AB3AV#9
+        // But doesn't work :-(
+        // Needs: npm install babylonjs-materials
+        material = new BABYLON_MATERIALS.CustomMaterial(name, scene);
+        material.alpha = 0.1;
+        material.Fragment_Before_FragColor(`
+            float fs = min(1.0, max(0.0, 1.0 - pow(dot(vNormalW, normalize((vEyePosition.xyz) - vPositionW)), 1.1)));
 
-interface SerializedPBRMaterial extends SerializedMaterialBase {
-    type: "PBRMaterial";
-    albedoColor: [number, number, number] | null;
-    albedoTexture: SerializedTexture | null;
-    metallic: number | null;
-    roughness: number | null;
-    metallicRoughnessTexture: SerializedTexture | null;
-    emissiveColor: [number, number, number] | null;
-    emissiveTexture: SerializedTexture | null;
-    bumpTexture: SerializedTexture | null;
-    environmentTexture: SerializedTexture | null;
-    transparencyMode: number | null;
-}
+            vec3 f1 = 1.51 * refract(vNormalW, normalize(vec3(100.0) - vPositionW), 1.2);
+            float l1 = sin(length(f1 * 0.1) * 1.2 + min((f1.y + abs(f1.x)), min(sin(f1.y), cos(0.01 * f1.x))) * 0.5 + 1.5) * 0.5;
 
-interface SerializedStandardMaterial extends SerializedMaterialBase {
-    type: "StandardMaterial";
-    diffuseColor: [number, number, number] | null;
-    diffuseTexture: SerializedTexture | null;
-    specularColor: [number, number, number] | null;
-    specularTexture: SerializedTexture | null;
-    emissiveColor: [number, number, number] | null;
-    emissiveTexture: SerializedTexture | null;
-    bumpTexture: SerializedTexture | null;
-}
+            vec3 f2 = 2.151 * refract(vNormalW, normalize((vEyePosition.xyz) - vPositionW) * 2.0, 1.15);
+            float l2 = sin(length(f2 * 0.1) * 1.2 + min((f2.y + abs(f2.y)), min(sin(f2.z), cos(0.01 * f2.x))) * 0.5 + 1.5) * 0.5;
+            l2 = min(1.0, max(0.0, l2));
 
-export type SerializedMaterial =
-    | SerializedPBRMaterial
-    | SerializedStandardMaterial;
-
-export const serializeMaterial = (
-    material: BABYLON.Material
-): SerializedMaterial => {
-    const serializeTexture = (
-        texture: BABYLON.BaseTexture | null
-    ): SerializedTexture | null => {
-        if (!texture) return null;
-
-        // Check if it's a Texture (not all BaseTextures have scale/offset)
-        if (texture instanceof BABYLON.Texture) {
-            return {
-                name: texture.name,
-                url: texture.url || null, // Only Textures have `url`
-                uScale: texture.uScale,
-                vScale: texture.vScale,
-                uOffset: texture.uOffset,
-                vOffset: texture.vOffset,
-            };
-        }
-
-        // Handle cases for other BaseTexture types (if needed)
-        return {
-            name: texture.name,
-            url: null, // Non-Texture BaseTextures do not have `url`
-            uScale: 1, // Default scale
-            vScale: 1,
-            uOffset: 0, // Default offset
-            vOffset: 0,
-        };
-    };
-
-    if (material instanceof BABYLON.PBRMaterial) {
-        return {
-            type: "PBRMaterial",
-            name: material.name,
-            alpha: material.alpha,
-            albedoColor: material.albedoColor
-                ? (material.albedoColor.asArray() as [number, number, number])
-                : null,
-            albedoTexture: serializeTexture(material.albedoTexture),
-            metallic: material.metallic,
-            roughness: material.roughness,
-            metallicRoughnessTexture: serializeTexture(
-                material.metallicTexture
-            ),
-            emissiveColor: material.emissiveColor
-                ? (material.emissiveColor.asArray() as [number, number, number])
-                : null,
-            emissiveTexture: serializeTexture(material.emissiveTexture),
-            bumpTexture: serializeTexture(material.bumpTexture),
-            environmentTexture: serializeTexture(material.reflectionTexture),
-            transparencyMode: material.transparencyMode,
-        };
+            color = vec4(vec3(1.0) * l2 + color.xyz, pow(l1, 5.0) + pow(l2 * 0.83 + (1.0 - fs), 12.0) * 0.5);
+        `);
+        material.backFaceCulling = true;
+        */
     }
 
-    if (material instanceof BABYLON.StandardMaterial) {
-        return {
-            type: "StandardMaterial",
-            name: material.name,
-            alpha: material.alpha,
-            diffuseColor: material.diffuseColor
-                ? (material.diffuseColor.asArray() as [number, number, number])
-                : null,
-            diffuseTexture: serializeTexture(material.diffuseTexture),
-            specularColor: material.specularColor
-                ? (material.specularColor.asArray() as [number, number, number])
-                : null,
-            specularTexture: serializeTexture(material.specularTexture),
-            emissiveColor: material.emissiveColor
-                ? (material.emissiveColor.asArray() as [number, number, number])
-                : null,
-            emissiveTexture: serializeTexture(material.emissiveTexture),
-            bumpTexture: serializeTexture(material.bumpTexture),
-        };
-    }
-
-    throw new Error(`Unsupported material type: ${material.getClassName()}`);
+    return material;
 };
 
-export const unserializeMaterial = (
+export const createMaterialFromKenneyBuildingKitColormap = (
     scene: BABYLON.Scene,
-    json: SerializedMaterial,
-    newMaterialName?: string
-): BABYLON.Material => {
-    const deserializeTexture = (
-        textureData: SerializedTexture | null
-    ): BABYLON.BaseTexture | null => {
-        if (!textureData) return null;
+    name: string,
+    columnIndex: number,
+    rowIndex: number
+): BABYLON.StandardMaterial => {
+    // Create a material
+    const material = new BABYLON.StandardMaterial(name, scene);
 
-        const texture = new BABYLON.Texture(textureData.url || "", scene);
-        texture.uScale = textureData.uScale;
-        texture.vScale = textureData.vScale;
-        texture.uOffset = textureData.uOffset;
-        texture.vOffset = textureData.vOffset;
-        return texture;
-    };
-
-    if (json.type === "PBRMaterial") {
-        const material = new BABYLON.PBRMaterial(
-            newMaterialName ?? json.name,
+    const textureName = `${name}__texture`;
+    let colormap = scene.getTextureByName(textureName) as BABYLON.Texture;
+    if (!colormap) {
+        colormap = new BABYLON.Texture(
+            "assets/kenney_building-kit/Textures/colormap.png",
             scene
         );
-        material.alpha = json.alpha;
-        material.albedoColor = json.albedoColor
-            ? BABYLON.Color3.FromArray(json.albedoColor)
-            : BABYLON.Color3.Black(); // Default to black
-        material.albedoTexture = deserializeTexture(json.albedoTexture);
-        material.metallic = json.metallic;
-        material.roughness = json.roughness;
-        material.metallicTexture = deserializeTexture(
-            json.metallicRoughnessTexture
-        );
-        material.emissiveColor = json.emissiveColor
-            ? BABYLON.Color3.FromArray(json.emissiveColor)
-            : BABYLON.Color3.Black(); // Default to black
-        material.emissiveTexture = deserializeTexture(json.emissiveTexture);
-        material.bumpTexture = deserializeTexture(json.bumpTexture);
-        material.reflectionTexture = deserializeTexture(
-            json.environmentTexture
-        );
-        material.transparencyMode =
-            json.transparencyMode !== undefined ? json.transparencyMode : null;
-        return material;
+        colormap.name = textureName;
+
+        // Set UV scaling for each grid cell
+        colormap.uScale = 1 / 16; // Divide texture into 16 horizontal columns
+        colormap.vScale = 1 / 4; // Divide texture into 4 vertical rows
     }
 
-    if (json.type === "StandardMaterial") {
-        const material = new BABYLON.StandardMaterial(
-            newMaterialName ?? json.name,
-            scene
-        );
-        material.alpha = json.alpha;
-        material.diffuseColor = json.diffuseColor
-            ? BABYLON.Color3.FromArray(json.diffuseColor)
-            : BABYLON.Color3.White(); // Default to white
-        material.diffuseTexture = deserializeTexture(json.diffuseTexture);
-        material.specularColor = json.specularColor
-            ? BABYLON.Color3.FromArray(json.specularColor)
-            : BABYLON.Color3.Black(); // Default to black
-        material.specularTexture = deserializeTexture(json.specularTexture);
-        material.emissiveColor = json.emissiveColor
-            ? BABYLON.Color3.FromArray(json.emissiveColor)
-            : BABYLON.Color3.Black(); // Default to black
-        material.emissiveTexture = deserializeTexture(json.emissiveTexture);
-        material.bumpTexture = deserializeTexture(json.bumpTexture);
-        return material;
-    }
+    // Set UV offsets to target the specific cell
+    colormap.uOffset = columnIndex / 16; // Horizontal offset for the column
+    colormap.vOffset = 1 - (rowIndex + 1) / 4; // Vertical offset for the row (flip Y-axis)
 
-    throw new Error(`Unsupported material type: ${(json as any).type}`);
+    // Apply the texture to the material
+    material.diffuseTexture = colormap; // Use diffuseTexture for StandardMaterial
+    material.specularColor = BABYLON.Color3.Black(); // Remove highlights
+    material.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
+    material.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+
+    return material;
 };

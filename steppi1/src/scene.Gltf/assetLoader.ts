@@ -2,10 +2,53 @@ import * as BABYLON from "babylonjs";
 
 import { AssetKey } from "../lib/AssetKey";
 import { makeConsoleLogger } from "./ConsoleLogger";
-import { serializeMaterial, unserializeMaterial } from "./materialUtils";
-import { kenneyMaterials } from "./kenneyMaterials";
+import {
+    createMaterialFromKenneyBuildingKitColormap,
+    glassMaterial,
+} from "./materialUtils";
 
 const cl = makeConsoleLogger("assetLoader", true);
+
+const makeMaterials =
+    // : Record<string, (scene: BABYLON.Scene, name:string) => BABYLON.Material>
+    {
+        roof: (scene: BABYLON.Scene, name: string) => {
+            return createMaterialFromKenneyBuildingKitColormap(
+                scene,
+                name,
+                10,
+                2
+            );
+        },
+        stairs: (scene: BABYLON.Scene, name: string) => {
+            return createMaterialFromKenneyBuildingKitColormap(
+                scene,
+                name,
+                12,
+                3
+            );
+        },
+        glass: (scene: BABYLON.Scene, name: string) => {
+            return glassMaterial(scene, name);
+        },
+        default: (scene: BABYLON.Scene, name: string) => {
+            return createMaterialFromKenneyBuildingKitColormap(
+                scene,
+                name,
+                10,
+                3
+            );
+        },
+    } as const;
+
+const materialSubstitutes: Array<
+    [regex: RegExp, materialName: keyof typeof makeMaterials]
+> = [
+    [/^building[/]stairs-.*[/]colormap$/, "stairs"],
+    [/^building[/]roof-.*[/]colormap$/, "roof"],
+    [/^.*[/]glass$/, "glass"],
+    [/^/, "default"],
+];
 
 const loadGlbAsset = async (
     scene: BABYLON.Scene,
@@ -33,49 +76,34 @@ const loadGlbAsset = async (
         }
 
         if (mesh.material) {
-            // TODO: Make this work:
-            /*
-            if (mesh.material.name in kenneyMaterials) {
-                const substituteMaterialName = `${mesh.material.name}_substitute`;
-                let material = scene.getMaterialByName(substituteMaterialName);
-                if (!material) {
-                    console.log(
-                        "COLOR",
-                        mesh.material.name,
-                        mesh.material,
-                        console.table(
-                            Object.entries(mesh.material)
-                            //.filter(                                (kv) => !kv[0].startsWith("_")                            )
-                        )
-                    );
-
-                    material = unserializeMaterial(
-                        scene,
-                        kenneyMaterials[mesh.material.name],
+            let material: BABYLON.Material | undefined;
+            for (const [regex, materialName] of materialSubstitutes) {
+                if (regex.test(`${assetKey}/${mesh.material.name}`)) {
+                    const substituteMaterialName =
+                        materialName + "__substitute";
+                    const material1 = scene.getMaterialByName(
                         substituteMaterialName
                     );
+                    if (material1) {
+                        material = material1;
+                    } else {
+                        material = makeMaterials[materialName](
+                            scene,
+                            substituteMaterialName
+                        );
+                    }
+                    cl.log(
+                        `Reassigned material ${substituteMaterialName} to mesh ${mesh.name} (was ${mesh.material.name})`
+                    );
+                    break;
                 }
-                mesh.material.dispose();
-                mesh.material = material;
-            } else 
-             */
-            if (mesh.material instanceof BABYLON.PBRMaterial) {
-                // PBRMaterial don't work with HMR. Replace them with StandardMaterial
-                const nextMaterial = new BABYLON.StandardMaterial(
-                    mesh.material.name + "_1",
-                    scene
-                );
-                let color = mesh.material.albedoColor;
-                if (assetKey.startsWith("building/roof-")) {
-                    color = new BABYLON.Color3(0.6, 0.2, 0.2);
-                }
-                nextMaterial.diffuseColor = color;
-                nextMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-                mesh.material = nextMaterial;
-                cl.log(
-                    `Reassigned material ${mesh.material.name} to mesh ${mesh.name}`
-                );
             }
+            if (!material) {
+                throw new Error("No material substitute matched");
+            }
+
+            mesh.material.dispose(false, true);
+            mesh.material = material;
         }
 
         mesh.bakeCurrentTransformIntoVertices();
