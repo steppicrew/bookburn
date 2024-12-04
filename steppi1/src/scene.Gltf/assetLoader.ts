@@ -3,40 +3,51 @@ import * as BABYLON from "babylonjs";
 import { AssetKey } from "../lib/AssetKey";
 import { makeConsoleLogger } from "./ConsoleLogger";
 import {
-    createMaterialFromKenneyBuildingKitColormap,
-    createPlainMaterial,
+    applyPerpendicularUVs,
+    applyPlanarProjection,
+    makePlainMaterial,
+    makeRoofTilesMaterial,
+    makeWallMaterial,
+    makeWoodMaterial,
     glassMaterial,
 } from "./materialUtils";
 
 const cl = makeConsoleLogger("assetLoader", true);
 
 const makeMaterials =
-    // : Record<string, (scene: BABYLON.Scene, name:string) => BABYLON.Material>
+    // : Record<string, (scene: BABYLON.Scene, name:string, mesh: BABYLON.Mesh) => BABYLON.Material>
     {
-        roof: (scene: BABYLON.Scene, name: string) => {
-            return createPlainMaterial(scene, name, 0.4, 0.1, 0.1);
+        wall: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) => {
+            applyPerpendicularUVs(mesh);
+            const material = makeWallMaterial(scene, name);
+            return material;
         },
-        stairs: (scene: BABYLON.Scene, name: string) => {
-            return createPlainMaterial(scene, name, 0.4, 0.5, 0.5);
+
+        roof: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) => {
+            applyPlanarProjection(mesh);
+            // return createPlainMaterial(scene, name, 0.4, 0.1, 0.1);
+            return makeRoofTilesMaterial(scene, name);
         },
-        glass: (scene: BABYLON.Scene, name: string) => {
-            return glassMaterial(scene, name);
+
+        stairs: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) => {
+            // applyPlanarProjection(mesh);
+            return makeWoodMaterial(scene, name);
         },
-        default: (scene: BABYLON.Scene, name: string) => {
-            return createMaterialFromKenneyBuildingKitColormap(
-                scene,
-                name,
-                10,
-                3
-            );
-        },
+
+        glass: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
+            glassMaterial(scene, name),
+
+        default: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
+            makePlainMaterial(scene, name, 1, 1, 1),
     } as const;
 
 const materialSubstitutes: Array<
     [regex: RegExp, materialName: keyof typeof makeMaterials]
 > = [
-    [/^building[/]stairs-.*[/]colormap$/, "stairs"],
+    [/^building[/]wall[/]colormap$/, "wall"],
+    [/^building[/]wall-.*[/]colormap$/, "wall"],
     [/^building[/]roof-.*[/]colormap$/, "roof"],
+    [/^building[/]stairs-.*[/]colormap$/, "stairs"],
     [/^.*[/]glass$/, "glass"],
     [/^/, "default"],
 ];
@@ -80,7 +91,8 @@ const loadGlbAsset = async (
                     } else {
                         material = makeMaterials[materialName](
                             scene,
-                            substituteMaterialName
+                            substituteMaterialName,
+                            mesh
                         );
                     }
                     cl.log(

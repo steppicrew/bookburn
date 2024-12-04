@@ -71,7 +71,7 @@ const light6 = (directionalLight: BABYLON.DirectionalLight) => {
         1024,
         directionalLight
     );
-    shadowGenerator.setDarkness(0.4);
+    shadowGenerator.setDarkness(0.1);
 
     shadowGenerator.lambda = 1;
     shadowGenerator.freezeShadowCastersBoundingInfo = true;

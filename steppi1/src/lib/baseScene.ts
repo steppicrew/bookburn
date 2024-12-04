@@ -1,4 +1,5 @@
 import * as BABYLON from "babylonjs";
+import { makeGroundMaterial } from "../scene.Gltf/materialUtils";
 
 export const createGround = (scene: BABYLON.Scene) => {
     // Create a ground mesh for teleportation
@@ -84,27 +85,17 @@ export const createSkybox = (scene: BABYLON.Scene) => {
 };
 
 export const createGround1 = (scene: BABYLON.Scene) => {
-    // Create a ground mesh
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
         { width: 100, height: 100 },
         scene
     );
 
-    // Create a standard material with a solid color
-    const groundMaterial = new BABYLON.StandardMaterial(
-        "groundMaterial",
-        scene
-    );
+    const groundMaterial = makeGroundMaterial(scene, "ground");
+    // groundMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.8, 0.4); // Light green
+    // groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0); // No specular highlights
 
-    // Set the diffuse color for the ground (e.g., light green for grass)
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.8, 0.4); // Light green
-    groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0); // No specular highlights
-
-    // Apply the material to the ground
     ground.material = groundMaterial;
-
-    // Enable the ground to receive shadows
     ground.receiveShadows = true;
 
     return ground;

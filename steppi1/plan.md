@@ -7,6 +7,8 @@ https://www.oculus.com/url
 ## Assets
 
 https://kenney.nl/assets
+https://www.manytextures.com/
+https://www.sketchuptextureclub.com/ ???
 
 ## Howtos
 

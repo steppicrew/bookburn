@@ -1,6 +1,56 @@
 import * as BABYLON from "babylonjs";
 // import * as BABYLON_MATERIALS from "babylonjs-materials";
 
+export const applyPlanarProjection = (mesh: BABYLON.AbstractMesh) => {
+    const uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind);
+    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+
+    if (!uvs || !positions) {
+        console.error("UV or position data not found on mesh.");
+        return;
+    }
+
+    const newUVs = [];
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const z = positions[i + 2];
+        newUVs.push(x, z); // Map X and Z to U and V
+    }
+
+    mesh.setVerticesData(BABYLON.VertexBuffer.UVKind, newUVs);
+};
+
+// Very hacky, not really working
+export const applyPerpendicularUVs = (mesh: BABYLON.AbstractMesh) => {
+    const positions = mesh.getVerticesData(BABYLON.VertexBuffer.PositionKind);
+    if (!positions) {
+        console.warn(`Mesh "${mesh.name}" has no position data, skipping.`);
+        return;
+    }
+
+    const newUVs: number[] = [];
+    for (let i = 0; i < positions.length; i += 3) {
+        const x = positions[i];
+        const y = positions[i + 1];
+        const z = positions[i + 2];
+
+        // Use the largest absolute axis to determine UVs (perpendicular projection)
+        if (Math.abs(x) > Math.abs(y) && Math.abs(x) > Math.abs(z)) {
+            // Perpendicular to X-axis
+            newUVs.push(z, y);
+        } else if (Math.abs(y) > Math.abs(x) && Math.abs(y) > Math.abs(z)) {
+            // Perpendicular to Y-axis
+            newUVs.push(x, z);
+        } else {
+            // Perpendicular to Z-axis
+            newUVs.push(x, y);
+        }
+    }
+
+    // Set the new UVs
+    mesh.setVerticesData(BABYLON.VertexBuffer.UVKind, newUVs);
+};
+
 /*
 export const glassMaterial_OLD = (scene: BABYLON.Scene, name: string) => {
     let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
@@ -42,43 +92,88 @@ export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
     return material;
 };
 
-export const createMaterialFromKenneyBuildingKitColormap = (
+const ensureTexture = (
     scene: BABYLON.Scene,
     name: string,
-    columnIndex: number,
-    rowIndex: number
-): BABYLON.StandardMaterial => {
-    // Create a material
-    const material = new BABYLON.StandardMaterial(name, scene);
-
-    const textureName = `${name}__texture`;
-    let colormap = scene.getTextureByName(textureName) as BABYLON.Texture;
-    if (!colormap) {
-        colormap = new BABYLON.Texture(
-            "assets/kenney_building-kit/Textures/colormap.png",
-            scene
-        );
-        colormap.name = textureName;
-
-        // Set UV scaling for each grid cell
-        colormap.uScale = 1 / 16; // Divide texture into 16 horizontal columns
-        colormap.vScale = 1 / 4; // Divide texture into 4 vertical rows
+    texturePath: string,
+    initTexture?: (texture: BABYLON.Texture) => void
+): BABYLON.Texture => {
+    name = `${name}__texture`;
+    let texture = scene.getTextureByName(name) as BABYLON.Texture;
+    if (!texture) {
+        texture = new BABYLON.Texture(texturePath, scene);
+        texture.name = name;
+        initTexture?.(texture);
     }
+    return texture;
+};
 
-    // Set UV offsets to target the specific cell
-    colormap.uOffset = columnIndex / 16; // Horizontal offset for the column
-    colormap.vOffset = 1 - (rowIndex + 1) / 4; // Vertical offset for the row (flip Y-axis)
-
-    // Apply the texture to the material
-    material.diffuseTexture = colormap; // Use diffuseTexture for StandardMaterial
-    material.specularColor = BABYLON.Color3.Black(); // Remove highlights
-    material.diffuseColor = new BABYLON.Color3(0.7, 0.7, 0.7);
-    material.emissiveColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-
+const makeTexturedMaterial = (
+    scene: BABYLON.Scene,
+    name: string,
+    texturePath: string,
+    initTexture?: (texture: BABYLON.Texture) => void
+): BABYLON.StandardMaterial => {
+    const material = new BABYLON.StandardMaterial(name, scene);
+    material.specularColor = BABYLON.Color3.Black();
+    material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+    material.diffuseTexture = ensureTexture(
+        scene,
+        name,
+        texturePath,
+        initTexture
+    );
     return material;
 };
 
-export const createPlainMaterial = (
+export const makeWoodMaterial = (
+    scene: BABYLON.Scene,
+    name: string
+): BABYLON.StandardMaterial =>
+    makeTexturedMaterial(
+        scene,
+        name,
+        "assets/scene.Gltf/old-wood-planks-256x256.png"
+    );
+
+export const makeWallMaterial = (
+    scene: BABYLON.Scene,
+    name: string
+): BABYLON.StandardMaterial =>
+    makeTexturedMaterial(
+        scene,
+        name,
+        // "assets/scene.Gltf/wall/irregular-concrete-wall-256x256.png",
+        // "assets/scene.Gltf/wall/white-marble-256x256.png",
+        "assets/scene.Gltf/wall/dirty-concrete-256x256.png",
+        (texture) => (texture.level = 2)
+    );
+
+export const makeRoofTilesMaterial = (
+    scene: BABYLON.Scene,
+    name: string
+): BABYLON.StandardMaterial =>
+    makeTexturedMaterial(
+        scene,
+        name,
+        "assets/scene.Gltf/roof-tiles-256x256.png"
+    );
+
+export const makeGroundMaterial = (
+    scene: BABYLON.Scene,
+    name: string
+): BABYLON.StandardMaterial =>
+    makeTexturedMaterial(
+        scene,
+        name,
+        "assets/scene.Gltf/ground/pebbles-ground-path-256x256.png",
+        // "assets/scene.Gltf/ground/ground-tile-256x256.png",
+        (texture) => {
+            texture.uScale = texture.vScale = 100 / 2;
+        }
+    );
+
+export const makePlainMaterial = (
     scene: BABYLON.Scene,
     name: string,
     r: number,
