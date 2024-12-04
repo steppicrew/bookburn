@@ -2,13 +2,15 @@ import * as BABYLON from "babylonjs";
 
 interface NodeMetadata {
     // If a body has no physics itself but has a physics body assigned, that's it
-    physicsBody?: BABYLON.Node;
+    physicsBody?: BABYLON.AbstractMesh;
 
     // Stop a body's physics
     stopPhysics?: () => void;
 
     // (Re)Start a body's physics
-    startPhysics?: () => void;
+    startPhysics?: (
+        physicsParameters?: BABYLON.PhysicsAggregateParameters
+    ) => void;
 }
 
 export const getMetadata = (node: BABYLON.Node): NodeMetadata | undefined => {

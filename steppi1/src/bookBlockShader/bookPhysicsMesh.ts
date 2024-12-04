@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { getCollisionTracker } from "../lib/collisionTracker";
-import { setMetadatas } from "../nodeLib/nodeTools";
+import { getMetadata, setMetadatas } from "../nodeLib/nodeTools";
 import { XYZ } from "./types";
 
 const SHOW_WIRE_FRAME = true;
@@ -154,45 +154,47 @@ export const getPhysicsMesh = (
     let physicsAggregate: BABYLON.PhysicsAggregate | undefined = undefined;
 
     const collisionTracker = getCollisionTracker({});
-    const addPhysics = () => {
-        let angularVelocity: BABYLON.Vector3 | undefined = undefined;
-        let linearVelocity: BABYLON.Vector3 | undefined = undefined;
-        if (physicsAggregate) {
+    {
+        const startPhysics = (physicsParameters?: BABYLON.PhysicsAggregateParameters) => {
+            let angularVelocity: BABYLON.Vector3 | undefined = undefined;
+            let linearVelocity: BABYLON.Vector3 | undefined = undefined;
+            if (physicsAggregate) {
+                const body = physicsAggregate.body;
+                angularVelocity = body.getAngularVelocity();
+                linearVelocity = body.getLinearVelocity();
+                physicsAggregate.dispose();
+            }
+            physicsAggregate = new BABYLON.PhysicsAggregate(
+                mesh,
+                BABYLON.PhysicsShapeType.MESH,
+                { mass: 1, restitution: 0.1, ...physicsParameters },
+                scene
+            );
+
             const body = physicsAggregate.body;
-            angularVelocity = body.getAngularVelocity();
-            linearVelocity = body.getLinearVelocity();
-            physicsAggregate.dispose();
-        }
-        physicsAggregate = new BABYLON.PhysicsAggregate(
-            mesh,
-            BABYLON.PhysicsShapeType.MESH,
-            { mass: 1, restitution: 0.1 },
-            scene
-        );
+            if (linearVelocity) {
+                body.setLinearVelocity(linearVelocity);
+            }
+            if (angularVelocity) {
+                body.setAngularVelocity(angularVelocity);
+            }
+            body.setCollisionCallbackEnabled(true);
+            const observable = body.getCollisionObservable();
+            observable.add(collisionTracker.onEvent);
+        };
 
-        const body = physicsAggregate.body;
-        if (linearVelocity) {
-            body.setLinearVelocity(linearVelocity);
-        }
-        if (angularVelocity) {
-            body.setAngularVelocity(angularVelocity);
-        }
-        body.setCollisionCallbackEnabled(true);
-        const observable = body.getCollisionObservable();
-        observable.add(collisionTracker.onEvent);
-    };
+        const stopPhysics = () => {
+            if (physicsAggregate) {
+                physicsAggregate.dispose();
+                physicsAggregate = undefined;
+            }
+        };
 
-    const removePhysics = () => {
-        if (physicsAggregate) {
-            physicsAggregate.dispose();
-            physicsAggregate = undefined;
-        }
-    };
-
-    setMetadatas(mesh, {
-        stopPhysics: removePhysics,
-        startPhysics: addPhysics,
-    });
+        setMetadatas(mesh, {
+            stopPhysics: stopPhysics,
+            startPhysics: startPhysics,
+        });
+    }
 
     let enabled = true;
     const setEnabled = (newState: boolean) => {
@@ -208,7 +210,7 @@ export const getPhysicsMesh = (
             }
             lastPositions = positions;
             mesh.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions);
-            addPhysics();
+            getMetadata(mesh)?.startPhysics?.();
         };
 
         const intermediateHullsCount = 10;
@@ -286,5 +288,5 @@ export const getPhysicsMesh = (
         };
     })();
 
-    return { mesh, getUpdate, addPhysics, collisionTracker, setEnabled };
+    return { mesh, getUpdate, collisionTracker, setEnabled };
 };
