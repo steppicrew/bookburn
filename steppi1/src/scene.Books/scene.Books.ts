@@ -115,7 +115,7 @@ export const createScene: CreateSceneFn = async (
         const ii = i % 25;
         book.node.position = new BABYLON.Vector3(
             Math.floor(ii / 5) * 5,
-            (ii % 5) * 5 + 30.5,
+            (ii % 5) * 5 + 30,
             Math.floor(i / 25) * 5
         );
         book.node.rotation = new BABYLON.Vector3(-0.8, 0, 0);

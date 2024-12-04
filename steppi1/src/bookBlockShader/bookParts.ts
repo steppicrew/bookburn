@@ -2,6 +2,7 @@ import * as BABYLON from "babylonjs";
 
 import { updateWrapper } from "../lib/updateWrapper";
 
+import { getMetadata, setMetadata } from "../nodeLib/nodeTools";
 import { createBookMesh } from "./bookMesh";
 import { getPhysicsMesh } from "./bookPhysicsMesh";
 import { globals } from "./globals";
@@ -90,7 +91,6 @@ export const createBookParts = (parameters: {
     const {
         mesh: hullMesh,
         getUpdate: hullGetUpdate,
-        addPhysics,
         collisionTracker,
         setEnabled: setHullEnabled,
     } = getPhysicsMesh(
@@ -102,6 +102,9 @@ export const createBookParts = (parameters: {
 
     mesh.parent = bookNode;
     hullMesh.parent = bookNode;
+
+    // Make hullMesh accessable via mesh (for scene.pick)
+    setMetadata(mesh, "physicsBody", hullMesh);
 
     collisionTracker.addEventListerner(({ state, event }) => {
         switch (state) {
@@ -228,6 +231,8 @@ export const createBookParts = (parameters: {
         scene.onKeyboardObservable.remove(keybordObserver);
         scene.onBeforeRenderObservable.remove(beforeRenderObservable);
     };
+
+    const addPhysics = getMetadata(hullMesh)?.startPhysics || (() => {});
 
     return {
         flipBook,
