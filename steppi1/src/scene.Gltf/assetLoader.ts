@@ -3,16 +3,16 @@ import * as BABYLON from "babylonjs";
 import { AssetKey } from "../lib/AssetKey";
 import { makeConsoleLogger } from "./ConsoleLogger";
 import {
-    applyPerpendicularUVs,
     applyPlanarProjection,
     makePlainMaterial,
     makeRoofTilesMaterial,
     makeWallMaterial,
     makeWoodMaterial,
     glassMaterial,
+    applyPerpendicularUVs,
 } from "./materialUtils";
 
-const cl = makeConsoleLogger("assetLoader", true);
+const cl = makeConsoleLogger("assetLoader", false);
 
 const makeMaterials =
     // : Record<string, (scene: BABYLON.Scene, name:string, mesh: BABYLON.Mesh) => BABYLON.Material>
@@ -44,8 +44,8 @@ const makeMaterials =
 const materialSubstitutes: Array<
     [regex: RegExp, materialName: keyof typeof makeMaterials]
 > = [
-    [/^building[/]wall[/]colormap$/, "wall"],
-    [/^building[/]wall-.*[/]colormap$/, "wall"],
+    // [/^building[/]wall-window-.*[/]colormap$/, "wall"],
+    [/^building[/]wall(?:-.*|)[/]colormap$/, "wall"],
     [/^building[/]roof-.*[/]colormap$/, "roof"],
     [/^building[/]stairs-.*[/]colormap$/, "stairs"],
     [/^.*[/]glass$/, "glass"],
@@ -56,7 +56,8 @@ const loadGlbAsset = async (
     scene: BABYLON.Scene,
     path: string,
     prefix: string,
-    name: string
+    name: string,
+    shadowGenerator?: BABYLON.ShadowGenerator
 ): Promise<BABYLON.Mesh[]> => {
     const assetKey = `${prefix}/${name}`;
     cl.log(`Loading asset ${assetKey}`);
@@ -82,7 +83,7 @@ const loadGlbAsset = async (
             for (const [regex, materialName] of materialSubstitutes) {
                 if (regex.test(`${assetKey}/${mesh.material.name}`)) {
                     const substituteMaterialName =
-                        materialName + "__substitute";
+                        assetKey + "__" + materialName + "__substitute";
                     const material1 = scene.getMaterialByName(
                         substituteMaterialName
                     );
@@ -96,7 +97,7 @@ const loadGlbAsset = async (
                         );
                     }
                     cl.log(
-                        `Reassigned material ${substituteMaterialName} to mesh ${mesh.name} (was ${mesh.material.name})`
+                        `Reassigned material ${assetKey}/${mesh.material.name} to ${substituteMaterialName}`
                     );
                     break;
                 }
@@ -110,7 +111,11 @@ const loadGlbAsset = async (
         }
 
         mesh.bakeCurrentTransformIntoVertices();
-        mesh.isVisible = false;
+
+        // Thin instance test
+        // mesh.isVisible = false;
+        shadowGenerator?.addShadowCaster(mesh);
+
         mesh.receiveShadows = true;
         return true;
     });
@@ -127,7 +132,11 @@ const assetsPathMap: Record<string, string> = {
     building: "assets/kenney_building-kit/",
 };
 
-const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
+const loadAsset = async (
+    scene: BABYLON.Scene,
+    assetKey: AssetKey,
+    shadowGenerator?: BABYLON.ShadowGenerator
+) => {
     const [prefix, name] = assetKey.split("/");
     if (!(prefix in assetsPathMap)) {
         throw new Error("Unknown assets path");
@@ -136,7 +145,8 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
         scene,
         assetsPathMap[prefix],
         prefix,
-        name
+        name,
+        shadowGenerator
     );
 
     if (prefix === "furniture") {
@@ -163,9 +173,13 @@ const loadAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
     });
 };
 
-export const getAsset = async (scene: BABYLON.Scene, assetKey: AssetKey) => {
+export const getAsset = async (
+    scene: BABYLON.Scene,
+    assetKey: AssetKey,
+    shadowGenerator?: BABYLON.ShadowGenerator
+) => {
     if (!(assetKey in assetsByName)) {
-        await loadAsset(scene, assetKey);
+        await loadAsset(scene, assetKey, shadowGenerator);
     }
 
     assetsByName[assetKey].forEach((mesh) => {
@@ -184,7 +198,7 @@ export const getAssetInstance = async (
     assetKey: AssetKey,
     shadowGenerator?: BABYLON.ShadowGenerator
 ) => {
-    const asset = await getAsset(scene, assetKey);
+    const asset = await getAsset(scene, assetKey); // Don't pass shadowGenerator for Instance
     let index = 0;
     if (assetKey in nextCloneIndex) {
         index = ++nextCloneIndex[assetKey];
@@ -198,13 +212,29 @@ export const getAssetInstance = async (
         }
         instance.isVisible = true;
         shadowGenerator?.addShadowCaster(instance);
-
-        // FIXME: Remove hack
-        // FIXME: DrawCell killer
-        if (instance.material?.name.startsWith("glass")) {
-            // instance.material.alpha = 0.5;
-        }
-
         return instance;
     });
+};
+
+const refreshMeshes = new Set<BABYLON.Mesh>();
+
+export const getAssetThinInstance = async (
+    scene: BABYLON.Scene,
+    assetKey: AssetKey,
+    matrix: BABYLON.Matrix,
+    shadowGenerator?: BABYLON.ShadowGenerator
+) => {
+    const asset = await getAsset(scene, assetKey, shadowGenerator); // Pass shadowGenerator for ThinInstance
+    return asset.map((mesh) => {
+        refreshMeshes.add(mesh);
+        mesh.thinInstanceAdd(matrix, false);
+    });
+};
+
+export const flushAssetThinInstances = () => {
+    for (const mesh of refreshMeshes) {
+        mesh.thinInstanceBufferUpdated("matrix");
+        mesh.thinInstanceRefreshBoundingInfo(true);
+    }
+    refreshMeshes.clear();
 };

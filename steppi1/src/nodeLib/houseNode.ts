@@ -2,7 +2,10 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
 import { dirXY, makeWalls, WallFeatures } from "./makeWalls";
-import { getAssetInstance } from "../scene.Gltf/assetLoader";
+import {
+    getAssetInstance,
+    getAssetThinInstance,
+} from "../scene.Gltf/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
 
 const createRandom = (seed: number) => {
@@ -74,75 +77,81 @@ export const addHouse = async (
                     "building/wall-window-round-detailed",
                     "building/wall-window-square",
                 ]);
-                const instance = await getAssetInstance(
-                    scene,
-                    assetKey,
-                    shadowGenerator
-                );
-
-                // console.log(assetKey, getNodeWorldDimensions(instance));
-
-                instance.forEach((mesh) => {
-                    mesh.position = new BABYLON.Vector3(
+                const matrix = BABYLON.Matrix.RotationYawPitchRoll(
+                    ((5 - segment.dir) * Math.PI) / 2,
+                    0,
+                    0
+                ).multiply(
+                    BABYLON.Matrix.Translation(
                         x + segment.cx,
                         y,
                         z + segment.cy
-                    );
-                    // instance.setPivotPoint(new BABYLON.Vector3(-0.0, 0, 0.0));
-                    mesh.rotate(
-                        new BABYLON.Vector3(0, 1, 0),
-                        ((5 - segment.dir) * Math.PI) / 2
-                    );
-                });
+                    )
+                );
+                await getAssetThinInstance(
+                    scene,
+                    assetKey,
+                    matrix,
+                    shadowGenerator
+                );
                 continue;
             }
             if (segment.type === "corner") {
-                const instance = await getAssetInstance(
+                const matrix = BABYLON.Matrix.Translation(0.5, 0, -0.5)
+                    .multiply(
+                        BABYLON.Matrix.RotationYawPitchRoll(
+                            ((6 - segment.dir) * Math.PI) / 2,
+                            0,
+                            0
+                        ).multiply(BABYLON.Matrix.Translation(-0.5, 0, 0.5))
+                    )
+                    .multiply(
+                        BABYLON.Matrix.Translation(
+                            x + segment.cx + 0.5,
+                            y,
+                            z + segment.cy - 0.5
+                        )
+                    );
+                await getAssetThinInstance(
                     scene,
                     "building/wall-corner-column-small",
+                    matrix,
                     shadowGenerator
                 );
-                instance.forEach((mesh) => {
-                    mesh.position = new BABYLON.Vector3(
-                        x + segment.cx + 0.5,
-                        y,
-                        z + segment.cy - 0.5
-                    );
-                    mesh.setPivotPoint(new BABYLON.Vector3(-0.5, 0, 0.5));
-                    mesh.rotate(
-                        new BABYLON.Vector3(0, 1, 0),
-                        ((6 - segment.dir) * Math.PI) / 2
-                    );
-                });
                 continue;
             }
             if (segment.type === "stairs") {
-                const instance = await getAssetInstance(
+                const dir1 = (segment.dir + 2) & 3;
+                const nextDir = (segment.dir + 1) & 3;
+                const x1 =
+                    dirXY[dir1][0] * 1.5 -
+                    ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][0];
+                const y1 =
+                    dirXY[dir1][1] * 1.5 -
+                    ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][1];
+                const matrix = BABYLON.Matrix.Translation(0.5, 0, -0.5)
+                    .multiply(
+                        BABYLON.Matrix.RotationYawPitchRoll(
+                            ((6 - segment.dir) * Math.PI) / 2,
+                            0,
+                            0
+                        ).multiply(BABYLON.Matrix.Translation(-0.5, 0, 0.5))
+                    )
+                    .multiply(
+                        BABYLON.Matrix.Translation(
+                            x + segment.cx + x1 + 0.5,
+                            y,
+                            z + segment.cy + y1 - 0.5
+                        )
+                    );
+                await getAssetThinInstance(
                     scene,
                     "building/stairs-closed",
+                    matrix,
                     shadowGenerator
                 );
-                instance.forEach((mesh) => {
-                    const dir1 = (segment.dir + 2) & 3;
-                    const nextDir = (segment.dir + 1) & 3;
-                    const x1 =
-                        dirXY[dir1][0] * 1.5 -
-                        ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][0];
-                    const y1 =
-                        dirXY[dir1][1] * 1.5 -
-                        ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][1];
-                    mesh.position = new BABYLON.Vector3(
-                        x + segment.cx + x1 + 0.5,
-                        y,
-                        z + segment.cy + y1 - 0.5
-                    );
-                    mesh.setPivotPoint(new BABYLON.Vector3(-0.5, 0, 0.5));
-                    mesh.rotate(
-                        new BABYLON.Vector3(0, 1, 0),
-                        ((6 - segment.dir) * Math.PI) / 2
-                    );
-                    xrHelper?.teleportation.addFloorMesh(mesh);
-                });
+
+                // xrHelper?.teleportation.addFloorMesh(mesh);
                 // debugInstance(scene, instance);
                 continue;
             }
@@ -150,15 +159,12 @@ export const addHouse = async (
     }
 
     for (const [floorX, floorY] of floorArea) {
-        const instance = await getAssetInstance(
+        var matrix = BABYLON.Matrix.Translation(x + floorX, y, z + floorY);
+        await getAssetThinInstance(
             scene,
             "building/roof-flat-patch",
+            matrix,
             shadowGenerator
         );
-        instance.forEach((mesh) => {
-            mesh.position = new BABYLON.Vector3(x + floorX, y, z + floorY);
-            shadowGenerator?.addShadowCaster(mesh);
-            xrHelper?.teleportation.addFloorMesh(mesh);
-        });
     }
 };

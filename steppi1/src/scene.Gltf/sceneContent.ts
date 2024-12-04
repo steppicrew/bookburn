@@ -2,6 +2,7 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 import { addPerson } from "../nodeLib/personNode";
 import { addHouse } from "../nodeLib/houseNode";
+import { flushAssetThinInstances } from "./assetLoader";
 
 export const sceneContent = async (
     scene: BABYLON.Scene,
@@ -10,6 +11,15 @@ export const sceneContent = async (
 ) => {
     // addPerson(scene);
     // addDebugGrid(scene);
+
+    /*
+    await addHouse(scene, -6, -2, [2, 2], {
+        startFloor: 0,
+        shadowGenerator,
+        xrHelper,
+    });
+    return;
+    */
 
     await addHouse(scene, 0, 0, [-3, 1, -2, 2, 5, -3], {
         floors: 2,
@@ -72,4 +82,6 @@ export const sceneContent = async (
         xrHelper,
         features: [{ type: "stairs", index: 40 }],
     });
+
+    flushAssetThinInstances();
 };
