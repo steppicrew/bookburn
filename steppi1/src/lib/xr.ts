@@ -179,10 +179,15 @@ const observeRightHand = (
 
         // Apply impulse based on pointer velocity
         getMetadata(grabbedMesh.mesh)?.startPhysics?.();
+        grabbedMesh.mesh.physicsBody?.setLinearVelocity(
+            grabbedMesh.tracking.velocity
+        );
+        /*
         grabbedMesh.mesh.physicsImpostor?.applyImpulse(
             grabbedMesh.tracking.velocity.scale(5), // Adjust scale factor as needed
             getCurrentPointerEndPosition(grabbedMesh)
         );
+        */
 
         logger.log(
             "Object released:",
