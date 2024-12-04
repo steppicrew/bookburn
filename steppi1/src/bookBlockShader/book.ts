@@ -112,8 +112,8 @@ export const setupBook = (
     }
 ) => {
     const pageCount = options?.pageCount || 200;
-    const pageDepth = options?.pageDepth || 0.001;
-    const coverDepth = options?.coverDepth || 0.01;
+    const pageDepth = options?.pageDepth || 0.01;
+    const coverDepth = options?.coverDepth || 0.1;
     const maxFlipPageCount = options?.maxFlipPageCount || 50;
     const texture = options?.texture || defaultTexture;
 
@@ -121,8 +121,8 @@ export const setupBook = (
 
     const bookParts = createBookParts({
         scene,
-        width: 0.21,
-        height: 0.27,
+        width: 2.1,
+        height: 2.7,
         coverDepth,
         pageDepth,
         maxFlipPageCount: Math.min(maxFlipPageCount, pageCount) as never,

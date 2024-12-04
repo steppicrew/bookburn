@@ -1,5 +1,9 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
+import { getMetadata } from "../nodeLib/nodeTools";
+import { makeConsoleLogger } from "../scene.Gltf/ConsoleLogger";
+
+const logger = makeConsoleLogger("xr.ts");
 
 const getControllerForwardRay = (controller: BABYLON.WebXRInputSource) => {
     // Use the grip transform node if available, otherwise fallback to pointer
@@ -21,12 +25,17 @@ const getControllerForwardRay = (controller: BABYLON.WebXRInputSource) => {
     return new BABYLON.Ray(origin, direction, 10); // Length is 10 units (can be adjusted)
 };
 
+const grabMesh = (mesh: BABYLON.AbstractMesh): BABYLON.AbstractMesh => {
+    return mesh.metadata?.phyisicsBody || mesh;
+};
+
 const observeRightHand = (
     xrController: BABYLON.WebXRInputSource,
     scene: BABYLON.Scene
 ) => {
     let observable: BABYLON.Nullable<BABYLON.Observer<BABYLON.Scene>> = null;
     let grabbedMesh: BABYLON.Nullable<BABYLON.AbstractMesh> = null;
+    let grabbingController: BABYLON.Nullable<BABYLON.WebXRInputSource> = null;
 
     let previousPosition: BABYLON.Vector3 | null = null;
     let previousTimestamp: number | null = null;
@@ -37,56 +46,71 @@ const observeRightHand = (
         xrController: BABYLON.WebXRInputSource,
         scene: BABYLON.Scene
     ) => {
-        observable = scene.onBeforeRenderObservable.add(() => {
-            if (!grabbedMesh) {
-                // Calculate the forward ray
-                const ray = getControllerForwardRay(xrController);
-                if (ray) {
-                    // Perform a ray pick
-                    const pickInfo = scene.pickWithRay(ray);
-                    if (pickInfo?.hit && pickInfo.pickedMesh) {
-                        console.log(
-                            "Grabbing mesh:",
-                            pickInfo.pickedMesh.name,
-                            pickInfo.pickedMesh.getAbsolutePosition()
-                        );
-                        grabbedMesh = pickInfo.pickedMesh;
-                    }
-                }
+        if (grabbedMesh) {
+            return;
+        }
+
+        // Calculate the forward ray
+        const ray = getControllerForwardRay(xrController);
+        if (ray) {
+            /*
+            BABYLON.RayHelper.CreateAndShow(
+                ray,
+                scene,
+                new BABYLON.Color3(1, 0, 0)
+            );
+            */
+            // Perform a ray pick
+            const pickInfo = scene.pickWithRay(ray);
+            if (pickInfo?.hit && pickInfo.pickedMesh) {
+                grabbedMesh = grabMesh(pickInfo.pickedMesh);
+                logger.log(
+                    "Grabbing mesh:",
+                    grabbedMesh.name,
+                    grabbedMesh.getAbsolutePosition()
+                );
+
+                getMetadata(grabbedMesh)?.stopPhysics?.();
+
+                // Reset speed tracking
+                previousPosition = previousTimestamp = null;
+                currentVelocity = new BABYLON.Vector3(0, 0, 0);
+                grabbingController = xrController;
             }
-            {
-                const pointerNode = xrController.pointer;
-                if (pointerNode) {
-                    // Get current position of the pointer
-                    const currentPosition = pointerNode.getAbsolutePosition();
+        }
+        if (!grabbedMesh) {
+            return;
+        }
 
-                    // Get the current timestamp
-                    const currentTime = performance.now();
+        logger.log("Add observable");
+        observable = scene.onBeforeRenderObservable.add(() => {
+            const pointerNode = xrController.pointer;
+            if (pointerNode) {
+                // Get current position of the pointer
+                const currentPosition = pointerNode.getAbsolutePosition();
 
-                    if (previousPosition && previousTimestamp) {
-                        // Calculate time interval (in seconds)
-                        const deltaTime =
-                            (currentTime - previousTimestamp) / 1000;
+                // Get the current timestamp
+                const currentTime = performance.now();
 
-                        // Calculate velocity as (current - previous) / deltaTime
-                        const movedBy =
-                            currentPosition.subtract(previousPosition);
+                if (previousPosition && previousTimestamp) {
+                    // Calculate time interval (in seconds)
+                    const deltaTime = (currentTime - previousTimestamp) / 1000;
 
-                        if (grabbedMesh) {
-                            console.log("p1", grabbedMesh.position);
-                            grabbedMesh.moveWithCollisions(movedBy);
-                            console.log("p2", grabbedMesh.position);
-                        }
-                        currentVelocity = movedBy.scale(1 / deltaTime);
-                        if (currentVelocity.lengthSquared() != 0) {
-                            console.log("currentVelocity", currentVelocity);
-                        }
+                    // Calculate velocity as (current - previous) / deltaTime
+                    const movedBy = currentPosition.subtract(previousPosition);
+
+                    if (grabbedMesh) {
+                        grabbedMesh.moveWithCollisions(movedBy);
                     }
-
-                    // Update previous values
-                    previousPosition = currentPosition.clone();
-                    previousTimestamp = currentTime;
+                    currentVelocity = movedBy.scale(1 / deltaTime);
+                    if (currentVelocity.lengthSquared() != 0) {
+                        console.log("currentVelocity", currentVelocity);
+                    }
                 }
+
+                // Update previous values
+                previousPosition = currentPosition.clone();
+                previousTimestamp = currentTime;
             }
         });
     };
@@ -95,23 +119,26 @@ const observeRightHand = (
         xrController: BABYLON.WebXRInputSource,
         scene: BABYLON.Scene
     ) => {
-        if (grabbedMesh) {
-            // Detach the mesh from the controller
-            grabbedMesh.setParent(null);
-            // Apply impulse based on pointer velocity
-            if (grabbedMesh.physicsImpostor) {
-                grabbedMesh.physicsImpostor.applyImpulse(
-                    currentVelocity.scale(5), // Adjust scale factor as needed
-                    grabbedMesh.getAbsolutePosition()
-                );
-            }
-            console.log(
-                "Object released:",
-                grabbedMesh.name,
-                grabbedMesh.getAbsolutePosition()
-            );
-            grabbedMesh = null;
+        if (!grabbedMesh || grabbingController != xrController) {
+            return;
         }
+
+        // Apply impulse based on pointer velocity
+        getMetadata(grabbedMesh)?.startPhysics?.();
+        grabbedMesh.physicsImpostor?.applyImpulse(
+            currentVelocity.scale(5), // Adjust scale factor as needed
+            grabbedMesh.getAbsolutePosition()
+        );
+
+        console.log(
+            "Object released:",
+            grabbedMesh.name,
+            grabbedMesh.getAbsolutePosition()
+        );
+        grabbedMesh = null;
+        grabbingController = null;
+
+        logger.log("Remove observable");
         scene.onBeforeRenderObservable.remove(observable);
     };
 
@@ -125,10 +152,8 @@ const observeRightHand = (
             grabComponent.onButtonStateChangedObservable.add(() => {
                 if (grabComponent.changes.pressed) {
                     if (grabComponent.pressed) {
-                        console.log("Grab started with the right hand.");
                         grabObject(xrController, scene);
                     } else {
-                        console.log("Grab released with the right hand.");
                         releaseObject(xrController, scene);
                     }
                 }

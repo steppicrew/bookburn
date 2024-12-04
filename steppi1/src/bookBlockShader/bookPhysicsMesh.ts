@@ -1,5 +1,6 @@
 import * as BABYLON from "babylonjs";
 import { getCollisionTracker } from "../lib/collisionTracker";
+import { setMetadatas } from "../nodeLib/nodeTools";
 import { XYZ } from "./types";
 
 const SHOW_WIRE_FRAME = true;
@@ -180,6 +181,18 @@ export const getPhysicsMesh = (
         const observable = body.getCollisionObservable();
         observable.add(collisionTracker.onEvent);
     };
+
+    const removePhysics = () => {
+        if (physicsAggregate) {
+            physicsAggregate.dispose();
+            physicsAggregate = undefined;
+        }
+    };
+
+    setMetadatas(mesh, {
+        stopPhysics: removePhysics,
+        startPhysics: addPhysics,
+    });
 
     let enabled = true;
     const setEnabled = (newState: boolean) => {
