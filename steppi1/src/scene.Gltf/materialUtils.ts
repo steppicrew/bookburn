@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-// import * as BABYLON_MATERIALS from "babylonjs-materials";
+import * as BABYLON_MATERIALS from "babylonjs-materials";
 
 export const applyPlanarProjection = (mesh: BABYLON.AbstractMesh) => {
     const uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind);
@@ -134,7 +134,7 @@ export const glassMaterial_OLD = (scene: BABYLON.Scene, name: string) => {
 };
 */
 
-export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
+export const makeGlassMaterial = (scene: BABYLON.Scene, name = "glass") => {
     let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
     if (!material) {
         material = new BABYLON.PBRMaterial(name, scene);
@@ -150,6 +150,29 @@ export const glassMaterial = (scene: BABYLON.Scene, name: string) => {
 
     return material;
 };
+
+/*
+// Does not work. Makes a http request for the Vertex shader. I don't know why.
+export const makeGlassMaterial1 = (scene: BABYLON.Scene, name = "glass") => {
+    let material = scene.getMaterialByName(
+        name
+    ) as BABYLON_MATERIALS.CustomMaterial;
+    if (!material) {
+        material = new BABYLON_MATERIALS.CustomMaterial(name, scene);
+        material.alpha = 0.1;
+        material.Fragment_Before_FragColor(`
+            float fs = min(1.,max(0.,1.-pow(dot(vNormalW,normalize(( vEyePosition.xyz) - vPositionW)),1.1)));
+            vec3 f1 =  1.51*reflect(vNormalW,normalize(    vec3(100.) - vPositionW)  ) ;
+            float l1 = sin(length(f1*0.1)*1.2+min( (f1.y+(abs(f1.x))),min(sin(f1.y),cos(0.01*f1.x)))*0.5+1.5 )*0.5;
+            vec3 f2 =  1.751*refract(vNormalW,normalize(   ( vEyePosition.xyz) - vPositionW)*2. ,1.15 ) ;
+            float l2 = sin(length(f2*0.1)*1.2+min( (f2.y+(abs(f2.y))),min(sin(f2.z),cos(0.01*f2.x)))*0.5+1.5 )*0.5;
+            l2 = min(1.,max(0.,l2)) ;
+            color = vec4( vec3(1.)*l2+color.xyz,pow(l1,13.)+pow(l2*0.83+(1.-fs),12.)*0.5 );
+        `);
+    }
+    return material;
+};
+*/
 
 const ensureTexture = (
     scene: BABYLON.Scene,
@@ -187,7 +210,7 @@ const makeTexturedMaterial = (
 
 export const makeWoodMaterial = (
     scene: BABYLON.Scene,
-    name: string
+    name = "wood"
 ): BABYLON.StandardMaterial =>
     makeTexturedMaterial(
         scene,
@@ -298,6 +321,22 @@ export class GlassMaterialPlugin extends BABYLON.MaterialPluginBase {
         if (shaderType === "fragment") {
             return {
                 CUSTOM_FRAGMENT_MAIN_END: `
+
+                    float fs =  min(1.0,max(0.0,1.0-pow(dot(vNormalW,normalize(( vEyePosition.xyz) - vPositionW)),1.0)));
+                    vec3  f1 =  1.51*refract(vNormalW,normalize(    vec3(100.) -  0.1*vPositionW) ,1.2 ) ;
+                    float l1 =  0.5*( cos( tan(f1.x))*0.5+  sin( tan(f1.y))*0.5 +  sin( tan(f1.z))*0.5 ) ;
+                    vec3  f2 =  5.851*refract(vNormalW,normalize(   ( vEyePosition.xyz) - vPositionW)*2.0 ,1.15 ) ;
+                    float l2 =  cos( (f2.x))*0.5+  sin( (f2.y))*0.5 +  sin( (f2.z))*0.5 ;
+                    l2 = min(1.,max(0.,l2)) ;
+                    l1 = pow(l1,5.)+   pow(l2*0.83+(1.-fs),12.)*0.5;
+                    l2 = pow(l1,33.)*58. + pow(l1,0.6)*0.8;
+                    l2 = (pow(l2,33.)*58. + pow(l2,0.6)*0.8)*0.5+l1*0.5;
+                    l2 = l2/.2;
+                    gl_FragColor=vec4(vec3(.8,.8,1)*l2,min(.4,l2));
+                    // gl_FragColor = vec4( vec3(1.)*l2 ,l2*.2);
+                `,
+                /*
+                CUSTOM_FRAGMENT_MAIN_END1: `
                     // Compute the Fresnel effect
                     vec3 viewDirection = normalize(vEyePosition.xyz - vPositionW);
                     float normalDotView = dot(vNormalW, viewDirection);
@@ -320,15 +359,62 @@ export class GlassMaterialPlugin extends BABYLON.MaterialPluginBase {
 
                     // Combine the results to compute the final color
                     // *** Changed from vec3(1.0) * l2
-                    vec3 baseColor1 = vec3(0.8, 0.8, 1.0) * (1.0 - l2); //  + gl_FragColor.xyz;
-                    // *** Changed from 12.0 to 2.0
-                    float alpha1 = pow(l1, 5.0) * 0.4 + pow(l2 * 0.83 + (1.0 - fs), 2.0) * 0.3 + 0.3;
+                    vec3 baseColor1 = vec3(0.8, 0.8, 1.0) * (1.0 - l2);
+                    float alpha1 = pow(l1, 5.0) * 0.25 + pow(l2 * 0.83 + (1.0 - fs), 12.0) * 0.45;
 
                     // Output the final fragment color
                     gl_FragColor = vec4(baseColor1, alpha1);
-            `,
+                `,
+                */
             };
         }
         return null;
     }
 }
+
+/*
+
+Glass Shader:
+Adapted from https://forum.babylonjs.com/t/glass-material-without-texture/6331/6
+
+Also: https://www.babylonjs-playground.com/#9AB3AV#11
+Fixed: vEyePosition -> vEyePosition.xyz
+
+    float fs = min(1.,max(0.,1.-pow(dot(vNormalW,normalize(( vEyePosition.xyz) - vPositionW)),1.)));
+     vec3 f1 =  1.51*refract(vNormalW,normalize(    vec3(100.) - vPositionW) ,1.2 ) ;
+     float l1 =   sin(length(f1*0.1)*1.2+min( (f1.y+(abs(f1.x))),min(sin(f1.y),cos(0.01*f1.x)))*0.5+1.5 )*0.5;
+     vec3 f2 =  2.151*refract(vNormalW,normalize(   ( vEyePosition.xyz) - vPositionW)*2. ,1.15 ) ;
+     float l2 =   sin(length(f2*0.1)*1.2+min( (f2.y+(abs(f2.y))),min(sin(f2.z),cos(0.01*f2.x)))*0.5+1.5 )*0.5;
+      l2 =  min(1.,max(0.,l2)) ;
+      l1 = pow(l1,5.)+   pow(l2*0.83+(1.-fs),12.)*0.5;
+      l2 = pow(l1,33.)*58. + pow(l1,0.6)*0.8;
+      l2 = (pow(l2,33.)*58. + pow(l2,0.6)*0.8)*0.5+l1*.5;
+     color = vec4( vec3(1.)*l2+color.xyz ,l2);
+
+Also: https://www.babylonjs-playground.com/#9AB3AV#12
+Fixed: vEyePosition -> vEyePosition.xyz
+
+     float fs = min(1.0,max(0.0,1.0-pow(dot(vNormalW,normalize(( vEyePosition.xyz) - vPositionW)),1.0)));
+     vec3 f1 =  1.51*refract(vNormalW,normalize(    vec3(100.) -  0.1*vPositionW) ,1.2 ) ;
+     float l1 =   0.5*( cos( tan(f1.x))*0.5+  sin( tan(f1.y))*0.5 +  sin( tan(f1.z))*0.5 ) ;
+     vec3 f2 =  5.851*refract(vNormalW,normalize(   ( vEyePosition.xyz) - vPositionW)*2.0 ,1.15 ) ;
+     float l2 =  cos( (f2.x))*0.5+  sin( (f2.y))*0.5 +  sin( (f2.z))*0.5 ;
+      l2 =  min(1.,max(0.,l2)) ;
+      l1 = pow(l1,5.)+   pow(l2*0.83+(1.-fs),12.)*0.5;
+      l2 = pow(l1,33.)*58. + pow(l1,0.6)*0.8;
+      l2 = (pow(l2,33.)*58. + pow(l2,0.6)*0.8)*0.5+l1*0.5;
+     color = vec4( vec3(1.)*l2+color.xyz ,l2);
+
+https://www.babylonjs-playground.com/#9AB3AV#7
+Fixed: vEyePosition -> vEyePosition.xyz
+    float fs = min(1.,max(0.,1.-pow(dot(vNormalW,normalize(( vEyePosition.xyz) - vPositionW)),1.1)));
+     vec3 f1 =  0.51*reflect(vNormalW,normalize(    vec3(100.) - vPositionW)  ) ;
+     float l1 =   sin(length(f1*0.1)*1.2+min( (f1.y+(abs(f1.x))),min(sin(f1.y),cos(0.01*f1.z)))*0.5+1.5 )*0.5;
+     vec3 f2 =  10.751*refract(vNormalW,normalize(   ( vEyePosition.xyz) - vPositionW)*2. ,1.15 ) ;
+     float l2 =   sin(length(f2*0.1)*1.2+min( (f2.y+(abs(f2.x))),min(sin(f2.y),cos(0.01*f2.z)))*0.5+1.5 )*0.5;
+     l2 = pow(max(l1+.5,l2+0.25)*(1.-fs),50.)*0.5+max(fs*0.25, pow(min(1.,max(0.,fs*l2+fs*0.2+l1))*0.877,13.)*1.5);
+     l2 =  min(1.,max(0.,l2)) ;
+     l2 = min(1.,max(0.,pow(l2,60.)*10.+pow(l2,2.)*2.+pow(l2,0.8)*.7));
+     l2 = pow(l2,50.)*120.+pow(l2,2.)*3.+pow(l2,0.28)*.17;
+     color = vec4( vec3(1.)*l2+color.xyz, pow(l2+(1.-fs),12.)*0.2 );
+*/

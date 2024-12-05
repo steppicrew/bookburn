@@ -1,7 +1,11 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
-import { addHouse, flushTeleportationCells } from "../nodeLib/houseNode";
+import {
+    addHouse,
+    flushTeleportationCells as flushHouses,
+} from "../nodeLib/houseNode";
 import { flushAssetThinInstances } from "./assetLoader";
+import { addElevator } from "./elevator";
 
 export const addHouses = async (
     scene: BABYLON.Scene,
@@ -40,13 +44,13 @@ export const addHouses = async (
 
     // outline MUST be counter clockwise
 
-    await addHouse(scene, -10, -2, [2, -1, 3, 3], {
+    await addHouse(scene, -14, -2, [2, -1, 3, 3], {
         floors: 2,
         shadowGenerator,
         features: [{ type: "stairs", index: 8 }],
     });
 
-    await addHouse(scene, -4, -2, [2, 2], {
+    await addHouse(scene, -10, -2, [2, 2], {
         startFloor: 2,
         shadowGenerator,
     });
@@ -69,7 +73,10 @@ export const addHouses = async (
         startFloor: 1,
         floors: 12,
         shadowGenerator,
-        features: [{ type: "stairs", index: 0 }],
+        features: [
+            { type: "stairs", index: 0 },
+            { type: "elevator", index: 10 },
+        ],
     });
     await addHouse(scene, 4, 10, [3, 3], {
         startFloor: 1,
@@ -81,9 +88,10 @@ export const addHouses = async (
         shadowGenerator,
     });
 
-    await addHouse(scene, -50, -15, [3, 4, -2, -2, 5, -1, 5, 10, -4, -3], {
-        floors: 2,
+    await addHouse(scene, -50, -15, [3, 8, 8, -5, -5, -2, 8, 10], {
+        floors: 40,
         shadowGenerator,
+        features: [{ type: "elevator", index: 2 }],
     });
 
     await addHouse(scene, 42, 50, [4, 50], {
@@ -113,8 +121,36 @@ export const sceneContent = async (
     // addPerson(scene);
     // addDebugGrid(scene);
 
+    // addElevator(scene, 0, 0, 2, 10, xrHelper);
+
     await addHouses(scene, shadowGenerator, xrHelper);
 
     flushAssetThinInstances();
-    flushTeleportationCells(scene, xrHelper);
+    flushHouses(scene, xrHelper);
+
+    /*
+    // https://doc.babylonjs.com/features/featuresDeepDive/webXR/WebXRSelectedFeatures/WebXRLayers/
+
+    try {
+        // Attempt to enable the 'xr-layers' feature
+        await xrHelper?.baseExperience.featuresManager.enableFeature(
+            BABYLON.WebXRFeatureName.LAYERS,
+            "stable"
+        );
+        console.log("XR Layers enabled successfully!");
+    } catch (error) {
+        // Handle unsupported feature gracefully
+        console.log(
+            "sceneContent: XR Layers feature is not supported in this environment:",
+            error
+        );
+    }
+    */
+
+    /*
+    xrHelper?.onInitialXRPoseSetObservable.add((xrCamera) => {
+        // floor is at y === 2
+        xrCamera.position.y = 2;
+    });
+    */
 };

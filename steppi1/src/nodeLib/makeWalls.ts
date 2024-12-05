@@ -22,7 +22,18 @@ export type StairsSegment = {
     turn?: number;
 };
 
-export type Segment = CornerSegment | WallSegment | StairsSegment;
+export type ElevatorSegment = {
+    type: "elevator";
+    cx: number;
+    cy: number;
+    dir: number;
+};
+
+export type Segment =
+    | CornerSegment
+    | WallSegment
+    | StairsSegment
+    | ElevatorSegment;
 
 // 0 = +x, 1 = -y, 2 = -x, 3 = +y
 export const dirXY = [
@@ -56,7 +67,12 @@ type StairsFeature = {
     index: number;
 };
 
-type Feature = StairsFeature;
+type ElevatorFeature = {
+    type: "elevator";
+    index: number;
+};
+
+type Feature = StairsFeature | ElevatorFeature;
 export type WallFeatures = Feature[];
 
 export const makeWalls = (
@@ -193,7 +209,16 @@ export const makeWalls = (
                         });
                         return;
                     }
-                    throw new Error(`Unknown Feature.type: ${feature.type}`);
+                    if (feature.type === "elevator") {
+                        segments.push({
+                            type: "elevator",
+                            cx,
+                            cy,
+                            dir,
+                        });
+                        return;
+                    }
+                    throw new Error(`Unknown feature type: ${feature}`);
                 });
 
         for (let j = 0; j < wall.points.length; ++j) {

@@ -2,9 +2,9 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
 import { dirXY, makeWalls, WallFeatures } from "./makeWalls";
-import { getAsset, getAssetThinInstance } from "../scene.Gltf/assetLoader";
+import { getAssetThinInstance } from "../scene.Gltf/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
-import { getMeshWorldDimensions } from "../lib/nodeUtils";
+import { addElevator } from "../scene.Gltf/elevator";
 
 const createRandom = (seed: number) => {
     return (): number => {
@@ -21,13 +21,10 @@ const createRandom = (seed: number) => {
 const chooseFrom = <T>(random: number, cands: T[]) =>
     cands[random % cands.length];
 
-type FloorArea = Array<[x: number, y: number]>;
-
-type TeleportationCell = [x: number, y: number, z: number];
-
-type TeleportationCells = TeleportationCell[];
+type TeleportationCells = Array<[x: number, y: number, z: number]>;
 
 const teleportationCells: TeleportationCells = [];
+const fixups: Array<(xrHelper: BABYLON.WebXRDefaultExperience) => void> = [];
 
 type MergedRectangle = {
     groupDim: number;
@@ -169,11 +166,16 @@ export const addHouse = async (
         for (const segment of segments) {
             if (segment.type === "wall") {
                 const assetKey = chooseFrom<AssetKey>(nextRandom(), [
-                    "building/wall-doorway-round",
                     "building/wall",
+                    "building/wall",
+                    "building/wall",
+                    "building/wall",
+                    "building/wall-doorway-round",
+                    "building/wall-doorway-square",
                     "building/wall-window-round",
                     "building/wall-window-round-detailed",
                     "building/wall-window-square",
+                    "building/wall-window-square-detailed",
                     // "building/roof-flat-side",
                 ]);
                 const matrix = BABYLON.Matrix.RotationYawPitchRoll(
@@ -278,6 +280,26 @@ export const addHouse = async (
                 }
                 continue;
             }
+            if (segment.type === "elevator" && floor === 0) {
+                const xy1p = dirXY[(segment.dir + 1) & 3];
+
+                fixups.push(
+                    (
+                        (y: number) =>
+                        (xrHelper?: BABYLON.WebXRDefaultExperience) => {
+                            addElevator(
+                                scene,
+                                -x - segment.cx + xy1p[0] * 1.5,
+                                y,
+                                z + segment.cy + xy1p[1] * 1.5,
+                                (floors + 1) * 2.4,
+                                xrHelper
+                            );
+                        }
+                    )(y)
+                );
+                continue;
+            }
         }
     }
 
@@ -291,6 +313,8 @@ export const addHouse = async (
         );
         teleportationCells.push([x + floorX, y, z + floorY]);
     }
+
+    return fixups;
 };
 
 export const flushTeleportationCells = (
@@ -348,6 +372,9 @@ export const flushTeleportationCells = (
             plane.isVisible = false;
             xrHelper.teleportation.addFloorMesh(plane);
         }
+
+        fixups.forEach((fixup) => fixup(xrHelper));
     }
     teleportationCells.splice(0);
+    fixups.splice(0);
 };

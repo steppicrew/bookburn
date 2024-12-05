@@ -24,17 +24,9 @@ export class SceneEx {
     ) {
         const scene = new BABYLON.Scene(engine);
         const camera = await createCamera2(canvas, scene);
-        //const xrHelper = await scene.createDefaultXRExperienceAsync();
-        const xrHelper = await BABYLON.WebXRDefaultExperience.CreateAsync(
-            scene,
-            {
-                optionalFeatures: [
-                    "hand-tracking",
-                    "hit-test",
-                    "local-floor",
-                ],
-            }
-        );
+        const xrHelper = await scene.createDefaultXRExperienceAsync({
+            optionalFeatures: ["hand-tracking", "hit-test", "local-floor"],
+        });
 
         return new SceneEx(scene, camera, xrHelper);
     }

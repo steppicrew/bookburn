@@ -8,11 +8,11 @@ import {
     makeRoofTilesMaterial,
     makeWallMaterial,
     makeWoodMaterial,
-    glassMaterial,
+    makeGlassMaterial,
     applyPerpendicularUVs,
 } from "./materialUtils";
 
-const cl = makeConsoleLogger("assetLoader");
+const cl = makeConsoleLogger("assetLoader", true);
 
 const makeMaterials =
     // : Record<string, (scene: BABYLON.Scene, name:string, mesh: BABYLON.Mesh) => BABYLON.Material>
@@ -34,8 +34,8 @@ const makeMaterials =
             return makeWoodMaterial(scene, name);
         },
 
-        glass: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
-            glassMaterial(scene, name),
+        glass: (scene: BABYLON.Scene, _name: string, mesh: BABYLON.Mesh) =>
+            makeGlassMaterial(scene),
 
         default: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
             makePlainMaterial(scene, name, 1, 1, 1),
