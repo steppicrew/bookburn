@@ -1,25 +1,28 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 import { addPerson } from "../nodeLib/personNode";
-import { addHouse } from "../nodeLib/houseNode";
+import { addHouse, flushTeleportationCells } from "../nodeLib/houseNode";
 import { flushAssetThinInstances } from "./assetLoader";
 
-export const sceneContent = async (
+export const addHouses = async (
     scene: BABYLON.Scene,
     shadowGenerator?: BABYLON.ShadowGenerator,
     xrHelper?: BABYLON.WebXRDefaultExperience
 ) => {
-    // addPerson(scene);
-    // addDebugGrid(scene);
-
-    /*
-    await addHouse(scene, -6, -2, [2, 2], {
-        startFloor: 0,
-        shadowGenerator,
-        xrHelper,
-    });
-    return;
-    */
+    if (false) {
+        await addHouse(scene, -6, -2, [2, 2], {
+            startFloor: 0,
+            shadowGenerator,
+            xrHelper,
+        });
+        await addHouse(scene, 10, 0, [4, 2, -4, -2], {
+            floors: 5,
+            shadowGenerator,
+            xrHelper,
+            features: [{ type: "stairs", index: 0 }],
+        });
+        return;
+    }
 
     await addHouse(scene, 0, 0, [-3, 1, -2, 2, 5, -3], {
         floors: 2,
@@ -40,6 +43,20 @@ export const sceneContent = async (
     });
     await addHouse(scene, 10, 0, [4, 2, -4, -2], {
         floors: 5,
+        shadowGenerator,
+        xrHelper,
+        features: [{ type: "stairs", index: 0 }],
+    });
+    await addHouse(scene, 18, 0, [6, 2], {
+        startFloor: 1,
+        floors: 8,
+        shadowGenerator,
+        xrHelper,
+        features: [{ type: "stairs", index: 0 }],
+    });
+    await addHouse(scene, 27, 1, [3, 3], {
+        startFloor: 1,
+        floors: 12,
         shadowGenerator,
         xrHelper,
         features: [{ type: "stairs", index: 0 }],
@@ -82,6 +99,18 @@ export const sceneContent = async (
         xrHelper,
         features: [{ type: "stairs", index: 40 }],
     });
+};
+
+export const sceneContent = async (
+    scene: BABYLON.Scene,
+    shadowGenerator?: BABYLON.ShadowGenerator,
+    xrHelper?: BABYLON.WebXRDefaultExperience
+) => {
+    // addPerson(scene);
+    // addDebugGrid(scene);
+
+    await addHouses(scene, shadowGenerator, xrHelper);
 
     flushAssetThinInstances();
+    flushTeleportationCells(scene, xrHelper);
 };

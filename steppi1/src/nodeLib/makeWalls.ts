@@ -42,7 +42,7 @@ type Walls = {
     points: Points;
 };
 
-type FloorArea = Set<[x: number, y: number]>;
+type FloorArea = Array<[x: number, y: number]>;
 
 type MakeWalls = {
     segments: Segment[];
@@ -225,14 +225,17 @@ export const makeWalls = (
     const minY = Math.min(...allY);
     const maxY = Math.max(...allY);
 
-    const floorArea: FloorArea = new Set(Object.values(area));
+    const floorArea: FloorArea = Object.values(area);
     const nextFill: Array<[number, number]> = [[fillX, fillY]];
 
     while (nextFill.length) {
         const xy = nextFill.pop() as [number, number];
         const [x, y] = xy;
+        if (`${x}:${y}` in area) {
+            continue;
+        }
         area[`${x}:${y}`] = [x, y];
-        floorArea.add([x, y]);
+        floorArea.push([x, y]);
         for (let j = 0; j < 4; ++j) {
             const x1 = x + dirXY[j][0];
             const y1 = y + dirXY[j][1];
