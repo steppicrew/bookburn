@@ -10,6 +10,7 @@ import { initBookDebugGui } from "./bookDebugGui";
 
 import { initXR } from "../lib/xr";
 import { createHand, simulateHandMovement } from "../nodeLib/handSimulator";
+import { setMetadatas } from "../nodeLib/nodeTools";
 import { getInitializedHavok } from "./physics";
 
 export const createScene: CreateSceneFn = async (
@@ -174,12 +175,17 @@ export const createScene: CreateSceneFn = async (
         }
 
         // Create a sphere shape and the associated body. Size will be determined automatically.
-        const sphereAggregate = new BABYLON.PhysicsAggregate(
-            sphere,
-            BABYLON.PhysicsShapeType.SPHERE,
-            { mass: 1, restitution: 0.75 },
-            scene
-        );
+        const startPhysics = () =>
+            new BABYLON.PhysicsAggregate(
+                sphere,
+                BABYLON.PhysicsShapeType.SPHERE,
+                { mass: 1, restitution: 0.75 },
+                scene
+            );
+        const stopPhysics = () => {
+            sphere.physicsImpostor?.dispose();
+        };
+        setMetadatas(sphere, { startPhysics, stopPhysics });
     }
 
     // Ground
