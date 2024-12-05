@@ -12,7 +12,7 @@ import {
     applyPerpendicularUVs,
 } from "./materialUtils";
 
-const cl = makeConsoleLogger("assetLoader", false);
+const cl = makeConsoleLogger("assetLoader");
 
 const makeMaterials =
     // : Record<string, (scene: BABYLON.Scene, name:string, mesh: BABYLON.Mesh) => BABYLON.Material>

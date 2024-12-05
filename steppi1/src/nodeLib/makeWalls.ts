@@ -19,6 +19,7 @@ export type StairsSegment = {
     cx: number;
     cy: number;
     dir: number;
+    turn?: number;
 };
 
 export type Segment = CornerSegment | WallSegment | StairsSegment;
@@ -51,6 +52,7 @@ type MakeWalls = {
 
 type StairsFeature = {
     type: "stairs";
+    turn?: number;
     index: number;
 };
 
@@ -96,13 +98,11 @@ export const makeWalls = (
         fillY = 1;
     }
     if (outline[0] < 0) {
-        dir = 1;
         fillX = -1;
     } else {
-        dir = 3;
         fillX = 1;
     }
-
+    dir = 1;
     let pointIndex = 0;
 
     for (let i = 0; i < outline.length; i++) {
@@ -179,7 +179,7 @@ export const makeWalls = (
             });
         }
 
-        const checkFeature = ([cx, cy, index]: Points[number], dir: number) => {
+        const checkFeature = ([cx, cy, index]: Points[number], dir: number) =>
             features
                 .filter((feature) => feature.index === index)
                 .forEach((feature) => {
@@ -189,18 +189,18 @@ export const makeWalls = (
                             cx,
                             cy,
                             dir,
+                            turn: feature.turn,
                         });
                         return;
                     }
                     throw new Error(`Unknown Feature.type: ${feature.type}`);
                 });
-        };
 
         for (let j = 0; j < wall.points.length; ++j) {
+            checkFeature(wall.points[j], wall.dir);
             if (j + 2 < wall.points.length) {
-                const p1 = wall.points[j];
-                checkFeature(p1, wall.dir);
                 checkFeature(wall.points[j + 1], wall.dir);
+                const p1 = wall.points[j];
                 j += 1;
                 const p2 = wall.points[j + 1];
                 const cx = (p1[0] + p2[0]) / 2;

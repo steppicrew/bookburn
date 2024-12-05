@@ -2,8 +2,9 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
 import { dirXY, makeWalls, WallFeatures } from "./makeWalls";
-import { getAssetThinInstance } from "../scene.Gltf/assetLoader";
+import { getAsset, getAssetThinInstance } from "../scene.Gltf/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
+import { getMeshWorldDimensions } from "../lib/nodeUtils";
 
 const createRandom = (seed: number) => {
     return (): number => {
@@ -130,13 +131,10 @@ function mergeCellsToRectangles(
     return rectangles;
 }
 
-const debugInstance = (
-    scene: BABYLON.Scene,
-    instance: BABYLON.AbstractMesh[]
-) => {
+const debugInstance = (scene: BABYLON.Scene, mesh: BABYLON.AbstractMesh[]) => {
     let angle = 0.01;
     scene.registerAfterRender(function () {
-        instance.forEach((mesh) => {
+        mesh.forEach((mesh) => {
             mesh.rotate(
                 new BABYLON.Vector3(0, 1, 0),
                 angle,
@@ -150,7 +148,6 @@ type HouseOptions = {
     floors?: number;
     startFloor?: number;
     shadowGenerator?: BABYLON.ShadowGenerator;
-    xrHelper?: BABYLON.WebXRDefaultExperience;
     features?: WallFeatures;
 };
 
@@ -159,13 +156,7 @@ export const addHouse = async (
     x: number,
     z: number,
     outline: number[],
-    {
-        floors = 1,
-        startFloor = 0,
-        shadowGenerator,
-        xrHelper,
-        features,
-    }: HouseOptions
+    { floors = 1, startFloor = 0, shadowGenerator, features }: HouseOptions
 ) => {
     const { segments, floorArea } = makeWalls(outline, features);
     const nextRandom = createRandom(
@@ -183,6 +174,7 @@ export const addHouse = async (
                     "building/wall-window-round",
                     "building/wall-window-round-detailed",
                     "building/wall-window-square",
+                    // "building/roof-flat-side",
                 ]);
                 const matrix = BABYLON.Matrix.RotationYawPitchRoll(
                     ((5 - segment.dir) * Math.PI) / 2,
@@ -228,29 +220,40 @@ export const addHouse = async (
                 continue;
             }
             if (segment.type === "stairs") {
-                const dir1 = (segment.dir + 2) & 3;
-                const nextDir = (segment.dir + 1) & 3;
-                const x1 =
-                    dirXY[dir1][0] * 1.5 -
-                    ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][0];
-                const y1 =
-                    dirXY[dir1][1] * 1.5 -
-                    ((floor - floors + 1) * 4 - 1) * dirXY[nextDir][1];
+                // const xy1 = dirXY[(segment.dir + 2) & 3];
+                const xy1p = dirXY[(segment.dir + 3) & 3]; // 90deg of stairs
+                const dir = (segment.dir + (segment.turn ?? 0) + 5) & 3; // dir of stairs
+                const xy2 = dirXY[dir];
+                const xy2p = dirXY[(dir + 1) & 3];
 
-                const x2 = x + segment.cx + x1;
+                // Dimensions of stairs models:
+                const DX = 1.3;
+                const DY = 2.5;
+                const DZ = 4;
+                const DIST_FROM_WALL = 1.2;
+
+                const x2 =
+                    x +
+                    segment.cx -
+                    xy1p[0] * DIST_FROM_WALL -
+                    ((floor - floors + 1) * DZ + 0.5) * xy2[0];
                 const y2 = y;
-                const z2 = z + segment.cy + y1;
-                const matrix = BABYLON.Matrix.Translation(0.5, 0, -0.5)
+                const z2 =
+                    z +
+                    segment.cy -
+                    xy1p[1] * DIST_FROM_WALL -
+                    ((floor - floors + 1) * DZ + 0.5) * xy2[1];
+
+                let matrix = BABYLON.Matrix.Translation(0, 0, (DX / 4 - DZ) / 2)
                     .multiply(
                         BABYLON.Matrix.RotationYawPitchRoll(
-                            ((6 - segment.dir) * Math.PI) / 2,
+                            ((7 - dir) * Math.PI) / 2,
                             0,
                             0
-                        ).multiply(BABYLON.Matrix.Translation(-0.5, 0, 0.5))
+                        )
                     )
-                    .multiply(
-                        BABYLON.Matrix.Translation(x2 + 0.5, y2, z2 - 0.5)
-                    );
+                    .multiply(BABYLON.Matrix.Translation(x2, y2, z2));
+
                 await getAssetThinInstance(
                     scene,
                     "building/stairs-open",
@@ -259,16 +262,16 @@ export const addHouse = async (
                 );
 
                 for (let i = 0; i < 4; ++i) {
-                    const x3 = x2 + dirXY[nextDir][0] * (i - 2);
+                    const x3 = x2 + xy2[0] * (i - 1);
                     const y3 = y2 + (4 - i) * 0.6;
-                    const z3 = z2 + dirXY[nextDir][1] * (i - 2);
+                    const z3 = z2 + xy2[1] * (i - 1);
 
-                    for (let j = 0; j < 2; ++j) {
-                        for (let k = 0; k < 2; ++k) {
+                    for (let j = -1; j < 2; ++j) {
+                        for (let k = 1; k < 3; ++k) {
                             teleportationCells.push([
-                                x3 + dirXY[dir1][0] * j + dirXY[nextDir][0] * k,
+                                x3 + xy2p[0] * j + dirXY[dir][0] * k,
                                 y3,
-                                z3 + dirXY[dir1][1] * j + dirXY[nextDir][1] * k,
+                                z3 + xy2p[1] * j + dirXY[dir][1] * k,
                             ]);
                         }
                     }

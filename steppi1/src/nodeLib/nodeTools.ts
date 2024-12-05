@@ -1,5 +1,7 @@
 import * as BABYLON from "babylonjs";
 
+// TODO: Move to lib/nodeUtils.ts
+
 interface NodeMetadata {
     // If a body has no physics itself but has a physics body assigned, that's it
     physicsBody?: BABYLON.AbstractMesh;

@@ -1,15 +1,15 @@
 import * as BABYLON from "babylonjs";
 
 export function getMeshWorldDimensions(
-    node: BABYLON.TransformNode
+    mesh: BABYLON.AbstractMesh
 ): BABYLON.Vector3 | null {
-    if (!(node instanceof BABYLON.AbstractMesh)) {
-        console.warn("Node is not a mesh; cannot calculate dimensions.");
+    if (!(mesh instanceof BABYLON.AbstractMesh)) {
+        console.warn("Arg is not a mesh; cannot calculate dimensions.");
         return null;
     }
 
     // Get the bounding info
-    const boundingInfo = node.getBoundingInfo();
+    const boundingInfo = mesh.getBoundingInfo();
     if (!boundingInfo) {
         console.warn("Bounding info not available for this node.");
         return null;
@@ -21,7 +21,7 @@ export function getMeshWorldDimensions(
 
     // Calculate dimensions
     const dimensions = max.subtract(min);
-    console.log(`World Dimensions of ${node.name}:`, dimensions);
+    console.log(`World Dimensions of ${mesh.name}:`, dimensions);
     return dimensions;
 }
 
