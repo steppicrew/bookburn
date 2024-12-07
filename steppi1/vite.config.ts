@@ -25,13 +25,15 @@ export default defineConfig(({ mode }) => {
             outDir: "dist",
             rollupOptions: {
                 input: {
-                    main: path.resolve(__dirname, `src/main.ts`),
+                    main: path.resolve(__dirname, `index.html`),
                 },
             },
         },
         define: {
-            "process.env.SCENE": JSON.stringify(entryScene), // To access in code
+            // To access in code
+            "process.env.SCENE": JSON.stringify(entryScene),
         },
-        optimizeDeps: { exclude: ["@babylonjs/havok"] }, // to serve HavokPhysics.wasm from it's original location
+        // to serve HavokPhysics.wasm from it's original location
+        optimizeDeps: { exclude: ["@babylonjs/havok"] },
     };
 });

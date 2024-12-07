@@ -34,8 +34,11 @@ const makeMaterials =
             return makeWoodMaterial(scene, name);
         },
 
-        glass: (scene: BABYLON.Scene, _name: string, mesh: BABYLON.Mesh) =>
-            makeGlassMaterial(scene),
+        glass: (scene: BABYLON.Scene, _name: string, mesh: BABYLON.Mesh) => {
+            const material = makeGlassMaterial(scene);
+            // material.backFaceCulling = false;
+            return material;
+        },
 
         default: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
             makePlainMaterial(scene, name, 1, 1, 1),

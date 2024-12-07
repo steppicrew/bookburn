@@ -7,3 +7,4 @@ downloads
 *.bak
 stash.txt
 dr2/
+dist/

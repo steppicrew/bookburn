@@ -94,6 +94,14 @@ export const addHouses = async (
         features: [{ type: "elevator", index: 2 }],
     });
 
+    /*
+    await addHouse(scene, -50, -15, [3, 8, 8, -5, -7, -2, 10, 10], {
+        floors: 80,
+        shadowGenerator,
+        features: [{ type: "elevator", index: 2 }],
+    });
+    */
+
     await addHouse(scene, 42, 50, [4, 50], {
         floors: 2,
         shadowGenerator,

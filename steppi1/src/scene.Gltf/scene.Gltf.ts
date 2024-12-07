@@ -58,10 +58,6 @@ const light5 = (directionalLight: BABYLON.DirectionalLight) => {
     shadowGenerator.bias = 0.001;
     shadowGenerator.normalBias = 0.5;
     shadowGenerator.setDarkness(0.4);
-    directionalLight.position = new BABYLON.Vector3(6, 20, -10);
-    directionalLight.direction = new BABYLON.Vector3(-1, -2, -1);
-    directionalLight.shadowMinZ = -40;
-    directionalLight.shadowMaxZ = 55;
     return shadowGenerator;
 };
 
@@ -83,13 +79,7 @@ const light6 = (directionalLight: BABYLON.DirectionalLight) => {
     shadowGenerator.filteringQuality = BABYLON.ShadowGenerator.QUALITY_HIGH;
 
     // shadowGenerator.numCascades = 2;
-
     // shadowGenerator.autoCalcDepthBounds = true;
-
-    directionalLight.position = new BABYLON.Vector3(6, 20, -10);
-    directionalLight.direction = new BABYLON.Vector3(-1, -2, -1);
-    directionalLight.shadowMinZ = -40;
-    directionalLight.shadowMaxZ = 55;
 
     return shadowGenerator;
 };
@@ -127,6 +117,10 @@ export const createScene: CreateSceneFn = async (
         new BABYLON.Vector3(-1, -2, -1),
         scene
     );
+    directionalLight.position = new BABYLON.Vector3(6, 20, -10);
+    directionalLight.direction = new BABYLON.Vector3(-1, -2, -1);
+    directionalLight.shadowMinZ = -40;
+    directionalLight.shadowMaxZ = 55;
 
     const shadowGenerator = light6(directionalLight);
 
