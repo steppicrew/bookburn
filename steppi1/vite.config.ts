@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
         plugins: [glsl(), basicSsl({})],
         assetsInclude: ["**/*.gltf", "**/*.glb"],
         build: {
+            base: "/bookburn/",
             outDir: "dist",
             rollupOptions: {
                 input: {
