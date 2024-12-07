@@ -6,6 +6,7 @@ import { state } from "./state";
 
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
+import { initXrDebugging } from "./lib/initXrDebugging";
 
 let createScene: CreateSceneFn;
 if (import.meta.env["VITE_SCENE"] === "Books") {
@@ -84,3 +85,7 @@ if (import.meta.hot) {
 
     import.meta.hot.accept(() => {});
 }
+
+//if (xrHelper.baseExperience.state === BABYLON.WebXRState.IN_XR) {
+initXrDebugging();
+// }

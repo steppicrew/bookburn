@@ -22,11 +22,6 @@ export const addElevator = (
     );
     shaft.position = new BABYLON.Vector3(x, y + height / 2 + 0.05, z);
 
-    /*
-    const shaftMaterial = new BABYLON.StandardMaterial("elevatorShaft", scene);
-    shaftMaterial.alpha = 0.5;
-    shaftMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.8, 1); // Light blue
-*/
     const shaftMaterial = makeGlassMaterial(scene);
     shaft.material = shaftMaterial;
     shaft.material.backFaceCulling = false;
@@ -36,13 +31,6 @@ export const addElevator = (
         { width: 2.9, depth: 1.9, height: 0.2 },
         scene
     );
-    /*
-    const platformMaterial = new BABYLON.StandardMaterial(
-        "elevatorPlatform",
-        scene
-    );
-    platformMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.8, 1);
-    */
     const platformMaterial = makeWoodMaterial(scene);
     platform.material = platformMaterial;
     platform.parent = shaft;
@@ -62,42 +50,45 @@ export const addElevator = (
     // Flags to control the elevator's state
     let userOnElevator = false;
 
-    const updateFloorY = () => {
+    const updateFloorY = (frame: XRFrame) => {
         const floorY =
             xrCamera.position.y -
             bounds.minimumWorld.y -
             xrCamera.realWorldHeight +
             bounds.minimum.y;
+
         platform.position.y = Math.min(
             bounds.maximum.y,
             Math.max(bounds.minimum.y, floorY)
         ); // Clamp within bounds
     };
 
-    // Move elevator floor up
-    const moveUserUp = () => {
+    const moveUserUp = (frame: XRFrame) => {
         if (
             xrCamera.position.y - xrCamera.realWorldHeight <
             bounds.maximumWorld.y - 2.4
         ) {
             xrCamera.position.y += 0.1; // Adjust speed as needed
-            updateFloorY();
-        } else {
-            scene.onBeforeRenderObservable.removeCallback(moveUserUp);
-            console.log("Reached the top of the transporter!");
+            updateFloorY(frame);
         }
     };
 
-    // Move elevator floor down
-    const moveElevatorDown = () => {
-        if (platform.position.y > bounds.minimum.y) {
-            platform.position.y -= 0.1; // Downward speed
-        } else {
-            platform.position.y = bounds.minimum.y;
-            console.log("Elevator reached the bottom.");
-            scene.onBeforeRenderObservable.removeCallback(moveElevatorDown);
+    const moveElevatorDown = (frame: XRFrame) => {
+        if (platform.position.y >= bounds.minimum.y) {
+            platform.position.y = Math.max(
+                bounds.minimum.y,
+                platform.position.y - 0.15
+            );
         }
     };
+
+    xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((frame) => {
+        if (userOnElevator) {
+            moveUserUp(frame);
+        } else {
+            moveElevatorDown(frame);
+        }
+    });
 
     // Trigger on entering the elevator
     shaft.actionManager = new BABYLON.ActionManager(scene);
@@ -108,10 +99,8 @@ export const addElevator = (
                 parameter: cameraProxy,
             },
             () => {
-                console.log("User entered the transporter!");
+                console.log("User entered the elevator!");
                 userOnElevator = true;
-                scene.onBeforeRenderObservable.add(moveUserUp);
-                scene.onBeforeRenderObservable.removeCallback(moveElevatorDown);
             }
         )
     );
@@ -124,10 +113,8 @@ export const addElevator = (
                 parameter: cameraProxy,
             },
             () => {
-                console.log("User exited the transporter!");
+                console.log("User exited the elevator!");
                 userOnElevator = false;
-                scene.onBeforeRenderObservable.add(moveElevatorDown);
-                scene.onBeforeRenderObservable.removeCallback(moveUserUp);
             }
         )
     );
