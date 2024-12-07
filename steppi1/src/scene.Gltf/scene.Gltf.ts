@@ -89,7 +89,9 @@ export const createScene: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    scene.debugLayer.show();
+    if (import.meta.env.DEV) {
+        scene.debugLayer.show();
+    }
 
     // ====================================
 
