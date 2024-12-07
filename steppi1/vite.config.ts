@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
     const entryScene = env.VITE_SCENE;
     console.log("ENTRY SCENE:", entryScene);
     return {
+        base: "./",
         server: {
             host: "0.0.0.0", // Bind to all interfaces
             open: false, // Automatically open the browser on start
