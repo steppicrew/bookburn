@@ -8,10 +8,10 @@ import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 
 let createScene: CreateSceneFn;
-if (import.meta.env["VITE_SCENE"] === "Gltf") {
-    createScene = createGltfScene;
-} else {
+if (import.meta.env["VITE_SCENE"] === "Books") {
     createScene = createBooksScene;
+} else {
+    createScene = createGltfScene;
 }
 
 const start = async () => {
