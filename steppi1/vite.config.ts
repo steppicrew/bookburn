@@ -21,6 +21,15 @@ export default defineConfig(({ mode }) => {
         },
         plugins: [glsl(), basicSsl({})],
         assetsInclude: ["**/*.gltf", "**/*.glb"],
+        build: {
+            assetsDir: "assets",
+            outDir: "dist",
+            rollupOptions: {
+                input: {
+                    main: path.resolve(__dirname, `index.html`),
+                },
+            },
+        },
         define: {
             // To access in code
             "process.env.SCENE": JSON.stringify(entryScene),
