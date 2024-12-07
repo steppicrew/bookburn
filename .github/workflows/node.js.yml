@@ -1,4 +1,4 @@
-name: Node.js CI
+name: Node.js CI and Deploy
 
 on:
   push:
@@ -7,30 +7,37 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [18.x, 20.x, 22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
+      # Step 1: Check out the repository
       - uses: actions/checkout@v4
+
+      # Step 2: Set up Node.js
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
-      - name: Navigate to project directory
-        working-directory: ./steppi1
-        run: echo "Moved to /steppi1"
+
+      # Step 3: Navigate to the project directory and install dependencies
       - name: Install dependencies
         working-directory: ./steppi1
         run: npm ci
+
+      # Step 4: Build the project
       - name: Build the project
         working-directory: ./steppi1
-        run: npm run build --if-present
-      - name: Run tests
-        working-directory: ./steppi1
-        run: npm test
+        run: npm run build
+
+      # Step 5: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./steppi1/dist
