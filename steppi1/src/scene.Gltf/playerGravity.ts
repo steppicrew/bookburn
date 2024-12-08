@@ -1,4 +1,7 @@
 import * as BABYLON from "babylonjs";
+import { makeConsoleLogger } from "./ConsoleLogger";
+
+const cl = makeConsoleLogger("playerGravity", true);
 
 const floorMeshes: BABYLON.AbstractMesh[] = [];
 
@@ -35,6 +38,8 @@ function getFloorHeightUnderCamera(xrHelper: BABYLON.WebXRDefaultExperience) {
     );
 }
 
+// Fixme: Checkout camera.checkCollisions = true; camera.applyGravity = true;
+
 let gravityEnabled = true;
 
 export function enableGravity(enable: boolean) {
@@ -42,10 +47,7 @@ export function enableGravity(enable: boolean) {
     console.log(`Gravity ${enable ? "enabled" : "disabled"}.`);
 }
 
-export function setupPlayerGravity(
-    scene: BABYLON.Scene,
-    xrHelper?: BABYLON.WebXRDefaultExperience
-) {
+export function setupPlayerGravity(xrHelper?: BABYLON.WebXRDefaultExperience) {
     if (!xrHelper) return;
 
     const teleportation = xrHelper.teleportation;
@@ -75,7 +77,7 @@ export function setupPlayerGravity(
     let gravity = INITIAL_GRAVITY;
     let lastFloorHeight = 0;
 
-    scene.onBeforeRenderObservable.add(() => {
+    xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((_frame) => {
         if (!gravityEnabled) {
             return;
         }
@@ -85,7 +87,7 @@ export function setupPlayerGravity(
         const floorHeight = getFloorHeightUnderCamera(xrHelper);
 
         if (lastFloorHeight !== floorHeight) {
-            console.log("FH", floorHeight);
+            cl.log("floorHeight", floorHeight);
             lastFloorHeight = floorHeight;
         }
 

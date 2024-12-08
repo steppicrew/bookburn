@@ -162,6 +162,7 @@ export const addHouse = async (
     const height = 2.4;
 
     let y = startFloor * height;
+    let hasElevator = false;
     for (let floor = 0; floor < floors; ++floor, y += height) {
         for (const segment of segments) {
             if (segment.type === "wall") {
@@ -298,11 +299,14 @@ export const addHouse = async (
                         }
                     )(y)
                 );
+                hasElevator = true;
                 continue;
             }
         }
     }
 
+    const soundPlane = [Infinity, Infinity, -Infinity, -Infinity];
+    const soundBorder = 2;
     for (const [floorX, floorY] of floorArea) {
         var matrix = BABYLON.Matrix.Translation(x + floorX, y, z + floorY);
         await getAssetThinInstance(
@@ -312,6 +316,64 @@ export const addHouse = async (
             shadowGenerator
         );
         teleportationCells.push([x + floorX, y, z + floorY]);
+        if (hasElevator) {
+            soundPlane[0] = Math.min(soundPlane[0], x + floorX - soundBorder);
+            soundPlane[1] = Math.min(soundPlane[1], z + floorY - soundBorder);
+            soundPlane[2] = Math.max(soundPlane[2], x + floorX + soundBorder);
+            soundPlane[3] = Math.max(soundPlane[3], z + floorY + soundBorder);
+        }
+    }
+
+    if (hasElevator) {
+        fixups.push((xrHelper) => {
+            const box = BABYLON.MeshBuilder.CreateBox(
+                "elevatorSoundPlane",
+                {
+                    width: soundPlane[2] - soundPlane[0],
+                    height: soundPlane[3] - soundPlane[1],
+                    depth: 4,
+                },
+                scene
+            );
+            if (false) {
+                //debug
+                box.material = new BABYLON.StandardMaterial("debugSound");
+                box.material.alpha = 0.5;
+            } else {
+                box.isVisible = false;
+            }
+            box.rotation.x = Math.PI / 2;
+            box.position.x = -(soundPlane[0] + soundPlane[2]) / 2;
+            box.position.y = y + 2;
+            box.position.z = (soundPlane[1] + soundPlane[3]) / 2;
+
+            console.log(
+                floors,
+                y,
+                Math.max(0.7, Math.min(1, 60 / y)),
+                Math.min(y / 60, 2)
+            );
+            const sound = new BABYLON.Sound(
+                "music",
+                "assets/sound/howling-wind.mp3",
+                scene,
+                null,
+                {
+                    loop: true,
+                    autoplay: true,
+                    spatialSound: true,
+                    refDistance: Math.max(
+                        soundPlane[2] - soundPlane[0],
+                        soundPlane[3] - soundPlane[1]
+                    ),
+                    rolloffFactor: 1.2, // Math.max(1.3, Math.min(1.3, 40 / y)),
+                    volume: Math.min(y / 60, 2),
+                    maxDistance: y * 0.8,
+                }
+            );
+            sound.attachToMesh(box);
+            sound.switchPanningModelToHRTF();
+        });
     }
 
     return fixups;
@@ -323,6 +385,8 @@ export const flushTeleportationCells = (
 ) => {
     if (xrHelper) {
         const rectangles = mergeCellsToRectangles(teleportationCells, 1);
+
+        const root = new BABYLON.TransformNode("teleportationHouse", scene);
 
         // console.log(teleportationCells.slice());
         // console.log(rectangles);
@@ -343,14 +407,16 @@ export const flushTeleportationCells = (
             // Create the plane with width and height
             // FIXME: Faster with instances?
             const plane = BABYLON.MeshBuilder.CreatePlane(
-                "plane",
+                "teleportationHousePlane",
                 {
                     width: size0,
                     height: size1,
-                    sideOrientation: BABYLON.Mesh.DOUBLESIDE,
+                    sideOrientation: BABYLON.Mesh.DOUBLESIDE, // FIXME: Needed?
                 },
                 scene
             );
+            plane.parent = root;
+            plane.isVisible = false;
 
             // Rotate the plane based on the group dimension
             if (groupDim === 0) {
@@ -369,7 +435,7 @@ export const flushTeleportationCells = (
                 position[1] + 0.07,
                 position[0]
             );
-            plane.isVisible = false;
+
             xrHelper.teleportation.addFloorMesh(plane);
         }
 

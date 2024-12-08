@@ -97,7 +97,7 @@ export const createScene: CreateSceneFn = async (
     // ====================================
 
     // BEFORE gound setup
-    setupPlayerGravity(scene, xrHelper);
+    setupPlayerGravity(xrHelper);
 
     if (true) {
         createSkybox1(scene);
@@ -143,6 +143,23 @@ export const createScene: CreateSceneFn = async (
         directionalLight.autoUpdateExtends = false;
     }
     */
+
+    // Important, otherwise there is staggering audio
+    scene.audioPositioningRefreshRate = 100;
+
+    const audioEngine = BABYLON.Engine.audioEngine;
+    if (audioEngine) {
+        audioEngine.useCustomUnlockedButton = true;
+
+        xrHelper.baseExperience.onStateChangedObservable.add((state) => {
+            if (state === BABYLON.WebXRState.IN_XR) {
+                if (!audioEngine.unlocked) {
+                    audioEngine.unlock();
+                    console.log("Audio unlocked for XR.");
+                }
+            }
+        });
+    }
 
     await sceneContent(scene, shadowGenerator, xrHelper);
 

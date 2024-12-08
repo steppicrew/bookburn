@@ -18,6 +18,7 @@ const insideBox = (box: BABYLON.Mesh, point: BABYLON.Vector3) => {
     return true;
 };
 
+// FIXME: add name
 export const addElevator = (
     scene: BABYLON.Scene,
     x: number,

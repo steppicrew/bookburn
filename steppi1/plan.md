@@ -20,3 +20,9 @@ https://github.com/meta-quest/immersive-web-emulator#immersive-web-emulator-usag
 https://sandbox.babylonjs.com/
 https://playcanvas.com/model-viewer
 https://imagetostl.com/de/dds-online-ansehen
+
+## Attributions
+
+CC4 from: https://www.freesoundslibrary.com/author/spanac/
+https://www.freesoundslibrary.com/blowing-wind-sound-effect-free/ (unused)
+https://www.freesoundslibrary.com/wind-blowing-sound/
