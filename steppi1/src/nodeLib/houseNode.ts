@@ -337,8 +337,8 @@ export const addHouse = async (
             );
             if (false) {
                 //debug
-                box.material = new BABYLON.StandardMaterial("debugSound");
-                box.material.alpha = 0.5;
+                // box.material = new BABYLON.StandardMaterial("debugSound");
+                // box.material.alpha = 0.5;
             } else {
                 box.isVisible = false;
             }
@@ -347,12 +347,6 @@ export const addHouse = async (
             box.position.y = y + 2;
             box.position.z = (soundPlane[1] + soundPlane[3]) / 2;
 
-            console.log(
-                floors,
-                y,
-                Math.max(0.7, Math.min(1, 60 / y)),
-                Math.min(y / 60, 2)
-            );
             const sound = new BABYLON.Sound(
                 "music",
                 "assets/sound/howling-wind.mp3",

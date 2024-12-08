@@ -156,6 +156,19 @@ export const createScene: CreateSceneFn = async (
                 if (!audioEngine.unlocked) {
                     audioEngine.unlock();
                     console.log("Audio unlocked for XR.");
+
+                    new BABYLON.Sound(
+                        "ambientSound",
+                        "assets/sound/bird-chirping-in-the-garden-sound-effect.mp3",
+                        scene,
+                        null,
+                        {
+                            spatialSound: false,
+                            loop: true,
+                            autoplay: true,
+                            volume: 0.3,
+                        }
+                    );
                 }
             }
         });

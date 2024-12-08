@@ -56,6 +56,19 @@ export const addElevator = (
     platform.position = new BABYLON.Vector3(0, bounds.minimum.y, 0);
     xrHelper.teleportation.addFloorMesh(platform);
 
+    const sound = new BABYLON.Sound(
+        "elevatorSound",
+        "assets/sound/413457__thatmisfit__mechanical-elevator-lights-buzzing.mp3",
+        scene,
+        null,
+        {
+            spatialSound: false,
+            loop: true,
+            autoplay: false,
+            volume: 12,
+        }
+    );
+
     let lastInside = false;
 
     xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((frame) => {
@@ -69,6 +82,9 @@ export const addElevator = (
             lastInside = inside;
             if (inside) {
                 platform.position.y = bounds.minimum.y;
+                sound.play(0.1);
+            } else {
+                sound.stop(0.1);
             }
         }
 
