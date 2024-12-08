@@ -7,6 +7,7 @@ import { CreateSceneFn } from "../lib/sceneEx";
 import { createGround1, createSkybox1 } from "../lib/baseScene";
 import { sceneContent } from "./sceneContent";
 import { updateWrapper } from "../lib/updateWrapper";
+import { setupPlayerGravity } from "./playerGravity";
 
 const light1 = (directionalLight: BABYLON.DirectionalLight) => {
     const shadowGenerator = new BABYLON.ShadowGenerator(1024, directionalLight);
@@ -94,6 +95,9 @@ export const createScene: CreateSceneFn = async (
     }
 
     // ====================================
+
+    // BEFORE gound setup
+    setupPlayerGravity(scene, xrHelper);
 
     if (true) {
         createSkybox1(scene);

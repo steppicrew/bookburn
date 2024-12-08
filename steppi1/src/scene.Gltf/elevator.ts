@@ -1,5 +1,22 @@
 import * as BABYLON from "babylonjs";
 import { makeGlassMaterial, makeWoodMaterial } from "./materialUtils";
+import { enableGravity } from "./playerGravity";
+
+const insideBox = (box: BABYLON.Mesh, point: BABYLON.Vector3) => {
+    var boundInfo = box.getRawBoundingInfo();
+    var max = boundInfo.maximum;
+    var min = boundInfo.minimum;
+    if (point.x < min.x || point.x > max.x) {
+        return false;
+    }
+    if (point.y < min.y || point.y > max.y) {
+        return false;
+    }
+    if (point.z < min.z || point.z > max.z) {
+        return false;
+    }
+    return true;
+};
 
 export const addElevator = (
     scene: BABYLON.Scene,
@@ -22,8 +39,7 @@ export const addElevator = (
     );
     shaft.position = new BABYLON.Vector3(x, y + height / 2 + 0.05, z);
 
-    const shaftMaterial = makeGlassMaterial(scene);
-    shaft.material = shaftMaterial;
+    shaft.material = makeGlassMaterial(scene);
     shaft.material.backFaceCulling = false;
 
     const platform = BABYLON.MeshBuilder.CreateBox(
@@ -31,91 +47,46 @@ export const addElevator = (
         { width: 2.9, depth: 1.9, height: 0.2 },
         scene
     );
-    const platformMaterial = makeWoodMaterial(scene);
-    platform.material = platformMaterial;
+
+    platform.material = makeWoodMaterial(scene);
     platform.parent = shaft;
+
     const bounds = shaft.getBoundingInfo().boundingBox;
     platform.position = new BABYLON.Vector3(0, bounds.minimum.y, 0);
     xrHelper.teleportation.addFloorMesh(platform);
 
-    // Proxy mesh for XR camera
-    const cameraProxy = BABYLON.MeshBuilder.CreateSphere(
-        "cameraProxy",
-        { diameter: 0.3 },
-        scene
-    );
-    cameraProxy.isVisible = false;
-    cameraProxy.parent = xrCamera;
-
-    // Flags to control the elevator's state
-    let userOnElevator = false;
-
-    const updateFloorY = (frame: XRFrame) => {
-        const floorY =
-            xrCamera.position.y -
-            bounds.minimumWorld.y -
-            xrCamera.realWorldHeight +
-            bounds.minimum.y;
-
-        platform.position.y = Math.min(
-            bounds.maximum.y,
-            Math.max(bounds.minimum.y, floorY)
-        ); // Clamp within bounds
-    };
-
-    const moveUserUp = (frame: XRFrame) => {
-        if (
-            xrCamera.position.y - xrCamera.realWorldHeight <
-            bounds.maximumWorld.y - 2.4
-        ) {
-            xrCamera.position.y += 0.1; // Adjust speed as needed
-            updateFloorY(frame);
-        }
-    };
-
-    const moveElevatorDown = (frame: XRFrame) => {
-        if (platform.position.y >= bounds.minimum.y) {
-            platform.position.y = Math.max(
-                bounds.minimum.y,
-                platform.position.y - 0.15
-            );
-        }
-    };
+    let lastInside = false;
 
     xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((frame) => {
-        if (userOnElevator) {
-            moveUserUp(frame);
+        const inside = insideBox(
+            shaft,
+            xrCamera.position.subtract(shaft.getAbsolutePosition())
+        );
+
+        if (lastInside !== inside) {
+            enableGravity(lastInside);
+            lastInside = inside;
+            if (inside) {
+                platform.position.y = bounds.minimum.y;
+            }
+        }
+
+        if (inside) {
+            if (platform.position.y < bounds.maximum.y - 2.4) {
+                platform.position.y = Math.min(
+                    bounds.maximum.y - 2.4,
+                    platform.position.y + 0.1
+                );
+                xrCamera.position.y =
+                    platform.getAbsolutePosition().y + xrCamera.realWorldHeight;
+            }
         } else {
-            moveElevatorDown(frame);
+            if (platform.position.y >= bounds.minimum.y) {
+                platform.position.y = Math.max(
+                    bounds.minimum.y,
+                    platform.position.y - 0.15
+                );
+            }
         }
     });
-
-    // Trigger on entering the elevator
-    shaft.actionManager = new BABYLON.ActionManager(scene);
-    shaft.actionManager.registerAction(
-        new BABYLON.ExecuteCodeAction(
-            {
-                trigger: BABYLON.ActionManager.OnIntersectionEnterTrigger,
-                parameter: cameraProxy,
-            },
-            () => {
-                console.log("User entered the elevator!");
-                userOnElevator = true;
-            }
-        )
-    );
-
-    // Trigger on exiting the elevator
-    shaft.actionManager.registerAction(
-        new BABYLON.ExecuteCodeAction(
-            {
-                trigger: BABYLON.ActionManager.OnIntersectionExitTrigger,
-                parameter: cameraProxy,
-            },
-            () => {
-                console.log("User exited the elevator!");
-                userOnElevator = false;
-            }
-        )
-    );
 };
