@@ -100,9 +100,10 @@ export const createScene: CreateSceneFn = async (
     setupPlayerGravity(xrHelper);
 
     if (true) {
-        createSkybox1(scene);
+        const size = 10000;
+        createSkybox1(scene, size);
 
-        const ground = createGround1(scene);
+        const ground = createGround1(scene, size);
         ground.isPickable = false;
         xrHelper.teleportation.addFloorMesh(ground);
 

@@ -84,14 +84,14 @@ export const createSkybox = (scene: BABYLON.Scene) => {
     return skybox;
 };
 
-export const createGround1 = (scene: BABYLON.Scene) => {
+export const createGround1 = (scene: BABYLON.Scene, size = 100) => {
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
-        { width: 100, height: 100 },
+        { width: size, height: size },
         scene
     );
 
-    const groundMaterial = makeGroundMaterial(scene, "ground");
+    const groundMaterial = makeGroundMaterial(scene, "ground", size);
     // groundMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.8, 0.4); // Light green
     // groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0); // No specular highlights
 
@@ -101,13 +101,9 @@ export const createGround1 = (scene: BABYLON.Scene) => {
     return ground;
 };
 
-export const createSkybox1 = (scene: BABYLON.Scene) => {
+export const createSkybox1 = (scene: BABYLON.Scene, size = 100) => {
     // Create a large box for the skybox
-    const skybox = BABYLON.MeshBuilder.CreateBox(
-        "skybox",
-        { size: 1000 },
-        scene
-    );
+    const skybox = BABYLON.MeshBuilder.CreateBox("skybox", { size }, scene);
 
     // Create a lightweight material
     const skyboxMaterial = new BABYLON.StandardMaterial(

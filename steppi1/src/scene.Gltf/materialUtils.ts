@@ -243,7 +243,8 @@ export const makeRoofTilesMaterial = (
 
 export const makeGroundMaterial = (
     scene: BABYLON.Scene,
-    name: string
+    name: string,
+    size = 100
 ): BABYLON.StandardMaterial =>
     makeTexturedMaterial(
         scene,
@@ -251,7 +252,7 @@ export const makeGroundMaterial = (
         "assets/scene.Gltf/ground/pebbles-ground-path-256x256.png",
         // "assets/scene.Gltf/ground/ground-tile-256x256.png",
         (texture) => {
-            texture.uScale = texture.vScale = 100 / 2;
+            texture.uScale = texture.vScale = size / 2;
         }
     );
 
