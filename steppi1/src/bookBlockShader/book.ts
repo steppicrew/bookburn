@@ -5,7 +5,7 @@ import { TextureManager } from "../lib/TextureManager";
 import { createBookParts } from "./bookParts";
 import { TextureMap } from "./types";
 
-const defaultTexture = "assets/BookTexture-xcf.png";
+const defaultTexture = "assets/scene.Books/BookTexture-xcf.png";
 const defaultMsPerFlip = 500;
 
 const getTextureMap = (): [TextureMap[], number[]] => {

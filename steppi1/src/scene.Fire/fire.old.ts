@@ -170,7 +170,7 @@ const createFireSystem1 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 3.25, 0),
-        "assets/Fire_SpriteSheet1_8x8.png"
+        "assets/scene.Fire/old/Fire_SpriteSheet1_8x8.png"
     );
     return system;
 };
@@ -180,7 +180,7 @@ const createFireSystem2 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 2.25, 0),
-        "assets/Fire_SpriteSheet2_8x8.png"
+        "assets/scene.Fire/old/Fire_SpriteSheet2_8x8.png"
     );
     system.minSize = 5;
     system.maxSize = 6;
@@ -192,7 +192,7 @@ const createFireSystem3 = (scene: BABYLON.Scene, parent: BABYLON.Node) => {
         scene,
         parent,
         new BABYLON.Vector3(0, 2.25, 0),
-        "assets/Fire_SpriteSheet3_8x8.png"
+        "assets/scene.Fire/old/Fire_SpriteSheet3_8x8.png"
     );
     system.minSize = 5;
     system.maxSize = 6;
