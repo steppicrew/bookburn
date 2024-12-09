@@ -13,7 +13,12 @@ const chooseFrom = <T>(random: number, cands: T[]) =>
 type TeleportationCells = Array<[x: number, y: number, z: number]>;
 
 const teleportationCells: TeleportationCells = [];
-const fixups: Array<(xrHelper: BABYLON.WebXRDefaultExperience) => void> = [];
+
+interface FixupContext {
+    elevators: BABYLON.Mesh[];
+    xrHelper: BABYLON.WebXRDefaultExperience;
+}
+const fixups: Array<(context: FixupContext) => void> = [];
 
 type MergedRectangle = {
     groupDim: number;
@@ -297,8 +302,8 @@ export const addHouse1 = async (
                 fixups.push(
                     (
                         (y: number) =>
-                        (xrHelper?: BABYLON.WebXRDefaultExperience) => {
-                            addElevator(
+                        ({ elevators, xrHelper }) => {
+                            const shaft = addElevator(
                                 scene,
                                 x + segment.cx + xy1p[0] * 1.5,
                                 y,
@@ -306,6 +311,7 @@ export const addHouse1 = async (
                                 (floors + 1) * 2.4,
                                 xrHelper
                             );
+                            elevators.push(shaft);
                         }
                     )(y)
                 );
@@ -389,12 +395,6 @@ export const flushTeleportationCells = (
 ) => {
     if (xrHelper) {
         const rectangles = mergeCellsToRectangles(teleportationCells, 1);
-
-        const root = new BABYLON.TransformNode("teleportationHouse", scene);
-
-        // console.log(teleportationCells.slice());
-        // console.log(rectangles);
-
         const planes: BABYLON.Mesh[] = [];
 
         for (const {
@@ -448,7 +448,13 @@ export const flushTeleportationCells = (
             xrHelper.teleportation.addFloorMesh(mergedPlanes);
         }
 
-        fixups.forEach((fixup) => fixup(xrHelper));
+        const context: FixupContext = {
+            elevators: [],
+            xrHelper,
+        };
+
+        fixups.forEach((fixup) => fixup(context));
+        BABYLON.Mesh.MergeMeshes(context.elevators);
     }
     teleportationCells.splice(0);
     fixups.splice(0);

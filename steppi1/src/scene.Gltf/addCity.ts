@@ -16,7 +16,7 @@ export const addCity = async (
     const cityWidth = 170;
     const cityContour = new Array(cityWidth).fill(0);
 
-    for (let i = 0; i <= 200; ++i) {
+    for (let i = 0; i <= 100; ++i) {
         // const outline = [3, -3, -4, 1];
         const outline = makeRandomOutline(random);
         if (!outline) {
@@ -31,8 +31,7 @@ export const addCity = async (
         if (floors == 0) {
             floors = (random() % 25) + 1;
             if (floors > 15) {
-                random();
-                // features.push({ type: "elevator", index: random() % 20 });
+                features.push({ type: "elevator", index: random() % 20 });
             }
         } else {
             floors = (random() % 12) + 1;

@@ -86,7 +86,7 @@ export const addHouses = async (
         shadowGenerator,
         features: [
             { type: "stairs", index: 14 },
-            { type: "elevator", index: 12 },
+            { type: "elevator", index: 11 },
         ],
     });
 
@@ -139,9 +139,7 @@ export const sceneContent = async (
     // addPerson(scene);
     // addDebugGrid(scene);
 
-    // addElevator(scene, 0, 0, 2, 10, xrHelper);
-
-    if (true) {
+    if (location.hash === "") {
         await addCity(scene, shadowGenerator);
 
         if (xrHelper) {
@@ -165,6 +163,26 @@ export const sceneContent = async (
         });
     } else {
         await addHouses(scene, shadowGenerator, xrHelper);
+
+        scene.onBeforeCameraRenderObservable.addOnce(() => {
+            camera.node.target = new BABYLON.Vector3(
+                -98.79350159074379,
+                -0.9495311218264757,
+                -117.06590562917238
+            );
+            camera.node.alpha = 4.273743901370716;
+            camera.node.beta = 1.6277379220724377;
+            camera.node.radius = 0.0005723988569103608;
+
+            camera.node.target = new BABYLON.Vector3(
+                -82.43530572537381,
+                93.42749569638661,
+                -12.772009656214406
+            );
+            camera.node.alpha = 3.8305841657285895;
+            camera.node.beta = 0.6526176519707895;
+            camera.node.radius = 0;
+        });
     }
 
     flushAssetThinInstances();

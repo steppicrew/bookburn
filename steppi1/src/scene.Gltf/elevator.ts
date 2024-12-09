@@ -18,6 +18,31 @@ const insideBox = (box: BABYLON.Mesh, point: BABYLON.Vector3) => {
     return true;
 };
 
+function easeInOutElevator(
+    minValue: number,
+    maxValue: number,
+    currentValue: number,
+    minSpeed: number,
+    maxSpeed: number,
+    direction: number
+): number {
+    const progress = BABYLON.Scalar.Clamp(
+        (currentValue - minValue) / (maxValue - minValue),
+        0,
+        1
+    );
+    const easeFactor =
+        0.5 * (1 - Math.cos(Math.PI * 2 * (progress * 0.8 + 0.1)));
+    const speed = Math.max(minSpeed, maxSpeed * easeFactor);
+    let nextValue = currentValue + direction * speed;
+    if (direction > 0) {
+        nextValue = Math.min(nextValue, maxValue);
+    } else {
+        nextValue = Math.max(nextValue, minValue);
+    }
+    return nextValue;
+}
+
 // FIXME: add name
 export const addElevator = (
     scene: BABYLON.Scene,
@@ -25,20 +50,18 @@ export const addElevator = (
     y: number,
     z: number,
     height: number,
-    xrHelper?: BABYLON.WebXRDefaultExperience
+    xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    if (!xrHelper) {
-        return;
-    }
-
     const xrCamera = xrHelper.baseExperience.camera;
+
+    const position = new BABYLON.Vector3(x, y + height / 2 + 0.05, z);
 
     const shaft = BABYLON.MeshBuilder.CreateBox(
         "elevatorShaft",
         { width: 3, depth: 2, height },
         scene
     );
-    shaft.position = new BABYLON.Vector3(x, y + height / 2 + 0.05, z);
+    shaft.position = position.clone();
 
     shaft.material = makeGlassMaterial(scene);
     shaft.material.backFaceCulling = false;
@@ -49,11 +72,14 @@ export const addElevator = (
         scene
     );
 
+    console.log(position);
     platform.material = makeWoodMaterial(scene);
-    platform.parent = shaft;
 
-    const bounds = shaft.getBoundingInfo().boundingBox;
-    platform.position = new BABYLON.Vector3(0, bounds.minimum.y, 0);
+    const bounds1 = shaft.getBoundingInfo().boundingBox;
+    const minimumY = position.y + bounds1.minimum.y;
+    const maximumY = position.y + bounds1.maximum.y - 2.4;
+
+    platform.position = new BABYLON.Vector3(position.x, minimumY, position.z);
     xrHelper.teleportation.addFloorMesh(platform);
 
     const sound = new BABYLON.Sound(
@@ -71,6 +97,57 @@ export const addElevator = (
 
     let lastInside = false;
 
+    const maxUpSpeed = BABYLON.Scalar.Clamp(
+        (maximumY - minimumY) / 100,
+        0.3,
+        0.5
+    );
+    const maxDownSpeed = BABYLON.Scalar.Clamp(
+        (maximumY - minimumY) / 100,
+        0.3,
+        0.8
+    );
+
+    if (false) {
+        // For debugging:
+
+        let inside = true;
+
+        scene.registerBeforeRender(() => {
+            if (inside) {
+                if (platform.position.y < maximumY) {
+                    platform.position.y = easeInOutElevator(
+                        minimumY,
+                        maximumY,
+                        platform.position.y,
+                        0.01,
+                        maxUpSpeed,
+                        1
+                    );
+                    xrCamera.position.y =
+                        platform.position.y + xrCamera.realWorldHeight;
+                } else {
+                    inside = false;
+                }
+            } else {
+                if (platform.position.y > minimumY) {
+                    platform.position.y = easeInOutElevator(
+                        minimumY,
+                        maximumY,
+                        platform.position.y,
+                        0.2,
+                        maxDownSpeed,
+                        -1
+                    );
+                } else {
+                    inside = true;
+                }
+            }
+        });
+
+        return shaft;
+    }
+
     xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((frame) => {
         const inside = insideBox(
             shaft,
@@ -81,7 +158,7 @@ export const addElevator = (
             enableGravity(lastInside);
             lastInside = inside;
             if (inside) {
-                platform.position.y = bounds.minimum.y;
+                platform.position.y = minimumY;
                 sound.play(0.1);
             } else {
                 sound.stop(0.1);
@@ -89,21 +166,31 @@ export const addElevator = (
         }
 
         if (inside) {
-            if (platform.position.y < bounds.maximum.y - 2.4) {
-                platform.position.y = Math.min(
-                    bounds.maximum.y - 2.4,
-                    platform.position.y + 0.1
+            if (platform.position.y < maximumY) {
+                platform.position.y = easeInOutElevator(
+                    minimumY,
+                    maximumY,
+                    platform.position.y,
+                    0.01,
+                    maxUpSpeed,
+                    1
                 );
                 xrCamera.position.y =
-                    platform.getAbsolutePosition().y + xrCamera.realWorldHeight;
+                    platform.position.y + xrCamera.realWorldHeight;
             }
         } else {
-            if (platform.position.y >= bounds.minimum.y) {
-                platform.position.y = Math.max(
-                    bounds.minimum.y,
-                    platform.position.y - 0.15
+            if (platform.position.y > minimumY) {
+                platform.position.y = easeInOutElevator(
+                    minimumY,
+                    maximumY,
+                    platform.position.y,
+                    0.2,
+                    maxDownSpeed,
+                    -1
                 );
             }
         }
     });
+
+    return shaft;
 };
