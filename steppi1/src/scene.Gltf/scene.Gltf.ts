@@ -92,6 +92,7 @@ export const createScene: CreateSceneFn = async (
 ) => {
     if (import.meta.env.DEV) {
         scene.debugLayer.show();
+        new BABYLON.Debug.AxesViewer(scene, 1);
     }
 
     // ====================================

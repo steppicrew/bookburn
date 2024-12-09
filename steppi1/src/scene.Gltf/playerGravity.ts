@@ -94,7 +94,7 @@ export function setupPlayerGravity(xrHelper?: BABYLON.WebXRDefaultExperience) {
         const minH = floorHeight + userHeightOffset;
         if (xrCamera.position.y > minH) {
             xrCamera.position.y = Math.max(minH, xrCamera.position.y + gravity);
-            gravity *= 1.04;
+            gravity *= 1.06;
         } else {
             gravity = INITIAL_GRAVITY;
         }

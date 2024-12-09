@@ -56,9 +56,17 @@ type Walls = {
 
 type FloorArea = Array<[x: number, y: number]>;
 
-type MakeWalls = {
+export type WallContour = Record<number, number>;
+
+export type MakeWalls = {
     segments: Segment[];
     floorArea: FloorArea;
+    x: number;
+    y: number;
+    width: number;
+    depth: number;
+    contourMinX: WallContour;
+    contourMaxX: WallContour;
 };
 
 type StairsFeature = {
@@ -90,10 +98,6 @@ export const makeWalls = (
     }
     if (sumX !== 0 && sumY !== 0) {
         outline.push(-sumX, -sumY);
-    } else if (sumX !== 0 || sumY !== 0) {
-        throw new Error(
-            `sumX=${sumX}, sumY=${sumY} - can't autocorrect (${outline})`
-        );
     }
 
     const walls: Walls[] = [];
@@ -102,6 +106,9 @@ export const makeWalls = (
     let y = 0;
     let dir: number;
     let area: Record<string, [x: number, y: number]> = {};
+
+    const contourMinX: WallContour = {};
+    const contourMaxX: WallContour = {};
 
     let fillX: number;
     let fillY: number;
@@ -121,6 +128,14 @@ export const makeWalls = (
     dir = 1;
     let pointIndex = 0;
 
+    const addToArea = (nextX: number, nextY: number) => {
+        area[`${nextX}:${nextY}`] = [nextX, nextY];
+        if (!(nextX in contourMinX) || contourMinX[nextX] > nextY)
+            contourMinX[nextX] = nextY;
+        if (!(nextX in contourMaxX) || contourMaxX[nextX] < nextY)
+            contourMaxX[nextX] = nextY;
+    };
+
     for (let i = 0; i < outline.length; i++) {
         let nextDir: number;
         if (outline[i] < 0 !== dir <= 1) {
@@ -132,14 +147,14 @@ export const makeWalls = (
         let nextX = x;
         let nextY = y;
         const points: Points = [];
-        area[`${nextX}:${nextY}`] = [nextX, nextY];
+        addToArea(nextX, nextY);
         for (let j = Math.abs(outline[i]) * 2; j > 0; --j) {
             nextX += dirXY[nextDir][0];
             nextY += dirXY[nextDir][1];
             if (j > 1) {
                 points.push([nextX, nextY, pointIndex++]);
             }
-            area[`${nextX}:${nextY}`] = [nextX, nextY];
+            addToArea(nextX, nextY);
         }
 
         walls.push({
@@ -242,15 +257,22 @@ export const makeWalls = (
         }
     }
 
-    // Calculate bound for error checking
-    const allX = Array.from(Object.values(area), ([x]) => x);
-    const allY = Array.from(Object.values(area), ([, y]) => y);
-    const minX = Math.min(...allX);
-    const maxX = Math.max(...allX);
-    const minY = Math.min(...allY);
-    const maxY = Math.max(...allY);
-
     const floorArea: FloorArea = Object.values(area);
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const [x, y] of floorArea) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+
+    // console.log("MAXXXXX", minX, minY, maxX, maxY);
+
     const nextFill: Array<[number, number]> = [[fillX, fillY]];
 
     while (nextFill.length) {
@@ -269,12 +291,23 @@ export const makeWalls = (
             }
             if (x1 < minX || x1 > maxX || y1 < minY || y1 > maxY) {
                 throw new Error(
-                    `x/y out of bounds ${x1}/${y1} ${minX}/${minY}-${maxX}/${maxY}`
+                    `x/y out of bounds ${x1}/${y1} ${minX}/${minY}..${maxX}/${maxY}`
                 );
             }
             nextFill.push([x1, y1]);
         }
     }
 
-    return { segments, floorArea };
+    // FIXME: normalize floorArea / segments by adding -maxX/-minY
+
+    return {
+        segments,
+        floorArea,
+        x: -minX,
+        y: -minY,
+        width: maxX - minX + 1,
+        depth: maxY - minY + 1,
+        contourMinX,
+        contourMaxX,
+    };
 };

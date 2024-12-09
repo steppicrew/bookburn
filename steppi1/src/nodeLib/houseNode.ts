@@ -1,22 +1,11 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
-import { dirXY, makeWalls, WallFeatures } from "./makeWalls";
+import { dirXY, MakeWalls, makeWalls, WallFeatures } from "./makeWalls";
 import { getAssetThinInstance } from "../scene.Gltf/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
 import { addElevator } from "../scene.Gltf/elevator";
-
-const createRandom = (seed: number) => {
-    return (): number => {
-        // Linear Congruential Generator constants
-        const a = 1664525;
-        const c = 1013904223;
-        const m = 2 ** 32;
-
-        seed = (a * seed + c) % m;
-        return seed;
-    };
-};
+import { makeRandom } from "../lib/makeRandom";
 
 const chooseFrom = <T>(random: number, cands: T[]) =>
     cands[random % cands.length];
@@ -153,14 +142,40 @@ export const addHouse = async (
     x: number,
     z: number,
     outline: number[],
-    { floors = 1, startFloor = 0, shadowGenerator, features }: HouseOptions
+    options: HouseOptions
 ) => {
-    const { segments, floorArea } = makeWalls(outline, features);
-    const nextRandom = createRandom(
+    const { features, ...options1 } = options;
+    const nextRandom = makeRandom(
         outline.reduce((a, b) => (a * a * Math.abs(b + 1)) & 0xfffff)
     );
-    const height = 2.4;
+    const wall = makeWalls(outline, features);
+    return await addHouse1(
+        scene,
+        wall,
+        x - wall.x, // FIXME: Remove - wall.x/ - wall.y
+        z - wall.y,
+        nextRandom,
+        options1
+    );
+};
 
+type HouseOptions1 = {
+    floors?: number;
+    startFloor?: number;
+    shadowGenerator?: BABYLON.ShadowGenerator;
+};
+
+export const addHouse1 = async (
+    scene: BABYLON.Scene,
+    { x: wallX, y: wallZ, segments, floorArea }: MakeWalls,
+    x: number,
+    z: number,
+    nextRandom: () => number,
+    { floors = 1, startFloor = 0, shadowGenerator }: HouseOptions1
+) => {
+    const height = 2.4;
+    x += wallX;
+    z += wallZ;
     let y = startFloor * height;
     let hasElevator = false;
     for (let floor = 0; floor < floors; ++floor, y += height) {
@@ -185,7 +200,7 @@ export const addHouse = async (
                     0
                 ).multiply(
                     BABYLON.Matrix.Translation(
-                        x + segment.cx,
+                        -(x + segment.cx),
                         y,
                         z + segment.cy
                     )
@@ -199,17 +214,19 @@ export const addHouse = async (
                 continue;
             }
             if (segment.type === "corner") {
-                const matrix = BABYLON.Matrix.Translation(0.5, 0, -0.5)
+                const matrix = BABYLON.Matrix.Identity()
+                    .multiply(BABYLON.Matrix.Translation(0.5, 0, -0.5))
                     .multiply(
                         BABYLON.Matrix.RotationYawPitchRoll(
-                            ((6 - segment.dir) * Math.PI) / 2,
+                            ((3 + segment.dir) * Math.PI) / 2,
                             0,
                             0
-                        ).multiply(BABYLON.Matrix.Translation(-0.5, 0, 0.5))
+                        )
                     )
+                    .multiply(BABYLON.Matrix.Translation(-0.5, 0, 0.5))
                     .multiply(
                         BABYLON.Matrix.Translation(
-                            x + segment.cx + 0.5,
+                            -(x + segment.cx - 0.5),
                             y,
                             z + segment.cy - 0.5
                         )
@@ -250,12 +267,12 @@ export const addHouse = async (
                 let matrix = BABYLON.Matrix.Translation(0, 0, (DX / 4 - DZ) / 2)
                     .multiply(
                         BABYLON.Matrix.RotationYawPitchRoll(
-                            ((7 - dir) * Math.PI) / 2,
+                            ((1 + dir) * Math.PI) / 2,
                             0,
                             0
                         )
                     )
-                    .multiply(BABYLON.Matrix.Translation(x2, y2, z2));
+                    .multiply(BABYLON.Matrix.Translation(-x2, y2, z2));
 
                 await getAssetThinInstance(
                     scene,
@@ -282,7 +299,7 @@ export const addHouse = async (
                 continue;
             }
             if (segment.type === "elevator" && floor === 0) {
-                const xy1p = dirXY[(segment.dir + 1) & 3];
+                const xy1p = dirXY[(segment.dir + 3) & 3];
 
                 fixups.push(
                     (
@@ -290,7 +307,7 @@ export const addHouse = async (
                         (xrHelper?: BABYLON.WebXRDefaultExperience) => {
                             addElevator(
                                 scene,
-                                -x - segment.cx + xy1p[0] * 1.5,
+                                x + segment.cx + xy1p[0] * 1.5,
                                 y,
                                 z + segment.cy + xy1p[1] * 1.5,
                                 (floors + 1) * 2.4,
@@ -308,7 +325,7 @@ export const addHouse = async (
     const soundPlane = [Infinity, Infinity, -Infinity, -Infinity];
     const soundBorder = 2;
     for (const [floorX, floorY] of floorArea) {
-        var matrix = BABYLON.Matrix.Translation(x + floorX, y, z + floorY);
+        var matrix = BABYLON.Matrix.Translation(-(x + floorX), y, z + floorY);
         await getAssetThinInstance(
             scene,
             "building/roof-flat-patch",
@@ -343,7 +360,7 @@ export const addHouse = async (
                 box.isVisible = false;
             }
             box.rotation.x = Math.PI / 2;
-            box.position.x = -(soundPlane[0] + soundPlane[2]) / 2;
+            box.position.x = (soundPlane[0] + soundPlane[2]) / 2;
             box.position.y = y + 2;
             box.position.z = (soundPlane[1] + soundPlane[3]) / 2;
 
@@ -425,7 +442,7 @@ export const flushTeleportationCells = (
 
             // FIXME: Why sizzling?
             plane.position = new BABYLON.Vector3(
-                -position[2],
+                position[2],
                 position[1] + 0.07,
                 position[0]
             );

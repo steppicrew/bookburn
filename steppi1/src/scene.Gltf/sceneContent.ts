@@ -2,10 +2,13 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 import {
     addHouse,
+    addHouse1,
     flushTeleportationCells as flushHouses,
 } from "../nodeLib/houseNode";
 import { flushAssetThinInstances } from "./assetLoader";
-import { addElevator } from "./elevator";
+import { addCity } from "./addCity";
+import { makeWalls } from "../nodeLib/makeWalls";
+import { makeRandom } from "../lib/makeRandom";
 
 export const addHouses = async (
     scene: BABYLON.Scene,
@@ -13,38 +16,21 @@ export const addHouses = async (
     xrHelper?: BABYLON.WebXRDefaultExperience
 ) => {
     if (false) {
-        await addHouse(scene, -10, -2, [2, -1, 3, 3], {
-            floors: 2,
-            shadowGenerator,
-            features: [
-                { type: "stairs", index: 0 },
-                /*
-                { type: "stairs", index: 3 },
-                { type: "stairs", index: 4 },
-                { type: "stairs", index: 5 },
-                { type: "stairs", index: 6 },
-                { type: "stairs", index: 7 },
-                 */
-                { type: "stairs", index: 8, turn: 1 },
-                { type: "stairs", index: 9 },
-            ],
-        });
-        return;
-        await addHouse(scene, -6, -2, [2, 2], {
-            startFloor: 0,
-            shadowGenerator,
-        });
-        await addHouse(scene, 10, 0, [4, 2], {
-            floors: 5,
-            shadowGenerator,
-            features: [{ type: "stairs", index: 0 }],
-        });
+        await addHouse1(
+            scene,
+            makeWalls([5, 2, -4, -1]),
+            0,
+            0,
+            makeRandom(0),
+            {}
+        );
+        // await addHouse(scene, 0, 0, [1, 1, 1, -1, 1, -2], {});
         return;
     }
 
     // outline MUST be counter clockwise
 
-    await addHouse(scene, -14, -2, [2, -1, 3, 3], {
+    await addHouse(scene, -14, -2, [2, -1, 3, 5], {
         floors: 2,
         shadowGenerator,
         features: [{ type: "stairs", index: 8 }],
@@ -131,7 +117,18 @@ export const sceneContent = async (
 
     // addElevator(scene, 0, 0, 2, 10, xrHelper);
 
-    await addHouses(scene, shadowGenerator, xrHelper);
+    if (true) {
+        await addCity(scene, shadowGenerator);
+        xrHelper?.baseExperience.sessionManager.onXRFrameObservable.addOnce(
+            (_frame) => {
+                const xrCamera = xrHelper.baseExperience.camera;
+                xrCamera.position.x = 50;
+                xrCamera.position.z = 50;
+            }
+        );
+    } else {
+        await addHouses(scene, shadowGenerator, xrHelper);
+    }
 
     flushAssetThinInstances();
     flushHouses(scene, xrHelper);
