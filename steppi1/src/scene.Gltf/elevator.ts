@@ -72,7 +72,6 @@ export const addElevator = (
         scene
     );
 
-    console.log(position);
     platform.material = makeWoodMaterial(scene);
 
     const bounds1 = shaft.getBoundingInfo().boundingBox;
@@ -155,10 +154,10 @@ export const addElevator = (
         );
 
         if (lastInside !== inside) {
-            enableGravity(lastInside);
+            //enableGravity(lastInside);
             lastInside = inside;
             if (inside) {
-                platform.position.y = minimumY;
+                // platform.position.y = minimumY;
                 sound.play(0.1);
             } else {
                 sound.stop(0.1);
@@ -175,8 +174,15 @@ export const addElevator = (
                     maxUpSpeed,
                     1
                 );
-                xrCamera.position.y =
-                    platform.position.y + xrCamera.realWorldHeight;
+                if (
+                    xrCamera.position.y >=
+                        platform.position.y + xrCamera.realWorldHeight - 1 &&
+                    xrCamera.position.y <=
+                        platform.position.y + xrCamera.realWorldHeight + 1
+                ) {
+                    xrCamera.position.y =
+                        platform.position.y + xrCamera.realWorldHeight;
+                }
             }
         } else {
             if (platform.position.y > minimumY) {

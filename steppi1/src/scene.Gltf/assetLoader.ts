@@ -66,7 +66,7 @@ const loadGlbAsset = async (
     cl.log(`Loading asset ${assetKey}`);
 
     const result = await BABYLON.SceneLoader.ImportMeshAsync(
-        "",
+        null,
         path,
         `${name}.glb`,
         scene

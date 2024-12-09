@@ -123,7 +123,7 @@ export const addHouses = async (
 
     // ===
 
-    await addHouse(scene, -42, -12, [20, -8], {
+    await addHouse(scene, 10, -12, [20, -8], {
         floors: 4,
         shadowGenerator,
         features: [{ type: "stairs", index: 40, turn: 1 }],

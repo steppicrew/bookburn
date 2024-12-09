@@ -98,7 +98,7 @@ export const createScene: CreateSceneFn = async (
     // ====================================
 
     // BEFORE gound setup
-    setupPlayerGravity(xrHelper);
+    setupPlayerGravity(scene, xrHelper);
 
     {
         const size = 10000;
