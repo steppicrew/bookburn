@@ -134,8 +134,25 @@ export const glassMaterial_OLD = (scene: BABYLON.Scene, name: string) => {
 };
 */
 
-export const makeGlassMaterial = (scene: BABYLON.Scene, name = "glass") => {
+export const makePlainMaterial = (
+    scene: BABYLON.Scene,
+    name: string,
+    r: number,
+    g: number,
+    b: number
+): BABYLON.StandardMaterial => {
+    const material = new BABYLON.StandardMaterial(name, scene);
+    material.diffuseColor = new BABYLON.Color3(r, g, b);
+    material.specularColor = BABYLON.Color3.Black();
+    material.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    return material;
+};
+
+export const makeGlassMaterial = (scene: BABYLON.Scene, name = "glass1") => {
     let material = scene.getMaterialByName(name) as BABYLON.PBRMaterial;
+    if (!material) {
+        //return makePlainMaterial(scene, name, 1, 1, 1);
+    }
     if (!material) {
         material = new BABYLON.PBRMaterial(name, scene);
         material.alpha = 0.99;
@@ -196,15 +213,18 @@ const makeTexturedMaterial = (
     texturePath: string,
     initTexture?: (texture: BABYLON.Texture) => void
 ): BABYLON.StandardMaterial => {
-    const material = new BABYLON.StandardMaterial(name, scene);
-    material.specularColor = BABYLON.Color3.Black();
-    material.emissiveColor = new BABYLON.Color3(0, 0, 0);
-    material.diffuseTexture = ensureTexture(
-        scene,
-        name,
-        texturePath,
-        initTexture
-    );
+    let material = scene.getMaterialByName(name) as BABYLON.StandardMaterial;
+    if (!material) {
+        material = new BABYLON.StandardMaterial(name, scene);
+        material.specularColor = BABYLON.Color3.Black();
+        material.emissiveColor = new BABYLON.Color3(0, 0, 0);
+        material.diffuseTexture = ensureTexture(
+            scene,
+            name,
+            texturePath,
+            initTexture
+        );
+    }
     return material;
 };
 
@@ -255,20 +275,6 @@ export const makeGroundMaterial = (
             texture.uScale = texture.vScale = size / 2;
         }
     );
-
-export const makePlainMaterial = (
-    scene: BABYLON.Scene,
-    name: string,
-    r: number,
-    g: number,
-    b: number
-): BABYLON.StandardMaterial => {
-    const material = new BABYLON.StandardMaterial(name, scene);
-    material.diffuseColor = new BABYLON.Color3(r, g, b);
-    material.specularColor = BABYLON.Color3.Black();
-    material.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-    return material;
-};
 
 export class GlassMaterialPlugin extends BABYLON.MaterialPluginBase {
     constructor(material: BABYLON.Material) {

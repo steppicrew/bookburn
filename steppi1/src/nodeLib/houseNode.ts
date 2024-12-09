@@ -149,14 +149,7 @@ export const addHouse = async (
         outline.reduce((a, b) => (a * a * Math.abs(b + 1)) & 0xfffff)
     );
     const wall = makeWalls(outline, features);
-    return await addHouse1(
-        scene,
-        wall,
-        x - wall.x, // FIXME: Remove - wall.x/ - wall.y
-        z - wall.y,
-        nextRandom,
-        options1
-    );
+    return await addHouse1(scene, x, z, wall, nextRandom, options1);
 };
 
 type HouseOptions1 = {
@@ -167,9 +160,9 @@ type HouseOptions1 = {
 
 export const addHouse1 = async (
     scene: BABYLON.Scene,
-    { x: wallX, y: wallZ, segments, floorArea }: MakeWalls,
     x: number,
     z: number,
+    { x: wallX, y: wallZ, segments, floorArea }: MakeWalls,
     nextRandom: () => number,
     { floors = 1, startFloor = 0, shadowGenerator }: HouseOptions1
 ) => {
@@ -241,8 +234,8 @@ export const addHouse1 = async (
             }
             if (segment.type === "stairs") {
                 // const xy1 = dirXY[(segment.dir + 2) & 3];
-                const xy1p = dirXY[(segment.dir + 3) & 3]; // 90deg of stairs
-                const dir = (segment.dir + (segment.turn ?? 0) + 5) & 3; // dir of stairs
+                const xy1p = dirXY[(segment.dir + 1) & 3]; // 90deg of stairs
+                const dir = (segment.dir + (segment.turn ?? 0) + 3) & 3; // dir of stairs
                 const xy2 = dirXY[dir];
                 const xy2p = dirXY[(dir + 1) & 3];
 
@@ -402,6 +395,8 @@ export const flushTeleportationCells = (
         // console.log(teleportationCells.slice());
         // console.log(rectangles);
 
+        const planes: BABYLON.Mesh[] = [];
+
         for (const {
             groupDim,
             groupValue,
@@ -426,8 +421,7 @@ export const flushTeleportationCells = (
                 },
                 scene
             );
-            plane.parent = root;
-            plane.isVisible = false;
+            planes.push(plane);
 
             // Rotate the plane based on the group dimension
             if (groupDim === 0) {
@@ -446,8 +440,12 @@ export const flushTeleportationCells = (
                 position[1] + 0.07,
                 position[0]
             );
+        }
 
-            xrHelper.teleportation.addFloorMesh(plane);
+        const mergedPlanes = BABYLON.Mesh.MergeMeshes(planes);
+        if (mergedPlanes) {
+            mergedPlanes.isVisible = false;
+            xrHelper.teleportation.addFloorMesh(mergedPlanes);
         }
 
         fixups.forEach((fixup) => fixup(xrHelper));

@@ -100,7 +100,7 @@ export const createScene: CreateSceneFn = async (
     // BEFORE gound setup
     setupPlayerGravity(xrHelper);
 
-    if (true) {
+    {
         const size = 10000;
         createSkybox1(scene, size);
 
@@ -110,6 +110,19 @@ export const createScene: CreateSceneFn = async (
 
         ground.checkCollisions = true;
     }
+
+    // Exit XR when "B" pressed
+    xrHelper.input.onControllerAddedObservable.add((inputSource) => {
+        inputSource.onMotionControllerInitObservable.add((motionController) =>
+            motionController
+                .getComponent("b-button")
+                ?.onButtonStateChangedObservable.add((component) => {
+                    if (component.pressed) {
+                        void xrHelper.baseExperience.exitXRAsync();
+                    }
+                })
+        );
+    });
 
     // ====================================
 
@@ -176,7 +189,7 @@ export const createScene: CreateSceneFn = async (
         });
     }
 
-    await sceneContent(scene, shadowGenerator, xrHelper);
+    await sceneContent(scene, camera, shadowGenerator, xrHelper);
 
     // ====================================
 
