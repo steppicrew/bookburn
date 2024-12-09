@@ -18,6 +18,7 @@ https://audio.online-convert.com/convert/wav-to-mp3
 
 https://immersive-web.github.io/webxr-samples/
 https://github.com/meta-quest/immersive-web-emulator#immersive-web-emulator-usage
+https://forum.babylonjs.com/t/how-to-prevent-xr-camera-moving-through-the-wall-by-its-backward-movement/35635/3
 
 ## View GBL files
 

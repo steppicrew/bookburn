@@ -90,6 +90,8 @@ export const createScene: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
+    // ====================================
+
     if (import.meta.env.DEV) {
         scene.debugLayer.show();
         new BABYLON.Debug.AxesViewer(scene, 1);
@@ -110,6 +112,8 @@ export const createScene: CreateSceneFn = async (
 
         ground.checkCollisions = true;
     }
+
+    // ====================================
 
     // Exit XR when "B" pressed
     xrHelper.input.onControllerAddedObservable.add((inputSource) => {
@@ -159,6 +163,8 @@ export const createScene: CreateSceneFn = async (
     }
     */
 
+    // ====================================
+
     // Important, otherwise there is staggering audio
     scene.audioPositioningRefreshRate = 100;
 
@@ -188,6 +194,28 @@ export const createScene: CreateSceneFn = async (
             }
         });
     }
+
+    // ====================================
+
+    const plane = BABYLON.MeshBuilder.CreatePlane(
+        "teleportationBlocker",
+        { size: 1000 },
+        scene
+    );
+    plane.position.y = 4;
+    plane.addRotation(Math.PI / 2, 0, 0);
+    plane.isVisible = false;
+    // plane.material = new BABYLON.StandardMaterial("teleportationBlocker");
+    // plane.material.alpha = 0.2;
+    xrHelper.teleportation.addBlockerMesh(plane);
+
+    xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((_frame) => {
+        const xrCamera = xrHelper.baseExperience.camera;
+        plane.position = xrCamera.position.clone();
+        plane.position.y -= 6;
+    });
+
+    // ====================================
 
     await sceneContent(scene, camera, shadowGenerator, xrHelper);
 
