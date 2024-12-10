@@ -5,9 +5,9 @@ import { globals } from "../bookBlockShader/globals";
 import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
 import { updateWrapper } from "../lib/updateWrapper";
-import { addAutoflipBook } from "../nodeLib/autoflipBookNode";
 import { initBookDebugGui } from "./bookDebugGui";
 
+import { getPhysicsMesh } from "../bookBlockShader/bookPhysicsMesh2";
 import { initXR } from "../lib/xr";
 import { createHand, simulateHandMovement } from "../nodeLib/handSimulator";
 import { setMetadatas } from "../nodeLib/nodeTools";
@@ -18,33 +18,12 @@ export const createScene: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
-    // ====================================
-
     scene.debugLayer.show();
-
-    // ====================================
 
     // Initialize physics
     await initializePhysics(scene);
 
     initXR(scene, xrHelper);
-
-    // ====================================
-
-    // Exit XR when "B" pressed
-    xrHelper.input.onControllerAddedObservable.add((inputSource) => {
-        inputSource.onMotionControllerInitObservable.add((motionController) =>
-            motionController
-                .getComponent("b-button")
-                ?.onButtonStateChangedObservable.add((component) => {
-                    if (component.pressed) {
-                        void xrHelper.baseExperience.exitXRAsync();
-                    }
-                })
-        );
-    });
-
-    // ====================================
 
     initBookDebugGui(
         scene,
@@ -56,11 +35,8 @@ export const createScene: CreateSceneFn = async (
         }
     );
 
-    // ====================================
-
     const updates = updateWrapper();
 
-    // ====================================
     // *** Light ***
 
     if (false) {
@@ -121,27 +97,8 @@ export const createScene: CreateSceneFn = async (
         );
     }
 
-    // ====================================
     // *** Book ***
-
-    let book;
-    const startTime = Date.now();
-    for (let i = 0; i < 1; ++i) {
-        console.log("BOOK", i);
-        book = addAutoflipBook(scene, xrHelper, {
-            startTime,
-            flipAngle: (Math.PI * 1) / 3,
-        });
-        updates.addUpdates(book.updates);
-        const ii = i % 25;
-        book.node.position = new BABYLON.Vector3(
-            Math.floor(ii / 5) * 5,
-            (ii % 5) * 5 + 30,
-            Math.floor(i / 25) * 5
-        );
-        book.node.rotation = new BABYLON.Vector3(-0.8, 0, 0);
-        const physicsAggregate = book.addPhysics();
-    }
+    getPhysicsMesh(scene, 2.1, 2.7, 0.5);
 
     // Try anti-aliasing
     if (false) {
@@ -169,14 +126,10 @@ export const createScene: CreateSceneFn = async (
     }
     */
 
-    // ====================================
-
     // camera.node.setTarget(book!.node.position.clone());
     camera.node.setTarget(new BABYLON.Vector3(0, 0, 0));
 
-    // ====================================
     // Sphere
-
     {
         // Create a simple sphere to interact with
         const sphere = BABYLON.MeshBuilder.CreateSphere(
@@ -212,9 +165,7 @@ export const createScene: CreateSceneFn = async (
         setMetadatas(sphere, { startPhysics, stopPhysics });
     }
 
-    // ====================================
     // Ground
-
     if (true) {
         // Our built-in 'ground' shape.
         const ground = BABYLON.MeshBuilder.CreateGround(
@@ -243,11 +194,7 @@ export const createScene: CreateSceneFn = async (
         );
     }
 
-    // ====================================
-
     new BABYLON.AxesViewer(scene);
-
-    // ====================================
 
     if (false) {
         let grabbedMesh: BABYLON.Nullable<BABYLON.AbstractMesh> = null;
