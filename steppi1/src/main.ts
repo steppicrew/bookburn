@@ -5,9 +5,10 @@ import { CreateSceneFn, SceneEx } from "./lib/sceneEx";
 import { state } from "./state";
 import logo from "./assets/bookburn.svg?raw";
 
-import { createScene as createBooksScene } from "./scene.Books/scene.Books";
-import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 import { initXrDebugging } from "./lib/initXrDebugging";
+import { createScene as createBooksScene } from "./scene.Books/scene.Books";
+import { createScene as createBooks2Scene } from "./scene.Books2/scene.Books";
+import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 
 let createScene: CreateSceneFn | undefined;
 
@@ -24,6 +25,10 @@ const start = async () => {
         books: {
             title: "Book/Physics test scene",
             createScene: createBooksScene,
+        },
+        books2: {
+            title: "Book2/Physics test scene",
+            createScene: createBooks2Scene,
         },
     };
     if (!(location.hash.substring(1) in scenes)) {

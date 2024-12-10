@@ -9,31 +9,37 @@ export const getPhysicsMesh = (
     height: number,
     depth: number
 ) => {
+    depth = 1;
+
     // Box 1: Define the first box
     const backMesh = BABYLON.MeshBuilder.CreateBox(
-        "box1",
-        { width, depth: depth / 2, height },
+        "back",
+        { width, height: depth / 2, depth: height },
         scene
     );
-    backMesh.position = new BABYLON.Vector3(0, 0, 0);
-    backMesh.physicsImpostor = new BABYLON.PhysicsImpostor(
+    backMesh.position = new BABYLON.Vector3(width / 2, depth / 4, height / 2);
+    const backPhysics = new BABYLON.PhysicsAggregate(
         backMesh,
         BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 1, restitution: 0.5 },
+        { mass: 1, restitution: 0.3 },
         scene
     );
 
     // Box 2: Define the second box
     const frontMesh = BABYLON.MeshBuilder.CreateBox(
-        "box2",
-        { width, depth: depth / 2, height },
+        "front",
+        { width, height: depth / 2, depth: height },
         scene
     );
-    frontMesh.position = new BABYLON.Vector3(0, depth / 2, 0);
-    frontMesh.physicsImpostor = new BABYLON.PhysicsImpostor(
+    frontMesh.position = new BABYLON.Vector3(
+        width / 2,
+        (3 * depth) / 4,
+        height / 2
+    );
+    const frontPhysics = new BABYLON.PhysicsAggregate(
         frontMesh,
         BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 1, restitution: 0.5 },
+        { mass: 1, restitution: 0.3 },
         scene
     );
 
@@ -46,6 +52,38 @@ export const getPhysicsMesh = (
         }
     });
 
+    // Define hinge constraints
+    const constraintParams: BABYLON.PhysicsConstraintParameters = {
+        pivotA: new BABYLON.Vector3(0, depth / 2, 0), // Pivot at the edge of box1
+        pivotB: new BABYLON.Vector3(0, depth / 2, 0), // Pivot at the edge of box2
+        axisA: new BABYLON.Vector3(0, 0, height), // Axis of rotation for box1
+        axisB: new BABYLON.Vector3(0, 0, height), // Axis of rotation for box2
+    };
+
+    const angularLimits: BABYLON.Physics6DoFLimit[] = [
+        // Restrict rotation around the hinge axis
+        {
+            axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Z, // Axis around which the hinge rotates
+            minLimit: -Math.PI / 4, // Minimum rotation angle (-45 degrees)
+            maxLimit: Math.PI / 4, // Maximum rotation angle (+45 degrees)
+        },
+        // Free rotation on other axes (unconstrained)
+        {
+            axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Y,
+            minLimit: 0,
+            maxLimit: 0,
+        },
+        {
+            axis: BABYLON.PhysicsConstraintAxis.ANGULAR_X,
+            minLimit: 0,
+            maxLimit: 0,
+        },
+    ];
+
+    // Create the hinge joint
+    new BABYLON.Physics6DoFConstraint(constraintParams, angularLimits, scene);
+
+    /*
     // Create a hinge joint to connect the two boxes
     const hingeJoint = new BABYLON.PhysicsJoint(
         BABYLON.PhysicsJoint.HingeJoint,
@@ -57,8 +95,8 @@ export const getPhysicsMesh = (
         }
     );
 
-    // Add the joint between the two physics impostors
-    backMesh.physicsImpostor.addJoint(frontMesh.physicsImpostor, hingeJoint);
+    backImpostor.addJoint(frontImpostor, hingeJoint);
+    */
 
     let enabled = true;
     const setEnabled = (newState: boolean) => {
@@ -76,5 +114,11 @@ export const getPhysicsMesh = (
         };
     })();
 
-    return { mesh: backMesh, getUpdate, collisionTracker, setEnabled };
+    const node = new BABYLON.TransformNode("book-physics-node", scene);
+    backMesh.parent = node;
+    frontMesh.parent = node;
+
+    node.position.y = 0.3;
+
+    return { mesh: node, getUpdate, collisionTracker, setEnabled };
 };
