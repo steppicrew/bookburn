@@ -4,7 +4,7 @@ import { updateWrapper } from "../lib/updateWrapper";
 
 import { getMetadata, setMetadata } from "../nodeLib/nodeTools";
 import { createBookMesh } from "./bookMesh";
-import { getPhysicsMesh } from "./bookPhysicsMesh";
+import { getPhysicsMesh } from "./bookPhysicsMesh2";
 import { globals } from "./globals";
 import {
     BookFlipDirection,
