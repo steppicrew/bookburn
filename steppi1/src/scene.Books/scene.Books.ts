@@ -18,7 +18,11 @@ export const createScene: CreateSceneFn = async (
     camera: CreateCamera2,
     xrHelper: BABYLON.WebXRDefaultExperience
 ) => {
+    // ====================================
+
     scene.debugLayer.show();
+
+    // ====================================
 
     // Initialize physics
     {
@@ -30,6 +34,23 @@ export const createScene: CreateSceneFn = async (
 
     initXR(scene, xrHelper);
 
+    // ====================================
+
+    // Exit XR when "B" pressed
+    xrHelper.input.onControllerAddedObservable.add((inputSource) => {
+        inputSource.onMotionControllerInitObservable.add((motionController) =>
+            motionController
+                .getComponent("b-button")
+                ?.onButtonStateChangedObservable.add((component) => {
+                    if (component.pressed) {
+                        void xrHelper.baseExperience.exitXRAsync();
+                    }
+                })
+        );
+    });
+
+    // ====================================
+
     initBookDebugGui(
         scene,
         (manual) => {
@@ -40,8 +61,11 @@ export const createScene: CreateSceneFn = async (
         }
     );
 
+    // ====================================
+
     const updates = updateWrapper();
 
+    // ====================================
     // *** Light ***
 
     if (false) {
@@ -102,6 +126,7 @@ export const createScene: CreateSceneFn = async (
         );
     }
 
+    // ====================================
     // *** Book ***
 
     let book;
@@ -149,10 +174,14 @@ export const createScene: CreateSceneFn = async (
     }
     */
 
+    // ====================================
+
     // camera.node.setTarget(book!.node.position.clone());
     camera.node.setTarget(new BABYLON.Vector3(0, 0, 0));
 
+    // ====================================
     // Sphere
+
     {
         // Create a simple sphere to interact with
         const sphere = BABYLON.MeshBuilder.CreateSphere(
@@ -188,7 +217,9 @@ export const createScene: CreateSceneFn = async (
         setMetadatas(sphere, { startPhysics, stopPhysics });
     }
 
+    // ====================================
     // Ground
+
     if (true) {
         // Our built-in 'ground' shape.
         const ground = BABYLON.MeshBuilder.CreateGround(
@@ -217,7 +248,11 @@ export const createScene: CreateSceneFn = async (
         );
     }
 
+    // ====================================
+
     new BABYLON.AxesViewer(scene);
+
+    // ====================================
 
     if (false) {
         let grabbedMesh: BABYLON.Nullable<BABYLON.AbstractMesh> = null;

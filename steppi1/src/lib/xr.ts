@@ -51,7 +51,7 @@ interface NodeTracking {
 }
 
 interface Grabbed {
-    observable: BABYLON.Observer<BABYLON.Scene>;
+    observable: BABYLON.Observer<XRFrame>;
     controller: BABYLON.WebXRInputSource;
     mesh: BABYLON.AbstractMesh;
     distance: number;
@@ -68,17 +68,18 @@ const getCurrentPointerEndPosition = (grabbed: Grabbed) => {
 };
 
 const observeRightHand = (
+    xrHelper: BABYLON.WebXRDefaultExperience,
     xrController: BABYLON.WebXRInputSource,
     scene: BABYLON.Scene
 ) => {
-    let grabbedMesh: Grabbed | undefined = undefined;
+    let grabbed: Grabbed | undefined = undefined;
 
     // Logic for grabbing and releasing objects
     const grabObject = (
         xrController: BABYLON.WebXRInputSource,
         scene: BABYLON.Scene
     ) => {
-        if (grabbedMesh) {
+        if (grabbed) {
             return;
         }
 
@@ -118,43 +119,51 @@ const observeRightHand = (
         getMetadata(_grabbedMesh)?.stopPhysics?.();
 
         cl.log("Add observable");
-        const observable = scene.onBeforeRenderObservable.add(() => {
-            if (!grabbedMesh) {
-                cl.log(
-                    "This should not happen: grabbedNode is not set but observable not removed."
-                );
-                scene.onBeforeRenderObservable.remove(observable);
-                return;
-            }
+        const observable =
+            xrHelper.baseExperience.sessionManager.onXRFrameObservable.add(
+                (frame) => {
+                    if (!grabbed) {
+                        cl.log(
+                            "This should not happen: grabbedNode is not set but observable not removed."
+                        );
+                        xrHelper.baseExperience.sessionManager.onXRFrameObservable.remove(
+                            observable
+                        );
+                        return;
+                    }
 
-            const tracking = grabbedMesh.tracking;
+                    const tracking = grabbed.tracking;
 
-            // Get current position of the pointer
-            const currentPosition = getCurrentPointerEndPosition(grabbedMesh);
+                    // Get current position of the pointer
+                    const currentPosition =
+                        getCurrentPointerEndPosition(grabbed);
 
-            // Get the current timestamp
-            const currentTimestamp = performance.now();
+                    // Get the current timestamp
+                    const currentTimestamp = performance.now();
 
-            // Calculate time interval (in seconds)
-            const deltaTime =
-                (currentTimestamp - tracking.previousTimestamp) / 1000;
+                    // Calculate time interval (in seconds)
+                    const deltaTime =
+                        (currentTimestamp - tracking.previousTimestamp) / 1000;
 
-            // Calculate velocity as (current - previous) / deltaTime
-            const movedBy = currentPosition.subtract(tracking.previousPosition);
+                    // Calculate velocity as (current - previous) / deltaTime
+                    const movedBy = currentPosition.subtract(
+                        tracking.previousPosition
+                    );
 
-            grabbedMesh.mesh.moveWithCollisions(movedBy);
+                    grabbed.mesh.moveWithCollisions(movedBy);
 
-            const velocity = movedBy.scale(1 / deltaTime);
+                    const velocity = movedBy.scale(1 / deltaTime);
 
-            // Update previous values
-            grabbedMesh.tracking = {
-                velocity,
-                previousPosition: currentPosition.clone(),
-                previousTimestamp: currentTimestamp,
-            };
-        });
+                    // Update previous values
+                    grabbed.tracking = {
+                        velocity,
+                        previousPosition: currentPosition.clone(),
+                        previousTimestamp: currentTimestamp,
+                    };
+                }
+            );
 
-        grabbedMesh = {
+        grabbed = {
             controller: xrController,
             distance: pickInfo.distance,
             mesh: _grabbedMesh,
@@ -165,23 +174,21 @@ const observeRightHand = (
                 velocity: BABYLON.Vector3.Zero(),
             },
         };
-        grabbedMesh.tracking.previousPosition =
-            getCurrentPointerEndPosition(grabbedMesh);
+        grabbed.tracking.previousPosition =
+            getCurrentPointerEndPosition(grabbed);
     };
 
     const releaseObject = (
         xrController: BABYLON.WebXRInputSource,
         scene: BABYLON.Scene
     ) => {
-        if (grabbedMesh?.controller != xrController) {
+        if (grabbed?.controller != xrController) {
             return;
         }
 
         // Apply impulse based on pointer velocity
-        getMetadata(grabbedMesh.mesh)?.startPhysics?.();
-        grabbedMesh.mesh.physicsBody?.setLinearVelocity(
-            grabbedMesh.tracking.velocity
-        );
+        getMetadata(grabbed.mesh)?.startPhysics?.();
+        grabbed.mesh.physicsBody?.setLinearVelocity(grabbed.tracking.velocity);
         /*
         grabbedMesh.mesh.physicsImpostor?.applyImpulse(
             grabbedMesh.tracking.velocity.scale(5), // Adjust scale factor as needed
@@ -191,21 +198,25 @@ const observeRightHand = (
 
         cl.log(
             "Object released:",
-            grabbedMesh.mesh.name,
-            grabbedMesh.mesh.getAbsolutePosition()
+            grabbed.mesh.name,
+            grabbed.mesh.getAbsolutePosition()
         );
 
         cl.log("Remove observable");
-        scene.onBeforeRenderObservable.remove(grabbedMesh.observable);
+        xrHelper.baseExperience.sessionManager.onXRFrameObservable.remove(
+            grabbed.observable
+        );
 
-        grabbedMesh = undefined;
+        grabbed = undefined;
     };
 
     xrController.onMotionControllerInitObservable.add((motionController) => {
         // Get the "squeeze" or "trigger" component for grabbing
         const grabComponent =
-            motionController.getComponent("xr-standard-squeeze") ||
-            motionController.getComponent("xr-standard-trigger");
+            motionController.getComponent("xr-standard-trigger") ||
+            motionController.getComponent("xr-standard-squeeze");
+
+        cl.log("onmotion component", grabComponent.type);
 
         if (grabComponent) {
             grabComponent.onButtonStateChangedObservable.add(() => {
@@ -300,8 +311,10 @@ export const initXR = (
     // Enable hand tracking
     xrHelper.input.onControllerAddedObservable.add(
         (xrController: BABYLON.WebXRInputSource) => {
-            console.log("controller added", xrController);
-            observeRightHand(xrController, scene);
+            console.log("controller added");
+            observeRightHand(xrHelper, xrController, scene);
+
+            /*
             if (xrController.inputSource.handedness === "right") {
                 console.log("Hand controller added");
 
@@ -337,6 +350,7 @@ export const initXR = (
                     }
                 });
             }
+            */
         }
     );
 };
