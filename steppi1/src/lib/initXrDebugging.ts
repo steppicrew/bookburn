@@ -5,11 +5,21 @@ export const initXrDebugging = () => {
         return;
     }
 
-    const sendLog = (type: string, ...message: any[]) => {
+    const toJson = (...args: any[]) =>
+        args.map((arg) => {
+            try {
+                JSON.stringify(arg);
+            } catch (e) {
+                return "<recursive>";
+            }
+            return arg;
+        });
+
+    const sendLog = (type: string, ...args: any[]) => {
         import.meta.hot?.send(
             JSON.stringify({
                 event: "log-message",
-                data: { type, message },
+                data: { type, message: toJson(args) },
             })
         );
     };

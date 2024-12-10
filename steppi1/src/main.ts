@@ -3,6 +3,7 @@ import "babylonjs-loaders";
 
 import { CreateSceneFn, SceneEx } from "./lib/sceneEx";
 import { state } from "./state";
+import logo from "./assets/bookburn.svg?raw";
 
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
@@ -26,12 +27,12 @@ const start = async () => {
         },
     };
     if (!(location.hash.substring(1) in scenes)) {
+        // let logo = '<img class="logo" src="/assets/bookburn.svg" />';
         let html = "";
         for (const id in scenes) {
             html += `<a href="?#${id}"><h1>${scenes[id].title}</h1></a>`;
         }
-        document.body.innerHTML =
-            '<div id="scenes"><p>Select a scene:</p>' + html + "</div>";
+        document.body.innerHTML = `<div id="scenes"><p>Select a scene:</p>${html}<div class="logo">${logo}</div></div>`;
         return;
     }
 
