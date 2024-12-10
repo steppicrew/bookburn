@@ -212,7 +212,7 @@ export const createScene: CreateSceneFn = async (
     xrHelper.baseExperience.sessionManager.onXRFrameObservable.add((_frame) => {
         const xrCamera = xrHelper.baseExperience.camera;
         plane.position = xrCamera.position.clone();
-        plane.position.y -= 6;
+        plane.position.y -= 7;
     });
 
     // ====================================

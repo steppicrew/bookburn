@@ -3,7 +3,26 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Babylon.js with Vite and TypeScript</title>
+        <title>bookburn!</title>
+        <style>
+            body {
+                font-family: sans-serif;
+                background-color: green;
+                color: white;
+            }
+            body a {
+                color: white;
+            }
+            #scenes {
+                height: 100%;
+                display: grid;
+                align-content: center;
+                justify-content: center;
+            }
+            #scenes h1 {
+                x-display: grid;
+            }
+        </style>
     </head>
     <body style="height: 100%; margin: 0; overflow: hidden">
         <canvas id="renderCanvas" style="width: 100%; height: 100%"></canvas>

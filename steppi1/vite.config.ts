@@ -34,8 +34,6 @@ const logger = (): Plugin => ({
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, process.cwd());
-    const entryScene = env.VITE_SCENE;
-    console.log("ENTRY SCENE:", entryScene);
     return {
         base: "./",
         server: {
@@ -46,10 +44,6 @@ export default defineConfig(({ mode }) => {
             },
         },
         plugins: [glsl(), basicSsl({}), logger()],
-        define: {
-            // To access in code
-            "process.env.SCENE": JSON.stringify(entryScene),
-        },
         // to serve HavokPhysics.wasm from it's original location
         optimizeDeps: { exclude: ["@babylonjs/havok"] },
     };

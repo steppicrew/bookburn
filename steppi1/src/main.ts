@@ -8,14 +8,35 @@ import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 import { initXrDebugging } from "./lib/initXrDebugging";
 
-let createScene: CreateSceneFn;
-if (import.meta.env["VITE_SCENE"] === "Books") {
-    createScene = createBooksScene;
-} else {
-    createScene = createGltfScene;
-}
+let createScene: CreateSceneFn | undefined;
 
 const start = async () => {
+    const scenes: Record<
+        string,
+        { title: string; createScene: CreateSceneFn }
+    > = {
+        gltf: { title: '"City Vertigo"', createScene: createGltfScene },
+        gltf_test: {
+            title: "Houses test scene",
+            createScene: createGltfScene,
+        },
+        books: {
+            title: "Book/Physics test scene",
+            createScene: createBooksScene,
+        },
+    };
+    if (!(location.hash.substring(1) in scenes)) {
+        let html = "";
+        for (const id in scenes) {
+            html += `<a href="?#${id}"><h1>${scenes[id].title}</h1></a>`;
+        }
+        document.body.innerHTML =
+            '<div id="scenes"><p>Select a scene:</p>' + html + "</div>";
+        return;
+    }
+
+    createScene = scenes[location.hash.substring(1)].createScene;
+
     if (!state.canvas) {
         state.canvas = document.getElementById(
             "renderCanvas"
@@ -74,13 +95,17 @@ if (import.meta.hot) {
 
     import.meta.hot.on("vite:beforeUpdate", async (_args) => {
         console.log("HMR EVENT beforeUpdate: remove scene");
-        await state.sceneEx.setupBeforeHMR();
+        if (createScene) {
+            await state.sceneEx.setupBeforeHMR();
+        }
     });
 
     import.meta.hot.on("vite:afterUpdate", async (_args) => {
         console.log("HMR EVENT afterUpdate: re-create scene");
-        await state.sceneEx.setupCreateScene(createScene);
-        await state.sceneEx.setupAfterHMR();
+        if (createScene) {
+            await state.sceneEx.setupCreateScene(createScene);
+            await state.sceneEx.setupAfterHMR();
+        }
     });
 
     import.meta.hot.accept(() => {});
