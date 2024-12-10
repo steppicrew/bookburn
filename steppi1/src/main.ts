@@ -31,17 +31,20 @@ const start = async () => {
             createScene: createBooks2Scene,
         },
     };
-    if (!(location.hash.substring(1) in scenes)) {
+
+    const selected = location.search.substring(1);
+
+    if (!(selected in scenes)) {
         // let logo = '<img class="logo" src="/assets/bookburn.svg" />';
         let html = "";
         for (const id in scenes) {
-            html += `<a href="?#${id}"><h1>${scenes[id].title}</h1></a>`;
+            html += `<a href="/?${id}"><h1>${scenes[id].title}</h1></a>`;
         }
         document.body.innerHTML = `<div id="scenes"><p>Select a scene:</p>${html}<div class="logo">${logo}</div></div>`;
         return;
     }
 
-    createScene = scenes[location.hash.substring(1)].createScene;
+    createScene = scenes[selected].createScene;
 
     if (!state.canvas) {
         state.canvas = document.getElementById(

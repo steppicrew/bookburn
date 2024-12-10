@@ -139,7 +139,7 @@ export const sceneContent = async (
     // addPerson(scene);
     // addDebugGrid(scene);
 
-    if (location.hash === "#gltf") {
+    if (location.search === "?gltf") {
         await addCity(scene, shadowGenerator);
 
         if (xrHelper) {
