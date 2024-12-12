@@ -38,7 +38,7 @@ const start = async () => {
         // let logo = '<img class="logo" src="/assets/bookburn.svg" />';
         let html = "";
         for (const id in scenes) {
-            html += `<a href="/?${id}"><h1>${scenes[id].title}</h1></a>`;
+            html += `<a href="?${id}"><h1>${scenes[id].title}</h1></a>`;
         }
         document.body.innerHTML = `<div id="scenes"><p>Select a scene:</p>${html}<div class="logo">${logo}</div></div>`;
         return;
