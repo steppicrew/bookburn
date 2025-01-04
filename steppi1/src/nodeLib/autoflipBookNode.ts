@@ -11,8 +11,8 @@ export const addAutoflipBook = (
 ) => {
     const book = setupBook(scene, xrHelper, {
         pageCount: 200,
-        pageDepth: 0.0002,
-        coverDepth: 0.002,
+        pageDepth: 0.002,
+        coverDepth: 0.02,
         maxFlipPageCount: 10,
         texture: "assets/scene.Books/BookTexture-xcf.png",
     });

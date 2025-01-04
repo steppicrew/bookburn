@@ -2,7 +2,50 @@ import * as BABYLON from "babylonjs";
 import { getCollisionTracker } from "../lib/collisionTracker";
 
 const SHOW_WIRE_FRAME = true;
-const RESTITUTION = 0.8;
+const RESTITUTION = 0.3;
+
+const boxPositions: [x: number, y: number, z: number][] = [
+    [0, 0, 0],
+    [1, 0, 0],
+    [1, 1, 0],
+    [0, 1, 0],
+    [0, 0, 1],
+    [1, 0, 1],
+    [1, 1, 1],
+    [0, 1, 1],
+];
+const boxIndexes = [
+    0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 0, 4, 7, 0, 7, 3, 1, 5, 6, 1, 6, 2, 4,
+    5, 1, 4, 1, 0, 3, 2, 6, 3, 6, 7,
+];
+
+const getBoxMesh = ({
+    scene,
+    name,
+    width,
+    height,
+    depth,
+}: {
+    scene: BABYLON.Scene;
+    name: string;
+    width: number;
+    height: number;
+    depth: number;
+}) => {
+    const mesh = new BABYLON.Mesh(name, scene);
+
+    // Build vertexData
+    {
+        const vertexData = new BABYLON.VertexData();
+        vertexData.indices = boxIndexes;
+        vertexData.positions = boxPositions
+            .map((p) => [p[0] * width, p[1] * depth, p[2] * height])
+            .flat();
+        vertexData.applyToMesh(mesh);
+    }
+
+    return mesh;
+};
 
 export const getPhysicsMesh = (
     scene: BABYLON.Scene,
@@ -10,27 +53,25 @@ export const getPhysicsMesh = (
     height: number,
     depth: number
 ) => {
-    depth = 1;
-
     // Box 1: Define the first box
-    const backMesh = BABYLON.MeshBuilder.CreateBox(
-        "back",
-        { width, height: depth / 2, depth: height },
-        scene
-    );
-    backMesh.position = new BABYLON.Vector3(width / 2, depth / 4, height / 2);
+    const backMesh = getBoxMesh({
+        name: "back",
+        width,
+        height,
+        depth: depth / 2,
+        scene,
+    });
+    backMesh.position = new BABYLON.Vector3(0, 0, 0);
 
     // Box 2: Define the second box
-    const frontMesh = BABYLON.MeshBuilder.CreateBox(
-        "front",
-        { width, height: depth / 2, depth: height },
-        scene
-    );
-    frontMesh.position = new BABYLON.Vector3(
-        width / 2,
-        (3 * depth) / 4,
-        height / 2
-    );
+    const frontMesh = getBoxMesh({
+        name: "front",
+        width,
+        height,
+        depth: depth / 2,
+        scene,
+    });
+    frontMesh.position = new BABYLON.Vector3(0, depth / 2, 0);
     frontMesh.rotation = new BABYLON.Vector3(0, 0, Math.PI / 4);
 
     const enablePhysics = () => {
@@ -48,14 +89,55 @@ export const getPhysicsMesh = (
         );
 
         const joint = new BABYLON.HingeConstraint(
-            new BABYLON.Vector3(-width / 2, depth / 4, -height / 2),
-            new BABYLON.Vector3(-width / 2, -depth / 4, -height / 2),
+            new BABYLON.Vector3(0, depth / 2, 0),
+            new BABYLON.Vector3(0, 0, 0),
             new BABYLON.Vector3(0, 0, 1),
             new BABYLON.Vector3(0, 0, 1),
             scene
         );
 
+        let angleConstraint: BABYLON.Physics6DoFConstraint | undefined;
+
+        const setMaxAngle = (angle: number) => {
+            if (angleConstraint) {
+                angleConstraint.dispose();
+            }
+
+            angleConstraint = new BABYLON.Physics6DoFConstraint(
+                {
+                    pivotA: new BABYLON.Vector3(0, depth / 2, 0),
+                    pivotB: new BABYLON.Vector3(0, 0, 0),
+                    axisA: new BABYLON.Vector3(0, 0, 1),
+                    axisB: new BABYLON.Vector3(0, 0, 1),
+                },
+                [
+                    {
+                        axis: BABYLON.PhysicsConstraintAxis.ANGULAR_X,
+                        minLimit: 0,
+                        maxLimit: angle,
+                    },
+                    /*
+                    {
+                        axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Y,
+                        minLimit: 0,
+                        maxLimit: 0,
+                    },
+                    {
+                        axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Z,
+                        minLimit: 0,
+                        maxLimit: 0,
+                    },
+                    */
+                ],
+                scene
+            );
+            backPhysics.body.addConstraint(frontPhysics.body, angleConstraint);
+        };
+
         backPhysics.body.addConstraint(frontPhysics.body, joint);
+        setMaxAngle(Math.PI);
+
+        return setMaxAngle;
     };
 
     [frontMesh, backMesh].forEach((mesh) => {
@@ -133,8 +215,26 @@ export const getPhysicsMesh = (
 
     const collisionTracker = getCollisionTracker({});
 
+    const getPositionAngle = () => {
+        const position = backMesh.getAbsolutePosition();
+        const rotation =
+            backMesh.rotationQuaternion?.clone() ||
+            backMesh.rotation.toQuaternion();
+
+        const frontRotation =
+            frontMesh.rotationQuaternion ||
+            frontMesh.rotation.toQuaternion();
+
+        const relativeRotation = rotation.conjugate().multiply(frontRotation);
+
+        const angle = 2 * Math.acos(Math.min(Math.abs(relativeRotation.w), 1)); // Clamp to avoid NaN
+
+        return { position, rotation, angle };
+    };
+
     const getUpdate = (() => {
         return (maxAngle: number) => {
+            setMaxAngle(maxAngle);
             return (time: number) => {
                 collisionTracker.onPreEnd();
             };
@@ -142,13 +242,21 @@ export const getPhysicsMesh = (
     })();
 
     const node = new BABYLON.TransformNode("book-physics-node", scene);
-    // backMesh.parent = node;
-    // frontMesh.parent = node;
+    backMesh.parent = node;
+    frontMesh.parent = node;
 
-    node.position = new BABYLON.Vector3(0.5, 0.5, 0.5);
+    node.position = new BABYLON.Vector3(0.5, 2, 0.5);
     // node.rotation = new BABYLON.Vector3(1, 0, 0);
 
-    enablePhysics();
+    const setMaxAngle = enablePhysics();
 
-    return { mesh: node, getUpdate, collisionTracker, setEnabled };
+    // setMetadatas(node, { getPositionAngle });
+
+    return {
+        mesh: node,
+        getUpdate,
+        getPositionAngle,
+        collisionTracker,
+        setEnabled,
+    };
 };

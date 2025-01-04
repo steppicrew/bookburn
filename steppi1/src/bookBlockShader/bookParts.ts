@@ -4,7 +4,7 @@ import { updateWrapper } from "../lib/updateWrapper";
 
 import { getMetadata } from "../nodeLib/nodeTools";
 import { createBookMesh } from "./bookMesh";
-import { getPhysicsMesh } from "./bookPhysicsMesh";
+import { getPhysicsMesh } from "./bookPhysicsMesh2";
 import { globals } from "./globals";
 import {
     BookFlipDirection,
@@ -91,6 +91,7 @@ export const createBookParts = (parameters: {
     const {
         mesh: hullMesh,
         getUpdate: hullGetUpdate,
+        getPositionAngle: getHullPositionAngle,
         collisionTracker,
         setEnabled: setHullEnabled,
     } = getPhysicsMesh(
@@ -100,8 +101,8 @@ export const createBookParts = (parameters: {
         2 * coverDepth + pageCount * pageDepth
     );
 
-    mesh.parent = bookNode;
-    hullMesh.parent = bookNode;
+    // mesh.parent = bookNode;
+    // hullMesh.parent = bookNode;
 
     // Make hullMesh accessable via mesh (for scene.pick)
     // setMetadata(mesh, "physicsBody", hullMesh);
@@ -127,18 +128,17 @@ export const createBookParts = (parameters: {
         }
     });
 
+    let flipAngle = 0;
+    const setFlipAngle = (angle: number) => {
+        flipAngle = angle;
+        material.setFloat("flipAngle", angle);
+    };
+
     const beforeRenderObservable = scene.onBeforeRenderObservable.add(() => {
-        mesh.position.copyFrom(hullMesh.position);
-        if (hullMesh.rotationQuaternion) {
-            if (mesh.rotationQuaternion) {
-                mesh.rotationQuaternion.copyFrom(hullMesh.rotationQuaternion);
-            } else {
-                mesh.rotationQuaternion = hullMesh.rotationQuaternion.clone();
-            }
-        } else {
-            mesh.rotationQuaternion = null; // Reset if rotation is not quaternion
-            mesh.rotation.copyFrom(hullMesh.rotation);
-        }
+        const { position, rotation, angle } = getHullPositionAngle();
+        mesh.position.copyFrom(position);
+        mesh.rotationQuaternion = rotation;
+        setFlipAngle(angle);
     });
 
     const keybordObserver = scene.onKeyboardObservable.add((kbInfo) => {
@@ -163,13 +163,11 @@ export const createBookParts = (parameters: {
         msPerFlip,
         flipPages,
         startTime,
-        flipAngle,
     }: {
         direction: BookFlipDirection;
         msPerFlip: number;
         flipPages?: number;
         startTime?: number;
-        flipAngle?: number;
     }): Promise<void> =>
         new Promise((resolve, reject) => {
             if (!meshEnabled) {
@@ -184,13 +182,16 @@ export const createBookParts = (parameters: {
 
             material.setFloat("time", timeOffset);
             material.setInt("flipPages", flipPages);
-            material.setFloat("flipAngle", flipAngle || 0);
+            //material.setFloat("flipAngle", flipAngle || 0);
 
             let started = false;
 
             const hullUpdate = hullGetUpdate(flipAngle || 0);
 
             const update = () => {
+                if (flipAngle < 0.01) {
+                    return;
+                }
                 const now = Date.now();
                 if (!meshEnabled) {
                     updates.remove(update);
