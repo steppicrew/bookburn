@@ -98,7 +98,7 @@ export const createScene: CreateSceneFn = async (
     }
 
     // *** Book ***
-    getPhysicsMesh(scene, 2.1, 2.7, 0.5);
+    setTimeout(() => getPhysicsMesh(scene, 2.1, 2.7, 0.5), 1000);
 
     // Try anti-aliasing
     if (false) {

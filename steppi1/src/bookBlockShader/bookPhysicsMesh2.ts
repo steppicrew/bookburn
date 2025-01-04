@@ -2,6 +2,7 @@ import * as BABYLON from "babylonjs";
 import { getCollisionTracker } from "../lib/collisionTracker";
 
 const SHOW_WIRE_FRAME = true;
+const RESTITUTION = 0.8;
 
 export const getPhysicsMesh = (
     scene: BABYLON.Scene,
@@ -18,12 +19,6 @@ export const getPhysicsMesh = (
         scene
     );
     backMesh.position = new BABYLON.Vector3(width / 2, depth / 4, height / 2);
-    const backPhysics = new BABYLON.PhysicsAggregate(
-        backMesh,
-        BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 1, restitution: 0.3 },
-        scene
-    );
 
     // Box 2: Define the second box
     const frontMesh = BABYLON.MeshBuilder.CreateBox(
@@ -36,12 +31,32 @@ export const getPhysicsMesh = (
         (3 * depth) / 4,
         height / 2
     );
-    const frontPhysics = new BABYLON.PhysicsAggregate(
-        frontMesh,
-        BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 1, restitution: 0.3 },
-        scene
-    );
+    frontMesh.rotation = new BABYLON.Vector3(0, 0, Math.PI / 4);
+
+    const enablePhysics = () => {
+        const backPhysics = new BABYLON.PhysicsAggregate(
+            backMesh,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 1, restitution: RESTITUTION },
+            scene
+        );
+        const frontPhysics = new BABYLON.PhysicsAggregate(
+            frontMesh,
+            BABYLON.PhysicsShapeType.BOX,
+            { mass: 1, restitution: RESTITUTION },
+            scene
+        );
+
+        const joint = new BABYLON.HingeConstraint(
+            new BABYLON.Vector3(-width / 2, depth / 4, -height / 2),
+            new BABYLON.Vector3(-width / 2, -depth / 4, -height / 2),
+            new BABYLON.Vector3(0, 0, 1),
+            new BABYLON.Vector3(0, 0, 1),
+            scene
+        );
+
+        backPhysics.body.addConstraint(frontPhysics.body, joint);
+    };
 
     [frontMesh, backMesh].forEach((mesh) => {
         if (SHOW_WIRE_FRAME) {
@@ -52,6 +67,17 @@ export const getPhysicsMesh = (
         }
     });
 
+    /*
+    scene,
+        backMesh,
+        new BABYLON.Vector3(0, depth / 2, 0),
+        frontMesh,
+        new BABYLON.Vector3(0, depth / 2, 0),
+        new BABYLON.Vector3(0, 0, 1)
+    );
+    */
+
+    /*
     // Define hinge constraints
     const constraintParams: BABYLON.PhysicsConstraintParameters = {
         pivotA: new BABYLON.Vector3(0, depth / 2, 0), // Pivot at the edge of box1
@@ -82,6 +108,7 @@ export const getPhysicsMesh = (
 
     // Create the hinge joint
     new BABYLON.Physics6DoFConstraint(constraintParams, angularLimits, scene);
+    */
 
     /*
     // Create a hinge joint to connect the two boxes
@@ -115,10 +142,13 @@ export const getPhysicsMesh = (
     })();
 
     const node = new BABYLON.TransformNode("book-physics-node", scene);
-    backMesh.parent = node;
-    frontMesh.parent = node;
+    // backMesh.parent = node;
+    // frontMesh.parent = node;
 
-    node.position.y = 0.3;
+    node.position = new BABYLON.Vector3(0.5, 0.5, 0.5);
+    // node.rotation = new BABYLON.Vector3(1, 0, 0);
+
+    enablePhysics();
 
     return { mesh: node, getUpdate, collisionTracker, setEnabled };
 };
