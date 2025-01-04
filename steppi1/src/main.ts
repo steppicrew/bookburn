@@ -12,29 +12,30 @@ import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
 
 let createScene: CreateSceneFn | undefined;
 
+const scenes: Record<string, { title: string; createScene: CreateSceneFn }> = {
+    gltf: { title: '"City Vertigo"', createScene: createGltfScene },
+    gltf_test: {
+        title: "Houses test scene",
+        createScene: createGltfScene,
+    },
+    books: {
+        title: "Book/Physics test scene",
+        createScene: createBooksScene,
+    },
+    books2: {
+        title: "Book2/Physics test scene",
+        createScene: createBooks2Scene,
+    },
+};
+
+const selected = location.search.substring(1);
+
+if (selected in scenes) {
+    createScene = scenes[selected].createScene;
+}
+
 const start = async () => {
-    const scenes: Record<
-        string,
-        { title: string; createScene: CreateSceneFn }
-    > = {
-        gltf: { title: '"City Vertigo"', createScene: createGltfScene },
-        gltf_test: {
-            title: "Houses test scene",
-            createScene: createGltfScene,
-        },
-        books: {
-            title: "Book/Physics test scene",
-            createScene: createBooksScene,
-        },
-        books2: {
-            title: "Book2/Physics test scene",
-            createScene: createBooks2Scene,
-        },
-    };
-
-    const selected = location.search.substring(1);
-
-    if (!(selected in scenes)) {
+    if (!createScene) {
         // let logo = '<img class="logo" src="/assets/bookburn.svg" />';
         let html = "";
         for (const id in scenes) {
@@ -43,8 +44,6 @@ const start = async () => {
         document.body.innerHTML = `<div id="scenes"><p>Select a scene:</p>${html}<div class="logo">${logo}</div></div>`;
         return;
     }
-
-    createScene = scenes[selected].createScene;
 
     if (!state.canvas) {
         state.canvas = document.getElementById(
