@@ -273,5 +273,23 @@ export const createBookMesh = ({
 
     // mesh.isVisible = false;
 
-    return { mesh, material };
+    {
+        let _angle = 0;
+        return {
+            mesh,
+            setTime: (time: number) => {
+                material.setFloat("time", time);
+            },
+            setAngle: (angle: number) => {
+                _angle = angle;
+                material.setFloat("flipAngle", angle);
+            },
+            getAngle: () => {
+                return _angle;
+            },
+            setFlipPages: (flipPages: number) => {
+                material.setInt("flipPages", flipPages);
+            },
+        };
+    }
 };

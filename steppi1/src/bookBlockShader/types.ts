@@ -32,7 +32,6 @@ export interface BookType {
         msPerFlip: number;
         flipPages?: number;
         startTime?: number;
-        flipAngle?: number;
     }) => Promise<void>;
     updates: UpdateWrapper;
     addPhysics: () => void;

@@ -7,8 +7,8 @@ import { CreateSceneFn } from "../lib/sceneEx";
 import { updateWrapper } from "../lib/updateWrapper";
 import { initBookDebugGui } from "./bookDebugGui";
 
-import { getPhysicsMesh } from "../bookBlockShader/bookPhysicsMesh2";
 import { initXR } from "../lib/xr";
+import { addAutoflipBook } from "../nodeLib/autoflipBookNode";
 import { createHand, simulateHandMovement } from "../nodeLib/handSimulator";
 import { setMetadatas } from "../nodeLib/nodeTools";
 import { initializePhysics } from "./physics";
@@ -98,7 +98,24 @@ export const createScene: CreateSceneFn = async (
     }
 
     // *** Book ***
-    getPhysicsMesh(scene, 2.1, 2.7, 0.5);
+    // getPhysicsMesh(scene, 2.1, 2.7, 0.5);
+    let book;
+    const startTime = Date.now();
+    for (let i = 0; i < 1; ++i) {
+        console.log("BOOK", i);
+        book = addAutoflipBook(scene, xrHelper, {
+            startTime,
+        });
+        updates.addUpdates(book.updates);
+        const ii = i % 25;
+        book.node.position = new BABYLON.Vector3(
+            Math.floor(ii / 5) * 5,
+            (ii % 5) * 5 + 30,
+            Math.floor(i / 25) * 5
+        );
+        book.node.rotation = new BABYLON.Vector3(-0.8, 0.8, 0);
+        const physicsAggregate = book.addPhysics();
+    }
 
     // Try anti-aliasing
     if (false) {

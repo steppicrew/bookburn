@@ -13,6 +13,12 @@ interface NodeMetadata {
     startPhysics?: (
         physicsParameters?: BABYLON.PhysicsAggregateParameters
     ) => void;
+
+    getPositionAngle?: () => {
+        position: BABYLON.Vector3;
+        rotation: BABYLON.Quaternion;
+        angle: number;
+    };
 }
 
 export const getMetadata = (node: BABYLON.Node): NodeMetadata | undefined => {

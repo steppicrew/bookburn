@@ -54,7 +54,7 @@ export const createBookParts = (parameters: {
 
     let meshEnabled = true;
 
-    const { mesh, material } = createBookMesh({
+    const visibileBook = createBookMesh({
         ...parameters,
         vertices,
         coverOverlap,
@@ -72,8 +72,8 @@ export const createBookParts = (parameters: {
     const setBoundingBox = (time: number) => {
         const minX = time > 0 ? -width : 0;
         const maxX = time < 1 ? width : 0;
-        mesh.computeWorldMatrix(true);
-        mesh.setBoundingInfo(
+        visibileBook.mesh.computeWorldMatrix(true);
+        visibileBook.mesh.setBoundingInfo(
             new BABYLON.BoundingInfo(
                 new BABYLON.Vector3(minX, 0, 0),
                 new BABYLON.Vector3(
@@ -88,28 +88,23 @@ export const createBookParts = (parameters: {
     setBoundingBox(0);
     // mesh.showBoundingBox = true;
 
-    const {
-        mesh: hullMesh,
-        getUpdate: hullGetUpdate,
-        collisionTracker,
-        setEnabled: setHullEnabled,
-    } = getPhysicsMesh(
+    const bookHull = getPhysicsMesh(
         scene,
         width,
         height,
         2 * coverDepth + pageCount * pageDepth
     );
 
-    mesh.parent = bookNode;
-    hullMesh.parent = bookNode;
+    // mesh.parent = bookNode;
+    // hullMesh.parent = bookNode;
 
     // Make hullMesh accessable via mesh (for scene.pick)
     // setMetadata(mesh, "physicsBody", hullMesh);
 
-    collisionTracker.addEventListerner(({ state, event }) => {
+    bookHull.collisionTracker.addEventListerner(({ state, event }) => {
         switch (state) {
             case "started":
-                setHullEnabled(false);
+                bookHull.setEnabled(false);
                 meshEnabled = false;
             // Fall through
             case "continued":
@@ -128,21 +123,16 @@ export const createBookParts = (parameters: {
     });
 
     const beforeRenderObservable = scene.onBeforeRenderObservable.add(() => {
-        mesh.position.copyFrom(hullMesh.position);
-        if (hullMesh.rotationQuaternion) {
-            if (mesh.rotationQuaternion) {
-                mesh.rotationQuaternion.copyFrom(hullMesh.rotationQuaternion);
-            } else {
-                mesh.rotationQuaternion = hullMesh.rotationQuaternion.clone();
-            }
-        } else {
-            mesh.rotationQuaternion = null; // Reset if rotation is not quaternion
-            mesh.rotation.copyFrom(hullMesh.rotation);
-        }
+        const { position, rotation, angle } = bookHull.getPositionAngle();
+        // console.log("Positions", mesh.position, position, rotation, angle);
+        visibileBook.mesh.setAbsolutePosition(position);
+        // mesh.position.copyFrom(position);
+        visibileBook.mesh.rotationQuaternion = rotation;
+        visibileBook.setAngle(angle);
     });
 
     const keybordObserver = scene.onKeyboardObservable.add((kbInfo) => {
-        const body = hullMesh.physicsBody;
+        const body = bookHull.mesh.physicsBody;
         if (!body) {
             return;
         }
@@ -163,13 +153,11 @@ export const createBookParts = (parameters: {
         msPerFlip,
         flipPages,
         startTime,
-        flipAngle,
     }: {
         direction: BookFlipDirection;
         msPerFlip: number;
         flipPages?: number;
         startTime?: number;
-        flipAngle?: number;
     }): Promise<void> =>
         new Promise((resolve, reject) => {
             if (!meshEnabled) {
@@ -182,15 +170,19 @@ export const createBookParts = (parameters: {
             }
             const timeOffset = direction === "left" ? 0 : 1;
 
-            material.setFloat("time", timeOffset);
-            material.setInt("flipPages", flipPages);
-            material.setFloat("flipAngle", flipAngle || 0);
+            visibileBook.setTime(timeOffset);
+            visibileBook.setFlipPages(flipPages);
+            //material.setFloat("flipAngle", flipAngle || 0);
 
             let started = false;
 
-            const hullUpdate = hullGetUpdate(flipAngle || 0);
+            const flipAngle = visibileBook.getAngle() || 0;
+            const hullUpdate = bookHull.getUpdate(flipAngle);
 
             const update = () => {
+                if (flipAngle < 0.01) {
+                    return resolve();
+                }
                 const now = Date.now();
                 if (!meshEnabled) {
                     updates.remove(update);
@@ -209,12 +201,12 @@ export const createBookParts = (parameters: {
 
                 if (globals.useDebugTime) {
                     time1 = globals.debugTime;
-                    material.setFloat("time", time1);
+                    visibileBook.setTime(time1);
                     hullUpdate(time1);
                     return;
                 }
 
-                material.setFloat("time", time1);
+                visibileBook.setTime(time1);
                 hullUpdate(time1);
                 if (time === 1) {
                     updates.remove(update);
@@ -232,7 +224,7 @@ export const createBookParts = (parameters: {
         scene.onBeforeRenderObservable.remove(beforeRenderObservable);
     };
 
-    const addPhysics = getMetadata(hullMesh)?.startPhysics || (() => {});
+    const addPhysics = getMetadata(bookHull.mesh)?.startPhysics || (() => {});
 
     return {
         flipBook,

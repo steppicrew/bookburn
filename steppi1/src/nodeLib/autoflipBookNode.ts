@@ -6,13 +6,13 @@ export const addAutoflipBook = (
     xrHelper: BABYLON.WebXRDefaultExperience,
     {
         startTime,
-        flipAngle,
-    }: { startTime?: number; flipAngle?: number; withPhysics?: boolean }
+        flipDelay,
+    }: { startTime?: number; withPhysics?: boolean; flipDelay?: number } = {}
 ) => {
     const book = setupBook(scene, xrHelper, {
         pageCount: 200,
-        pageDepth: 0.0002,
-        coverDepth: 0.002,
+        pageDepth: 0.002,
+        coverDepth: 0.02,
         maxFlipPageCount: 10,
         texture: "assets/scene.Books/BookTexture-xcf.png",
     });
@@ -25,21 +25,17 @@ export const addAutoflipBook = (
                     msPerFlip: 3000,
                     flipPages: 5,
                     startTime,
-                    flipAngle,
                 })
-                .catch((error) => false && console.log(error))
-                .then(() => setTimeout(flipRight, 1000));
+                .finally(() => setTimeout(flipRight, flipDelay || 0));
         const flipRight = () =>
             book
                 .flipBook({
                     direction: "right",
                     msPerFlip: 2000,
                     flipPages: 10,
-                    flipAngle,
                 })
-                .catch((error) => false && console.log(error))
-                .then(() => setTimeout(flipLeft, 1000));
-        setTimeout(() => flipLeft(startTime), 1000);
+                .finally(() => setTimeout(flipLeft, flipDelay || 0));
+        setTimeout(() => flipLeft(startTime), flipDelay || 0);
     }
 
     return book;

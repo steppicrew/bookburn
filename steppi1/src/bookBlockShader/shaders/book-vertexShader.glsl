@@ -54,6 +54,7 @@ float binderFactor;
 float maxAngle;
 float binderTop;
 float flippingPagesRadius;
+float realTime;
 
 const float PI = 3.1415926535897932384626433832795;
 const float PI_2 = PI / 2.0;
@@ -112,7 +113,16 @@ float ease(float x) {
 
 // Initialize global variables
 void init(void) {
-    maxAngle = flipAngle == 0.0 ? PI : flipAngle;
+    maxAngle = flipAngle; // == 0.0 ? PI : flipAngle;
+    realTime = time;
+    if (maxAngle < 0.075) {
+        maxAngle = PI;
+        realTime = 0.0;
+    }
+    if (realTime < 0.0 || realTime >= 2.0) {
+        realTime = 0.0;
+    }
+    
 
     /*
     tp: time1 to turn one page
@@ -135,14 +145,14 @@ void init(void) {
     }
     deltaPageTime = timePerPage / float(flipPages);
     
-    if (time <= 1.0) {
-        easedTime = ease(time);
+    if (realTime <= 1.0) {
+        easedTime = ease(realTime);
         float timeLeft = 1.0 - easedTime - (timePerPage - deltaPageTime);
         maxFlipPageIndex = pageCount - int(floor(timeLeft / deltaPageTime));
         minFlipPageIndex = maxFlipPageIndex - (flipPages - 1);
     }
     else {
-        easedTime = 1.0 + ease(time - 1.0);
+        easedTime = 1.0 + ease(realTime - 1.0);
         float timeLeft = 2.0 - easedTime - (timePerPage);
         minFlipPageIndex = int(floor(timeLeft / deltaPageTime));
         maxFlipPageIndex = minFlipPageIndex + (flipPages - 1);
@@ -179,7 +189,7 @@ float binderFnRaw(float y) {
 }
 
 float binderFn(float y) {
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
+    if (realTime == 0.0 || realTime == 1.0) {
         return 0.0;
     }
     return binderFnRaw(y) * binderFactor;
@@ -187,7 +197,7 @@ float binderFn(float y) {
 
 // Normal vector on binderFn
 vec3 binderFnNorm(float y) {
-    if (time == 0.0 || time == 1.0 || time == 2.0) {
+    if (realTime == 0.0 || realTime == 1.0) {
         return vec3(-1.0, 0.0, 0.0);
     }
     /*
@@ -354,7 +364,7 @@ MyResult renderFrontBlockBody(MyInput data) {
     }
 
     if (side == BottomSide) {
-        if (time == 0.0 || time == 1.0 || time == 2.0) {
+        if (realTime == 0.0 || realTime == 1.0) {
             result.hide = true;
             return result;
         }
@@ -392,7 +402,7 @@ MyResult renderFrontBlockBody(MyInput data) {
 MyResult renderPageBody(MyInput data) {
     MyResult result = newResult();
     
-    if(!renderPages || time == 0.0 || time == 1.0 || time == 2.0 || data.pageNum >= flipPages) {
+    if(!renderPages || realTime == 0.0 || realTime == 1.0 || data.pageNum >= flipPages) {
         result.hide = true;
         return result;
     }
@@ -413,12 +423,12 @@ MyResult renderPageBody(MyInput data) {
 
     // Start bending page
     {
-        float t = time < 1.0 ? (easedTime - frontCoverHeadStart) : ((2.0 - easedTime) - deltaPageTime);
-        float _time = (t / deltaPageTime - float(pageNum)) / float(flipPages);
+        float t = realTime < 1.0 ? (easedTime - frontCoverHeadStart) : ((2.0 - easedTime) - deltaPageTime);
+        float time = (t / deltaPageTime - float(pageNum)) / float(flipPages);
         
         // k: 1/r
-        float normTime = 1.0 - _time;
-        float k = -2.0 * floppyness * (0.5 - abs(0.5 - normTime)) * sign(1.0 - time);
+        float normTime = 1.0 - time;
+        float k = -2.0 * floppyness * (0.5 - abs(0.5 - normTime)) * sign(1.0 - realTime);
 
         k *= maxAngle / PI;
         
