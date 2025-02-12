@@ -4,7 +4,7 @@ import { updateWrapper } from "../lib/updateWrapper";
 
 import { getMetadata } from "../nodeLib/nodeTools";
 import { createBookMesh } from "./bookMesh";
-import { getPhysicsMesh } from "./bookPhysicsMesh2";
+import { getPhysicsMesh } from "./bookPhysicsMesh";
 import { globals } from "./globals";
 import {
     BookFlipDirection,
@@ -181,7 +181,7 @@ export const createBookParts = (parameters: {
 
             const update = () => {
                 if (flipAngle < 0.01) {
-                    return;
+                    return resolve();
                 }
                 const now = Date.now();
                 if (!meshEnabled) {
