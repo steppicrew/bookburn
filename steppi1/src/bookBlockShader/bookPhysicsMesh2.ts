@@ -222,8 +222,7 @@ export const getPhysicsMesh = (
             backMesh.rotation.toQuaternion();
 
         const frontRotation =
-            frontMesh.rotationQuaternion ||
-            frontMesh.rotation.toQuaternion();
+            frontMesh.rotationQuaternion || frontMesh.rotation.toQuaternion();
 
         const relativeRotation = rotation.conjugate().multiply(frontRotation);
 
