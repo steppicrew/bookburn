@@ -10,6 +10,7 @@ import {
     makeWoodMaterial,
     makeGlassMaterial,
     applyPerpendicularUVs,
+    makeWood2Material,
 } from "../scene.Gltf/materialUtils";
 
 const cl = makeConsoleLogger("assetLoader", true);
@@ -40,6 +41,15 @@ const makeMaterials =
             return material;
         },
 
+        shelf: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) => {
+            const material = makeWood2Material(scene, name);
+            if (material.diffuseTexture instanceof BABYLON.Texture) {
+                material.diffuseTexture.uScale = 0.05;
+                material.diffuseTexture.vScale = 0.05;
+            }
+            return material;
+        },
+
         default: (scene: BABYLON.Scene, name: string, mesh: BABYLON.Mesh) =>
             makePlainMaterial(scene, name, 1, 1, 1),
     } as const;
@@ -51,6 +61,7 @@ const materialSubstitutes: Array<
     [/^building[/]wall(?:-.*|)[/]colormap$/, "wall"],
     [/^building[/]roof-.*[/]colormap$/, "roof"],
     [/^building[/]stairs-.*[/]colormap$/, "stairs"],
+    [/^furniture[/]bookcase.*[/]wood$/, "shelf"],
     [/^.*[/]glass$/, "glass"],
     [/^/, "default"],
 ];
@@ -196,6 +207,7 @@ export const getAsset = async (
 
 const nextCloneIndex: Record<string, number> = {};
 
+// UNUSED
 export const getAssetInstance = async (
     scene: BABYLON.Scene,
     assetKey: AssetKey,
@@ -228,10 +240,11 @@ export const getAssetThinInstance = async (
     shadowGenerator?: BABYLON.ShadowGenerator
 ) => {
     const asset = await getAsset(scene, assetKey, shadowGenerator); // Pass shadowGenerator for ThinInstance
-    return asset.map((mesh) => {
+    asset.map((mesh) => {
         refreshMeshes.add(mesh);
         mesh.thinInstanceAdd(matrix, false);
     });
+    return asset;
 };
 
 export const flushAssetThinInstances = () => {

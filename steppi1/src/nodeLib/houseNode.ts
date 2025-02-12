@@ -2,7 +2,7 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
 import { dirXY, MakeWalls, makeWalls, WallFeatures } from "./makeWalls";
-import { getAssetThinInstance } from "../scene.Gltf/assetLoader";
+import { getAssetThinInstance } from "../lib/assetLoader";
 import { AssetKey } from "../lib/AssetKey";
 import { addElevator } from "../scene.Gltf/elevator";
 import { makeRandom } from "../lib/makeRandom";

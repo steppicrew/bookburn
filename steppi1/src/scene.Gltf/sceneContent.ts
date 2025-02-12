@@ -5,7 +5,7 @@ import {
     addHouse1,
     flushTeleportationCells as flushHouses,
 } from "../nodeLib/houseNode";
-import { flushAssetThinInstances } from "./assetLoader";
+import { flushAssetThinInstances } from "../lib/assetLoader";
 import { addCity } from "./addCity";
 import { makeWalls } from "../nodeLib/makeWalls";
 import { makeRandom } from "../lib/makeRandom";

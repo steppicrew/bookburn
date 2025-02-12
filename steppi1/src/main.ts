@@ -9,6 +9,7 @@ import { initXrDebugging } from "./lib/initXrDebugging";
 import { createScene as createBooksScene } from "./scene.Books/scene.Books";
 import { createScene as createBooks2Scene } from "./scene.Books2/scene.Books";
 import { createScene as createGltfScene } from "./scene.Gltf/scene.Gltf";
+import { createScene as createShelvesScene } from "./scene.Shelves/scene.Shelves";
 
 let createScene: CreateSceneFn | undefined;
 
@@ -25,6 +26,10 @@ const scenes: Record<string, { title: string; createScene: CreateSceneFn }> = {
     books2: {
         title: "Book2/Physics test scene",
         createScene: createBooks2Scene,
+    },
+    shelves: {
+        title: "Shelves test scene",
+        createScene: createShelvesScene,
     },
 };
 

@@ -1,6 +1,5 @@
 import * as BABYLON from "babylonjs";
 import { makeGlassMaterial, makeWoodMaterial } from "./materialUtils";
-import { enableGravity } from "./playerGravity";
 
 const insideBox = (box: BABYLON.Mesh, point: BABYLON.Vector3) => {
     var boundInfo = box.getRawBoundingInfo();

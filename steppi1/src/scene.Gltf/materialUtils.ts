@@ -238,6 +238,16 @@ export const makeWoodMaterial = (
         "assets/scene.Gltf/old-wood-planks-256x256.png"
     );
 
+export const makeWood2Material = (
+    scene: BABYLON.Scene,
+    name = "wood2"
+): BABYLON.StandardMaterial =>
+    makeTexturedMaterial(
+        scene,
+        name,
+        "assets/scene.Gltf/dark-wood-parquet-256x256.png"
+    );
+
 export const makeWallMaterial = (
     scene: BABYLON.Scene,
     name: string
