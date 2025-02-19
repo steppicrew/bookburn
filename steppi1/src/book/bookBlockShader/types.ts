@@ -1,6 +1,6 @@
 import * as BABYLON from "babylonjs";
 
-import { UpdateWrapper } from "../lib/updateWrapper";
+import { UpdateWrapper } from "../../lib/updateWrapper";
 
 // Helper type that increments numbers from 0 to N
 type BuildRange<
@@ -36,6 +36,8 @@ export interface BookType {
     updates: UpdateWrapper;
     addPhysics: () => void;
     dispose: () => void;
+    setPosition: (position: BABYLON.Vector3) => void;
+    setRotationQuaternation: (rotation: BABYLON.Quaternion) => void;
     node: BABYLON.TransformNode;
 }
 

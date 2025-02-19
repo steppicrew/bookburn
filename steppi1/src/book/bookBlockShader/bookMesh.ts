@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 
-import { setLights } from "../lib/shaderTools";
-import { UpdateWrapper } from "../lib/updateWrapper";
+import { setLights } from "../../lib/shaderTools";
+import { UpdateWrapper } from "../../lib/updateWrapper";
 
 import fragmentShader from "./shaders/book-fragmentShader.glsl";
 import vertexShader from "./shaders/book-vertexShader.glsl";

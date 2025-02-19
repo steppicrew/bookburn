@@ -1,8 +1,9 @@
 import * as BABYLON from "babylonjs";
 
-import { updateWrapper } from "../lib/updateWrapper";
+import { updateWrapper } from "../../lib/updateWrapper";
 
-import { getMetadata } from "../nodeLib/nodeTools";
+import { getMetadata, setMetadata } from "../../nodeLib/nodeTools";
+import { Book } from "../types";
 import { createBookMesh } from "./bookMesh";
 import { getPhysicsMesh } from "./bookPhysicsMesh";
 import { globals } from "./globals";
@@ -20,6 +21,7 @@ const defaultZVertices = 1;
 
 export const createBookParts = (parameters: {
     scene: BABYLON.Scene;
+    book: Book;
     width: number;
     height: number;
     coverDepth?: number;
@@ -63,11 +65,6 @@ export const createBookParts = (parameters: {
         updates,
     });
 
-    const bookNode = new BABYLON.TransformNode("book", scene);
-    bookNode.onDispose = () => {
-        dispose();
-    };
-
     // Set BB to position on right side at time == 0, on left at time == 1, and on both sides at time in between
     const setBoundingBox = (time: number) => {
         const minX = time > 0 ? -width : 0;
@@ -99,7 +96,7 @@ export const createBookParts = (parameters: {
     // hullMesh.parent = bookNode;
 
     // Make hullMesh accessable via mesh (for scene.pick)
-    // setMetadata(mesh, "physicsBody", hullMesh);
+    setMetadata(visibileBook.mesh, "physicsBody", parameters.book);
 
     bookHull.collisionTracker.addEventListerner(({ state, event }) => {
         switch (state) {
@@ -226,11 +223,19 @@ export const createBookParts = (parameters: {
 
     const addPhysics = getMetadata(bookHull.mesh)?.startPhysics || (() => {});
 
+    const setRotationQuaternation = (
+        rotationQuaternation: BABYLON.Quaternion
+    ) => {
+        bookHull.mesh.rotationQuaternion = rotationQuaternation;
+    };
+
     return {
         flipBook,
         updates,
         addPhysics,
         dispose,
-        node: bookNode,
+        setPosition: bookHull.setPosition,
+        setRotationQuaternation,
+        node: bookHull.mesh,
     };
 };

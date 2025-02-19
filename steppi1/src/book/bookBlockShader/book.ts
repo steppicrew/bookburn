@@ -1,7 +1,8 @@
 import * as BABYLON from "babylonjs";
 
-import { TextureManager } from "../lib/TextureManager";
+import { TextureManager } from "../../lib/TextureManager";
 
+import { Book } from "../types";
 import { createBookParts } from "./bookParts";
 import { TextureMap } from "./types";
 
@@ -103,7 +104,10 @@ const getTextureMap = (): [TextureMap[], number[]] => {
 export const setupBook = (
     scene: BABYLON.Scene,
     xrHelper: BABYLON.WebXRDefaultExperience,
-    options?: {
+    book: Book,
+    options: {
+        width: number;
+        height: number;
         pageCount?: number;
         pageDepth?: number;
         coverDepth?: number;
@@ -121,8 +125,9 @@ export const setupBook = (
 
     const bookParts = createBookParts({
         scene,
-        width: 2.1,
-        height: 2.7,
+        book,
+        width: options.width,
+        height: options.height,
         coverDepth,
         pageDepth,
         maxFlipPageCount: Math.min(maxFlipPageCount, pageCount) as never,

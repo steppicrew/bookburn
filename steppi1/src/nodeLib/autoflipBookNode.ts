@@ -1,5 +1,5 @@
 import * as BABYLON from "babylonjs";
-import { setupBook } from "../bookBlockShader/book";
+import { makeBook } from "../book/makeBook";
 
 export const addAutoflipBook = (
     scene: BABYLON.Scene,
@@ -9,14 +9,19 @@ export const addAutoflipBook = (
         flipDelay,
     }: { startTime?: number; withPhysics?: boolean; flipDelay?: number } = {}
 ) => {
-    const book = setupBook(scene, xrHelper, {
-        pageCount: 200,
+    const book = makeBook({
+        scene,
+        xrHelper,
+        width: 21,
+        height: 27,
+        pageCount: 20,
         pageDepth: 0.002,
-        coverDepth: 0.02,
+        coverDepth: 0.01,
         maxFlipPageCount: 10,
         texture: "assets/scene.Books/BookTexture-xcf.png",
     });
 
+    /*
     if (true) {
         const flipLeft = (startTime?: number) =>
             book
@@ -37,6 +42,7 @@ export const addAutoflipBook = (
                 .finally(() => setTimeout(flipLeft, flipDelay || 0));
         setTimeout(() => flipLeft(startTime), flipDelay || 0);
     }
+    */
 
     return book;
 };

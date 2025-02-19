@@ -1,7 +1,7 @@
 import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 
-import { globals } from "../bookBlockShader/globals";
+import { globals } from "../book/bookBlockShader/globals";
 import { CreateCamera2 } from "../lib/camera1";
 import { CreateSceneFn } from "../lib/sceneEx";
 import { updateWrapper } from "../lib/updateWrapper";
@@ -108,13 +108,15 @@ export const createScene: CreateSceneFn = async (
         });
         updates.addUpdates(book.updates);
         const ii = i % 25;
-        book.node.position = new BABYLON.Vector3(
-            Math.floor(ii / 5) * 5,
-            (ii % 5) * 5 + 30,
-            Math.floor(i / 25) * 5
+        book.setAbsolutePosition(
+            new BABYLON.Vector3(
+                Math.floor(ii / 5) * 5,
+                (ii % 5) * 5 + 30,
+                Math.floor(i / 25) * 5
+            )
         );
-        book.node.rotation = new BABYLON.Vector3(-0.8, 0.8, 0);
-        const physicsAggregate = book.addPhysics();
+        // book.setRotationQuaternation(new BABYLON.Vector3(-0.8, 0.8, 0));
+        const physicsAggregate = book.startPhysics();
     }
 
     // Try anti-aliasing

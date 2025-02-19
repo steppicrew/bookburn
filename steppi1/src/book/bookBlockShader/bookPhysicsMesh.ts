@@ -1,24 +1,27 @@
 import * as BABYLON from "babylonjs";
-import { getCollisionTracker } from "../lib/collisionTracker";
+import { getCollisionTracker } from "../../lib/collisionTracker";
+import { MASS_BACK, MASS_FRONT, RESTITUTION } from "../types";
 
 const SHOW_WIRE_FRAME = true;
-const RESTITUTION = 1;
-const MASS = 1;
 
 const boxPositions: [x: number, y: number, z: number][] = [
-    [0, 0, 0],
-    [1, 0, 0],
-    [1, 1, 0],
-    [0, 1, 0],
-    [0, 0, 1],
-    [1, 0, 1],
-    [1, 1, 1],
-    [0, 1, 1],
-];
+    [0, 0, 0], // 0
+    [1, 0, 0], // 1
+    [1, 1, 0], // 2
+    [0, 1, 0], // 3
+    [0, 0, 1], // 4
+    [1, 0, 1], // 5
+    [1, 1, 1], // 6
+    [0, 1, 1], // 7
+] as const;
 const boxIndexes = [
-    0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 0, 4, 7, 0, 7, 3, 1, 5, 6, 1, 6, 2, 4,
-    5, 1, 4, 1, 0, 3, 2, 6, 3, 6, 7,
-];
+    [0, 1, 2, 0, 2, 3], // front plane
+    [4, 5, 6, 4, 6, 7], // back plane
+    [0, 4, 7, 0, 7, 3], // left plane
+    [1, 5, 6, 1, 6, 2], // right plane
+    [4, 5, 1, 4, 1, 0], // bottom plane
+    [3, 2, 6, 3, 6, 7], // top plane
+] as const;
 
 const getBoxMesh = ({
     scene,
@@ -38,7 +41,7 @@ const getBoxMesh = ({
     // Build vertexData
     {
         const vertexData = new BABYLON.VertexData();
-        vertexData.indices = boxIndexes;
+        vertexData.indices = boxIndexes.flat();
         vertexData.positions = boxPositions
             .map((p) => [p[0] * width, p[1] * depth, p[2] * height])
             .flat();
@@ -54,91 +57,154 @@ export const getPhysicsMesh = (
     height: number,
     depth: number
 ) => {
+    const frontBackDepth = depth / 2;
+    const frontOffset = frontBackDepth; // + 0.0000001;
+
     // Box 1: Define the first box
     const backMesh = getBoxMesh({
-        name: "back",
+        name: "back physical Hull",
         width,
         height,
-        depth: depth / 2,
+        depth: frontBackDepth,
         scene,
     });
     backMesh.position = new BABYLON.Vector3(0, 0, 0);
 
     // Box 2: Define the second box
     const frontMesh = getBoxMesh({
-        name: "front",
+        name: "front physical Hull",
         width,
         height,
-        depth: depth / 2,
+        depth: frontBackDepth,
         scene,
     });
-    frontMesh.position = new BABYLON.Vector3(0, depth / 2, 0);
+    frontMesh.position = new BABYLON.Vector3(0, frontOffset, 0);
     frontMesh.rotation = new BABYLON.Vector3(0, 0, Math.PI / 4);
 
     const enablePhysics = () => {
         const backPhysics = new BABYLON.PhysicsAggregate(
             backMesh,
             BABYLON.PhysicsShapeType.BOX,
-            { mass: MASS, restitution: RESTITUTION },
+            { mass: MASS_BACK, restitution: RESTITUTION },
             scene
         );
         const frontPhysics = new BABYLON.PhysicsAggregate(
             frontMesh,
             BABYLON.PhysicsShapeType.BOX,
-            { mass: MASS, restitution: RESTITUTION },
+            { mass: MASS_FRONT, restitution: RESTITUTION },
             scene
         );
-
+        /*
         const joint = new BABYLON.HingeConstraint(
-            new BABYLON.Vector3(0, depth / 2, 0),
+            new BABYLON.Vector3(0, frontBackDepth, 0),
             new BABYLON.Vector3(0, 0, 0),
             new BABYLON.Vector3(0, 0, 1),
             new BABYLON.Vector3(0, 0, 1),
             scene
         );
+        */
+        const constratintParams: BABYLON.PhysicsConstraintParameters = {
+            pivotA: new BABYLON.Vector3(0, frontBackDepth, 0),
+            pivotB: new BABYLON.Vector3(0, 0, 0),
+            axisA: new BABYLON.Vector3(0, 0, 1),
+            axisB: new BABYLON.Vector3(0, 0, 1),
+        } as const;
 
-        let angleConstraint: BABYLON.Physics6DoFConstraint | undefined;
+        const joint = new BABYLON.Physics6DoFConstraint(
+            constratintParams,
+            [
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.LINEAR_X, // Lock movement along X-axis
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.LINEAR_Y, // Lock movement along Y-axis
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.LINEAR_Z, // Lock movement along Z-axis
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.LINEAR_DISTANCE, // Lock distance between the two boxes
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.ANGULAR_X, // Lock rotation around X-axis
+                    minLimit: 0,
+                    maxLimit: Math.PI,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Y, // Lock rotation around Y-axis
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+                {
+                    axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Z, // Lock rotation around Z-axis
+                    minLimit: 0,
+                    maxLimit: 0,
+                },
+            ],
+            scene
+        );
+
+        let angleConstraint: BABYLON.Physics6DoFConstraint | undefined =
+            undefined;
 
         const setMaxAngle = (angle: number) => {
             if (angleConstraint) {
                 angleConstraint.dispose();
             }
+            if (backMesh.isDisposed() || frontMesh.isDisposed()) {
+                return;
+            }
+
+            if (angle < 0) angle = 0;
+            if (angle > Math.PI) angle = Math.PI;
+
+            // console.log("setMaxAngle", angle);
 
             angleConstraint = new BABYLON.Physics6DoFConstraint(
-                {
-                    pivotA: new BABYLON.Vector3(0, depth / 2, 0),
-                    pivotB: new BABYLON.Vector3(0, 0, 0),
-                    axisA: new BABYLON.Vector3(0, 0, 1),
-                    axisB: new BABYLON.Vector3(0, 0, 1),
-                },
+                constratintParams,
                 [
                     {
                         axis: BABYLON.PhysicsConstraintAxis.ANGULAR_X,
                         minLimit: 0,
                         maxLimit: angle,
                     },
-                    /*
-                    {
-                        axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Y,
-                        minLimit: 0,
-                        maxLimit: 0,
-                    },
-                    {
-                        axis: BABYLON.PhysicsConstraintAxis.ANGULAR_Z,
-                        minLimit: 0,
-                        maxLimit: 0,
-                    },
-                    */
                 ],
                 scene
             );
             backPhysics.body.addConstraint(frontPhysics.body, angleConstraint);
         };
 
+        const _setPosition = (
+            box: BABYLON.Mesh,
+            newPosition: BABYLON.Vector3
+        ) => {
+            box.physicsImpostor?.setLinearVelocity(BABYLON.Vector3.Zero());
+            box.physicsImpostor?.setAngularVelocity(BABYLON.Vector3.Zero());
+            box.position = newPosition;
+            box.physicsImpostor?.setDeltaPosition(
+                newPosition.subtract(box.position)
+            );
+        };
+
+        const setPosition = (newPosition: BABYLON.Vector3) => {
+            _setPosition(backMesh, newPosition);
+            _setPosition(
+                frontMesh,
+                newPosition.add(new BABYLON.Vector3(0, frontOffset, 0))
+            );
+        };
         backPhysics.body.addConstraint(frontPhysics.body, joint);
         setMaxAngle(Math.PI);
 
-        return setMaxAngle;
+        return { setMaxAngle, setPosition } as const;
     };
 
     [frontMesh, backMesh].forEach((mesh) => {
@@ -245,10 +311,10 @@ export const getPhysicsMesh = (
     backMesh.parent = node;
     frontMesh.parent = node;
 
-    node.position = new BABYLON.Vector3(0.5, 2, 0.5);
+    // node.position = new BABYLON.Vector3(0, 2, 0);
     // node.rotation = new BABYLON.Vector3(1, 0, 0);
 
-    const setMaxAngle = enablePhysics();
+    const { setMaxAngle, setPosition } = enablePhysics();
 
     // setMetadatas(node, { getPositionAngle });
 
@@ -258,5 +324,6 @@ export const getPhysicsMesh = (
         getPositionAngle,
         collisionTracker,
         setEnabled,
+        setPosition,
     };
 };

@@ -1,10 +1,14 @@
 import * as BABYLON from "babylonjs";
+import { Book } from "../book/types";
+import { XrPhysicsBody } from "../lib/xrTypes";
 
 // TODO: Move to lib/nodeUtils.ts
 
 interface NodeMetadata {
     // If a body has no physics itself but has a physics body assigned, that's it
-    physicsBody?: BABYLON.AbstractMesh;
+    physicsBody?: XrPhysicsBody;
+
+    book?: Book;
 
     // Stop a body's physics
     stopPhysics?: () => void;
@@ -22,7 +26,13 @@ interface NodeMetadata {
 }
 
 export const getMetadata = (node: BABYLON.Node): NodeMetadata | undefined => {
-    return node.metadata ? (node.metadata as NodeMetadata) : undefined;
+    if (node.metadata) {
+        return node.metadata as NodeMetadata;
+    }
+    if (node.parent) {
+        return getMetadata(node.parent);
+    }
+    return undefined;
 };
 
 export const setMetadata = <T extends keyof NodeMetadata>(

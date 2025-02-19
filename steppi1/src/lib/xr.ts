@@ -2,10 +2,11 @@ import * as BABYLON from "babylonjs";
 import "babylonjs-loaders";
 import { getMetadata } from "../nodeLib/nodeTools";
 import { makeConsoleLogger } from "../scene.Gltf/ConsoleLogger";
+import { XrPhysicsBody } from "./xrTypes";
 
 const cl = makeConsoleLogger("xr.ts");
 
-const RayLength = 10;
+const RayLength = 100;
 
 const getControllerForwardVector = (
     controller: BABYLON.WebXRInputSource
@@ -39,8 +40,8 @@ const getControllerForwardRay = (controller: BABYLON.WebXRInputSource) => {
     return new BABYLON.Ray(origin, direction, RayLength);
 };
 
-const grabMesh = (mesh: BABYLON.AbstractMesh): BABYLON.AbstractMesh => {
-    return getMetadata(mesh)?.physicsBody || mesh;
+const grabBody = (mesh: BABYLON.AbstractMesh): XrPhysicsBody | undefined => {
+    return getMetadata(mesh)?.physicsBody;
 };
 
 interface NodeTracking {
@@ -53,7 +54,7 @@ interface NodeTracking {
 interface Grabbed {
     observable: BABYLON.Observer<XRFrame>;
     controller: BABYLON.WebXRInputSource;
-    mesh: BABYLON.AbstractMesh;
+    body: XrPhysicsBody;
     distance: number;
 
     tracking: NodeTracking;
@@ -64,7 +65,7 @@ const getCurrentPointerEndPosition = (grabbed: Grabbed) => {
     if (vector) {
         return vector.origin.add(vector.direction.scale(grabbed.distance));
     }
-    return grabbed.mesh.getAbsolutePosition();
+    return grabbed.body.getAbsolutePosition();
 };
 
 const observeRightHand = (
@@ -72,6 +73,7 @@ const observeRightHand = (
     xrController: BABYLON.WebXRInputSource,
     scene: BABYLON.Scene
 ) => {
+    console.log("observeRightHand");
     let grabbed: Grabbed | undefined = undefined;
 
     // Logic for grabbing and releasing objects
@@ -98,11 +100,16 @@ const observeRightHand = (
         // Perform a ray pick
         const pickInfo = scene.pickWithRay(ray);
         if (!pickInfo?.hit || !pickInfo.pickedMesh) {
+            console.log("No mesh picked");
             return;
         }
 
         pickInfo.distance;
-        const _grabbedMesh = grabMesh(pickInfo.pickedMesh);
+        const _grabbedMesh = grabBody(pickInfo.pickedMesh);
+        if (!_grabbedMesh) {
+            console.log("No physics body found");
+            return;
+        }
         const pointerNode = xrController.pointer;
 
         if (!pointerNode) {
@@ -110,13 +117,9 @@ const observeRightHand = (
             return;
         }
 
-        cl.log(
-            "Grabbing mesh:",
-            _grabbedMesh.name,
-            _grabbedMesh.getAbsolutePosition()
-        );
+        cl.log("Grabbing mesh:", _grabbedMesh.name, "metadata");
 
-        getMetadata(_grabbedMesh)?.stopPhysics?.();
+        _grabbedMesh.stopPhysics();
 
         cl.log("Add observable");
         const observable =
@@ -150,7 +153,7 @@ const observeRightHand = (
                         tracking.previousPosition
                     );
 
-                    grabbed.mesh.moveWithCollisions(movedBy);
+                    grabbed.body.moveWithCollisions(movedBy);
 
                     const velocity = movedBy.scale(1 / deltaTime);
 
@@ -166,7 +169,7 @@ const observeRightHand = (
         grabbed = {
             controller: xrController,
             distance: pickInfo.distance,
-            mesh: _grabbedMesh,
+            body: _grabbedMesh,
             observable,
             tracking: {
                 previousPosition: BABYLON.Vector3.Zero(),
@@ -187,8 +190,7 @@ const observeRightHand = (
         }
 
         // Apply impulse based on pointer velocity
-        getMetadata(grabbed.mesh)?.startPhysics?.();
-        grabbed.mesh.physicsBody?.setLinearVelocity(grabbed.tracking.velocity);
+        grabbed.body.startPhysics(grabbed.tracking.velocity);
         /*
         grabbedMesh.mesh.physicsImpostor?.applyImpulse(
             grabbedMesh.tracking.velocity.scale(5), // Adjust scale factor as needed
@@ -198,8 +200,8 @@ const observeRightHand = (
 
         cl.log(
             "Object released:",
-            grabbed.mesh.name,
-            grabbed.mesh.getAbsolutePosition()
+            grabbed.body.name,
+            grabbed.body.getAbsolutePosition()
         );
 
         cl.log("Remove observable");
@@ -311,7 +313,6 @@ export const initXR = (
     // Enable hand tracking
     xrHelper.input.onControllerAddedObservable.add(
         (xrController: BABYLON.WebXRInputSource) => {
-            console.log("controller added");
             observeRightHand(xrHelper, xrController, scene);
 
             /*
